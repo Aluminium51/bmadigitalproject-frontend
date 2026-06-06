@@ -1,27 +1,34 @@
-import './globals.css';
-import { Manrope, Plus_Jakarta_Sans } from 'next/font/google';
+import "./globals.css";
+import type { Metadata } from "next";
+// 1. Import ฟอนต์ Noto Sans Thai
+import { Noto_Sans_Thai } from "next/font/google";
 
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-manrope',
+
+// 2. ตั้งค่าฟอนต์
+const notoSansThai = Noto_Sans_Thai({
+  subsets: ["thai", "latin"],
+  weight: ["300", "400", "500", "600", "700"], // เลือกน้ำหนักที่ใช้
+  variable: "--font-noto-sans-thai", // ตั้งชื่อ CSS Variable
+  display: "swap",
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-plus-jakarta-sans',
-});
+export const metadata: Metadata = {
+  title: "ระบบจัดการโครงการ กทม.",
+  description: "...",
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${plusJakartaSans.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    // 3. แนบ Variable เข้าไปที่ html
+    <html lang="th" className={`${notoSansThai.variable}`}>
+      {/* 4. เรียกใช้คลาส font-sans ที่เราจะไปผูกไว้ใน Tailwind */}
+      <body className="font-sans antialiased bg-background text-foreground">
+        {children}
+      </body>
     </html>
   );
 }
