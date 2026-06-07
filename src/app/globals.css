@@ -162,7 +162,10 @@ a {
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
+  
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground); 
+  
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -188,8 +191,8 @@ a {
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
-  --radius-container: 40px; /* ใช้สำหรับ Project Card / Dashboard container */
-  --radius-full: 9999px; /* สำหรับ Pill-shape buttons */
+  --radius-container: 40px; 
+  --radius-full: 9999px; 
 }
 
 

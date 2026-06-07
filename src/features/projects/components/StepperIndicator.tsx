@@ -31,13 +31,13 @@ export const StepperIndicator = () => {
                 <div
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ease-in-out z-10 ${
                     isActive
-                      ? "bg-primary-container text-surface shadow-md ring-4 ring-primary-container/20 scale-110" // Step ปัจจุบัน: เปล่งแสงและขยายตัว
+                      ? "bg-primary-container text-surface shadow-md ring-2 ring-primary-container/20 scale-110" // Step ปัจจุบัน: เปล่งแสงและขยายตัว
                       : isPast
                       ? "bg-primary text-surface shadow-sm" // Step ที่ผ่านมาแล้ว: สีทึบ
                       : "bg-surface-container border-2 border-border text-slate-gray" // Step อนาคต: สีเทาขอบบาง
                   }`}
                 >
-                  {isPast ? <Check className="h-5 w-5 stroke-3" /> : stepNum}
+                  {isPast ? <Check className="h-5 w-5 stroke-3 text-white" /> : stepNum}
                 </div>
                 
                 {/* ตัวหนังสือ (Label) - ถูกจัดให้อยู่ใต้วงกลมเสมอ */}

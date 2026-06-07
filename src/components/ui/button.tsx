@@ -32,7 +32,7 @@ const buttonVariants = cva(
         
         // ปุ่มลบ/อันตราย
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:border-destructive/40 focus-visible:ring-destructive/20",
+          "bg-destructive/5 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:border-destructive/40 focus-visible:ring-destructive/20 border-[1.5px] border-destructive",
         
         // ลิงก์
         link: 
