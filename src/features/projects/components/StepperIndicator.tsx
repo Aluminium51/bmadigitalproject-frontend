@@ -60,7 +60,7 @@ export const StepperIndicator = () => {
               {!isLast && (
                 <div className="flex-1 mx-2 sm:mx-4 flex items-center">
                   <div 
-                    className={`h-[2px] w-full rounded-full transition-all duration-500 ease-in-out ${
+                    className={`h-0.5 w-full rounded-full transition-all duration-500 ease-in-out ${
                       isPast ? "bg-primary" : "bg-border"
                     }`} 
                   />

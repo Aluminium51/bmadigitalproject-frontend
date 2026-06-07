@@ -35,7 +35,7 @@ export const ProjectStep4 = () => {
         {errors.personnelCosts?.root && <p className="text-sm text-status-orange mb-2">{errors.personnelCosts.root.message}</p>}
 
         <div className="overflow-x-auto border border-border rounded-md">
-          <table className="w-full text-left min-w-[800px]">
+          <table className="w-full text-left min-w-200">
             <thead className="bg-surface-container-low text-sm">
               <tr>
                 <th className="p-2 w-1/6">ระดับ</th>
@@ -77,7 +77,7 @@ export const ProjectStep4 = () => {
         </div>
 
         <div className="overflow-x-auto border border-border rounded-md">
-          <table className="w-full text-left min-w-[700px]">
+          <table className="w-full text-left min-w-175">
             <thead className="bg-surface-container-low text-sm">
               <tr>
                 <th className="p-2 w-2/5">รายการ</th>
