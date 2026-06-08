@@ -29,7 +29,7 @@ export const ProjectStep4 = () => {
       <div>
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-md font-bold text-foreground">ค่าใช้จ่ายบุคลากรที่ใช้ในการพัฒนาระบบ <span className="text-status-orange">*</span></h3>
-          <button type="button" onClick={() => appendPersonnel({ roleLevel: "บุคลากรหลัก", position: "", baseSalary: 0, multiplier: 1.76, personCount: 1, durationMonths: 1 })} className="text-sm text-surface bg-primary px-3 py-1.5 rounded-md hover:bg-primary-container transition-colors">+ เพิ่มบุคลากร</button>
+          <button type="button" onClick={() => appendPersonnel({ roleLevel: "บุคลากรหลัก", position: "", baseSalary: 0, multiplier: 1.76, personCount: 1, durationMonths: 1 })} className="text-sm text-white bg-primary px-3 py-1.5 rounded-md hover:bg-primary-container transition-colors">+ เพิ่มบุคลากร</button>
         </div>
         
         {errors.personnelCosts?.root && <p className="text-sm text-status-orange mb-2">{errors.personnelCosts.root.message}</p>}
@@ -73,7 +73,7 @@ export const ProjectStep4 = () => {
       <div>
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-md font-bold text-foreground">ค่าใช้จ่ายอื่นๆ (เช่น ฝึกอบรม, สื่อประชาสัมพันธ์)</h3>
-          <button type="button" onClick={() => appendOther({ itemName: "", quantity: 1, unitPrice: 0, remark: "" })} className="text-sm text-surface bg-primary px-3 py-1.5 rounded-md hover:bg-primary-container transition-colors">+ เพิ่มรายการ</button>
+          <button type="button" onClick={() => appendOther({ itemName: "", quantity: 1, unitPrice: 0, remark: "" })} className="text-sm text-white bg-primary px-3 py-1.5 rounded-md hover:bg-primary-container transition-colors">+ เพิ่มรายการ</button>
         </div>
 
         <div className="overflow-x-auto border border-border rounded-md">
