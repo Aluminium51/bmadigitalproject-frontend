@@ -66,7 +66,7 @@ const WizardForm = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl rounded-container border bg-surface p-6 sm:p-10 shadow-level-1">
+    <div className="mx-auto w-full rounded-container border bg-surface p-6 sm:p-10 shadow-level-1">
       <StepperIndicator />
 
       <FormProvider {...methods}>
@@ -81,12 +81,12 @@ const WizardForm = () => {
           {currentStep === 4 && <ProjectStep4 />}
           {currentStep === 5 && <ProjectStep5 />}
 
-          <div className="mt-12 flex flex-col sm:flex-row items-center justify-between border-t border-border pt-6 gap-4">
-            <div className="text-sm text-slate-gray order-2 sm:order-1">
+          <div className="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between border-t border-border gap-4">
+            <div className="text-sm text-slate-gray order-2 sm:order-1 w-full">
               {lastSavedAt && `บันทึกร่างล่าสุดเมื่อ: ${new Date(lastSavedAt).toLocaleTimeString()}`}
             </div>
 
-            <div className="flex gap-4 order-1 sm:order-2 w-full sm:w-auto justify-end">
+            <div className="flex flex-col sm:flex-row gap-4 order-1 sm:order-2 w-full justify-start sm:justify-end">
               {currentStep > 1 && (
                 <Button onClick={prevStep} variant="outline" className="px-6 py-4 w-full sm:w-auto font-medium">ย้อนกลับ</Button>
               )}

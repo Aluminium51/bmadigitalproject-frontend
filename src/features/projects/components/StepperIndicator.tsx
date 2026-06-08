@@ -12,17 +12,27 @@ export const StepperIndicator = () => {
     "ความพร้อม"
   ];
 
+  const stepsSm = [
+    "ข้อมูลทั่วไป", 
+    "สาระสำคัญ", 
+    "EA", 
+    "งบ", 
+    "ความพร้อม"
+  ];
+
   return (
     <div className="mb-12 w-full px-2 sm:px-6">
       <div className="flex w-full items-center justify-between">
-        {steps.map((label, index) => {
+        {/* ✅ วนลูปจาก steps ตัวเต็มเป็นหลัก */}
+        {steps.map((fullLabel, index) => {
+          const shortLabel = stepsSm[index]; // ดึงข้อความแบบสั้นตาม index
           const stepNum = index + 1;
           const isActive = currentStep === stepNum;
           const isPast = currentStep > stepNum;
           const isLast = stepNum === steps.length;
 
           return (
-            <div key={label} className={`flex items-center ${isLast ? "flex-none" : "flex-1"}`}>
+            <div key={fullLabel} className={`flex items-center ${isLast ? "flex-none" : "flex-1"}`}>
               
               {/* ส่วนของวงกลม และ ตัวหนังสือ */}
               <div className="relative flex flex-col items-center group">
@@ -31,10 +41,10 @@ export const StepperIndicator = () => {
                 <div
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-all duration-300 ease-in-out z-10 ${
                     isActive
-                      ? "bg-primary-container text-surface shadow-md ring-2 ring-primary-container/20 scale-110" // Step ปัจจุบัน: เปล่งแสงและขยายตัว
+                      ? "bg-primary-container text-primary shadow-md ring-2 ring-primary scale-110" 
                       : isPast
-                      ? "bg-primary text-surface shadow-sm" // Step ที่ผ่านมาแล้ว: สีทึบ
-                      : "bg-surface-container border-2 border-border text-slate-gray" // Step อนาคต: สีเทาขอบบาง
+                      ? "bg-primary text-surface shadow-sm" 
+                      : "bg-surface-container border-2 border-border text-slate-gray" 
                   }`}
                 >
                   {isPast ? <Check className="h-5 w-5 stroke-3 text-white" /> : stepNum}
@@ -51,7 +61,9 @@ export const StepperIndicator = () => {
                         : "font-medium text-slate-gray"
                     }`}
                   >
-                    {label}
+                    {/* ✅ จุดสำคัญ: ใช้ Tailwind สลับการแสดงผลข้อความ */}
+                    <span className="sm:hidden">{shortLabel}</span>
+                    <span className="hidden sm:inline">{fullLabel}</span>
                   </span>
                 </div>
               </div>

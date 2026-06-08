@@ -10,6 +10,10 @@
   /* --- Civic Horizon Theme Variables (Mapped for Shadcn) --- */
   --background: #f8f8ff; /* Ghost White Canvas */
   --foreground: #191c20; /* Ink Black */
+
+  --surface: #f9f9ff;
+  --surface-container-low: #f3f3fa;
+  --surface-container: #ededf4;
   
   --card: #ffffff; /* Pure White */
   --card-foreground: #191c20;
@@ -53,6 +57,11 @@
   /* Inverse colors derived from Civic Horizon */
   --background: #2e3036; /* inverse-surface */
   --foreground: #f0f0f7; /* inverse-on-surface */
+
+  --surface: #2e3036;
+  --surface-container-low: #24262b; /* เข้มกว่า surface เล็กน้อยให้มีมิติ */
+  --surface-container: #1e1f23;
+
   --card: #2e3036;
   --card-foreground: #f0f0f7;
   --popover: #2e3036;
@@ -148,6 +157,10 @@ a {
   --color-status-orange: #cf4500;
   --color-slate-gray: #696969;
   --color-surface-container: #ededf4;
+
+  --color-surface: var(--surface);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
 
   /* Shadcn Variable Mapping */
   --color-sidebar-ring: var(--sidebar-ring);

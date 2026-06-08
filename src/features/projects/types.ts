@@ -31,6 +31,39 @@ export const projectStep2Schema = z.object({
   projectType: z.enum(["จัดหาใหม่", "ทดแทนระบบเดิม", "โครงการต่อเนื่อง"], "กรุณาเลือกลักษณะโครงการ"),
   currentSystemStatus: z.string().min(5, "อธิบายสถานภาพระบบงานปัจจุบัน"),
   currentProblems: z.string().min(5, "อธิบายสภาพปัญหาปัจจุบัน"),
+
+  // array ของตารางโครงการที่เกี่ยวข้อง
+  relatedProjects: z.array(
+    z.object({
+      projectName: z.string().min(1, "ระบุชื่อโครงการ"),
+      agency: z.string().min(1, "ระบุหน่วยงาน"),
+      fiscalYear: z.string().min(4, "ระบุปี พ.ศ."),
+      relationType: z.string().min(1, "ระบุความเกี่ยวข้อง"),
+      remark: z.string().optional(),
+    })
+  ).optional().default([]),
+
+  // ตารางอัตรากำลัง (อนุญาตให้ว่างเปล่าได้)
+  manpower: z.array(
+    z.object({
+      agencyPart: z.string().min(1, "ระบุส่วนราชการ"),
+      positionLimit: z.coerce.number(),
+      occupied: z.coerce.number(),
+      vacant: z.coerce.number(),
+    })
+  ).optional().default([]),
+
+  // ตารางครุภัณฑ์ที่มีอยู่ (อนุญาตให้ว่างเปล่าได้)
+  existingEquipment: z.array(
+    z.object({
+      itemName: z.string().min(1, "ระบุรายการครุภัณฑ์"),
+      ageYears: z.coerce.number(),
+      quantity: z.coerce.number(),
+      user: z.string().min(1, "ระบุผู้ใช้งาน"),
+      location: z.string().min(1, "ระบุสถานที่ตั้ง"),
+      remark: z.string().optional(),
+    })
+  ).optional().default([]),
 });
 
 // ---------------------------------------------------------------------------

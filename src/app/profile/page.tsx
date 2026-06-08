@@ -45,9 +45,9 @@ const mockUserData: UserProfileData = {
   created_at: "2024-01-15T08:30:00Z",
   user_inf_nm: "สมชาย",
   user_inf_srnm: "พัฒนาเมือง",
-  user_inf_pst_nm: "นักวิชาการคอมพิวเตอร์ชำนาญการ",
-  user_inf_dep_cod: "DEP001",
-  user_inf_div_cod: "DIV005",
+  user_inf_pst_nm: "ผู้ดูแลระบบ",
+  user_inf_dep_cod: "26000000", // หน่วยงาน
+  user_inf_div_cod: "26020000", // ส่วนราชการ
   user_inf_ofc_tel_no: "02-222-3333",
   user_inf_ofc_tel_int_no: "4567",
   user_inf_mobile_no: "081-999-8888",

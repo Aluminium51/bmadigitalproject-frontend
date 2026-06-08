@@ -1,62 +1,428 @@
-import { useFormContext } from "react-hook-form";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+  useFormContext,
+  Controller,
+  useFieldArray,
+  useWatch,
+} from "react-hook-form";
+import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { ProjectStep2Values } from "../types";
 
-export const ProjectStep2 = () => {
-  const { register, formState: { errors } } = useFormContext<ProjectStep2Values>();
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+
+import { lu_division } from "@/data/lookup";
+
+// ==========================================
+// 🚀 Mockup Component: Combo Box สำหรับหน่วยงาน
+// ==========================================
+const AgencyComboBox = ({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
+
+  const fetchAgencies = lu_division.map((item) => ({
+    id: item.id.toString(),
+    name: item.name,
+  }));
+
+  useEffect(() => {
+    setIsLoading(true);
+    const fetchMockData = setTimeout(() => {
+      setAgencies(fetchAgencies);
+      setIsLoading(false);
+    }, 600); 
+    return () => clearTimeout(fetchMockData);
+  }, []);
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h2 className="text-2xl font-bold text-foreground">2. สาระสำคัญและขอบเขต</h2>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "w-full justify-between font-normal bg-surface border-border hover:bg-surface focus:ring-2 focus:ring-primary-light rounded-md px-3.5",
+            !value && "text-muted-foreground",
+          )}
+        >
+          {value
+            ? agencies.find((agency) => agency.name === value)?.name || value
+            : "ค้นหา หรือ เลือกหน่วยงาน..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-full p-0 shadow-level-2 border-border"
+        align="start"
+      >
+        <Command>
+          <CommandInput placeholder="พิมพ์ชื่อหน่วยงาน..." />
+          <CommandList>
+            <CommandEmpty>
+              {isLoading ? "กำลังโหลดข้อมูล..." : "ไม่พบหน่วยงานที่คุณค้นหา"}
+            </CommandEmpty>
+            <CommandGroup>
+              {agencies.map((agency) => (
+                <CommandItem
+                  key={agency.id}
+                  value={agency.name}
+                  onSelect={(currentValue) => {
+                    onChange(currentValue === value ? "" : agency.name);
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4 text-primary",
+                      value === agency.name ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  {agency.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+// ==========================================
 
-      <div className="grid grid-cols-1 gap-6">
-        <div>
-          <label className="text-sm font-medium text-foreground">ความเป็นมา <span className="text-status-orange">*</span></label>
-          <textarea {...register("background")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1 w-full rounded-md border border-border bg-surface px-4 py-2 outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-container" />
+export const ProjectStep2 = () => {
+  const {
+    register,
+    control,
+    formState: { errors },
+  } = useFormContext<ProjectStep2Values>();
+
+  const selectedProjectType = useWatch({
+    control,
+    name: "projectType",
+  });
+
+  const showRelatedProjects =
+    selectedProjectType === "ทดแทนระบบเดิม" ||
+    selectedProjectType === "โครงการต่อเนื่อง";
+
+  // 1. Array สำหรับ โครงการที่เกี่ยวข้อง
+  const { fields: relatedFields, append: appendRelated, remove: removeRelated } = useFieldArray({
+    control,
+    name: "relatedProjects",
+  });
+
+  // 2. Array สำหรับ อัตรากำลังของหน่วยงาน
+  const { fields: manpowerFields, append: appendManpower, remove: removeManpower } = useFieldArray({
+    control,
+    name: "manpower",
+  });
+
+  // 3. Array สำหรับ อุปกรณ์/ครุภัณฑ์ที่มีอยู่
+  const { fields: equipmentFields, append: appendEquipment, remove: removeEquipment } = useFieldArray({
+    control,
+    name: "existingEquipment",
+  });
+
+  return (
+    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <h2 className="text-2xl font-bold text-foreground border-b border-border pb-2">2. สาระสำคัญและขอบเขต</h2>
+
+      <div className="grid grid-cols-1 gap-8">
+        {/* --- Textareas --- */}
+        <div className="w-full">
+          <Label htmlFor="background" className="text-sm font-medium text-foreground">
+            หลักการและเหตุผล / ความเป็นมา <span className="text-status-orange">*</span>
+          </Label>
+          <Textarea id="background" {...register("background")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
           {errors.background && <p className="mt-1 text-sm text-status-orange">{errors.background.message}</p>}
         </div>
 
-        <div>
-          <label className="text-sm font-medium text-foreground">วัตถุประสงค์ <span className="text-status-orange">*</span></label>
-          <textarea {...register("objective")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1 w-full rounded-md border border-border bg-surface px-4 py-2 outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-container" />
+        <div className="w-full">
+          <Label htmlFor="objective" className="text-sm font-medium text-foreground">
+            วัตถุประสงค์ <span className="text-status-orange">*</span>
+          </Label>
+          <Textarea id="objective" {...register("objective")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
           {errors.objective && <p className="mt-1 text-sm text-status-orange">{errors.objective.message}</p>}
         </div>
 
-        <div>
-          <label className="text-sm font-medium text-foreground">เป้าหมาย <span className="text-status-orange">*</span></label>
-          <textarea {...register("target")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1 w-full rounded-md border border-border bg-surface px-4 py-2 outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-container" />
+        <div className="w-full">
+          <Label htmlFor="target" className="text-sm font-medium text-foreground">
+            เป้าหมาย <span className="text-status-orange">*</span>
+          </Label>
+          <Textarea id="target" {...register("target")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
           {errors.target && <p className="mt-1 text-sm text-status-orange">{errors.target.message}</p>}
         </div>
 
-        {/* ✅ เพิ่มช่อง "ขอบเขตการดำเนินงาน" (scope) ที่ขาดหายไปตรงนี้ครับ */}
-        <div>
-          <label className="text-sm font-medium text-foreground">ขอบเขตการดำเนินงาน <span className="text-status-orange">*</span></label>
-          <textarea {...register("scope")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1 w-full rounded-md border border-border bg-surface px-4 py-2 outline-none focus:ring-2 focus:ring-primary-light focus:border-primary-container" />
+        <div className="w-full">
+          <Label htmlFor="scope" className="text-sm font-medium text-foreground">
+            ขอบเขตการดำเนินงาน <span className="text-status-orange">*</span>
+          </Label>
+          <Textarea id="scope" {...register("scope")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
           {errors.scope && <p className="mt-1 text-sm text-status-orange">{errors.scope.message}</p>}
         </div>
 
+        <div className="border-t border-border" />
+
+        {/* --- Radio Group --- */}
         <div>
-          <label className="text-sm font-medium text-foreground">ลักษณะโครงการ <span className="text-status-orange">*</span></label>
-          <div className="mt-2 flex flex-col sm:flex-row gap-4">
-            {["จัดหาใหม่", "ทดแทนระบบเดิม", "โครงการต่อเนื่อง"].map((type) => (
-              <label key={type} className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" value={type} {...register("projectType")} className="accent-primary-container w-4 h-4" />
-                <span className="text-sm text-foreground">{type}</span>
-              </label>
-            ))}
-          </div>
+          <Label className="text-sm font-medium text-foreground mb-3 block">
+            ลักษณะโครงการ <span className="text-status-orange">*</span>
+          </Label>
+          <Controller
+            control={control}
+            name="projectType"
+            render={({ field }) => (
+              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-6">
+                {["จัดหาใหม่", "ทดแทนระบบเดิม", "โครงการต่อเนื่อง"].map((type) => (
+                  <div key={type} className="flex items-center space-x-2">
+                    <RadioGroupItem value={type} id={type} />
+                    <Label htmlFor={type} className="font-normal cursor-pointer text-foreground">{type}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            )}
+          />
           {errors.projectType && <p className="mt-1 text-sm text-status-orange">{errors.projectType.message}</p>}
         </div>
-        
-        <div className="border-t border-border pt-6 mt-2">
-          <label className="text-sm font-medium text-foreground">สถานภาพระบบงานคอมพิวเตอร์ปัจจุบัน <span className="text-status-orange">*</span></label>
-          <textarea {...register("currentSystemStatus")} rows={3} placeholder="พิมพ์อย่างน้อย 5 ตัวอักษร" className="mt-1 w-full rounded-md border border-border bg-surface px-4 py-2 outline-none focus:ring-2 focus:ring-primary-light" />
-          {errors.currentSystemStatus && <p className="mt-1 text-sm text-status-orange">{errors.currentSystemStatus.message}</p>}
-        </div>
-        
-        <div>
-          <label className="text-sm font-medium text-foreground">สภาพปัญหาของผู้รับบริการ / เหตุผลความจำเป็น <span className="text-status-orange">*</span></label>
-          <textarea {...register("currentProblems")} rows={3} placeholder="พิมพ์อย่างน้อย 5 ตัวอักษร" className="mt-1 w-full rounded-md border border-border bg-surface px-4 py-2 outline-none focus:ring-2 focus:ring-primary-light" />
-          {errors.currentProblems && <p className="mt-1 text-sm text-status-orange">{errors.currentProblems.message}</p>}
+
+        {/* --- ข้อมูลโครงการที่เกี่ยวข้อง --- */}
+        {showRelatedProjects && (
+          <div>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+              <h3 className="text-lg font-bold text-foreground">ข้อมูลโครงการที่เกี่ยวข้อง</h3>
+              <Button 
+                type="button" variant="soft" size="sm" className="rounded-full gap-2"
+                onClick={() => appendRelated({ projectName: "", agency: "", fiscalYear: "", relationType: "", remark: "" })}
+              >
+                <Plus className="w-4 h-4" /> เพิ่มโครงการ
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              {relatedFields.length === 0 ? (
+                <div className="p-8 text-center border-2 border-dashed border-border rounded-2xl text-slate-gray">
+                  กรุณากดปุ่ม "เพิ่มโครงการ" เพื่อระบุข้อมูล
+                </div>
+              ) : (
+                relatedFields.map((field, index) => (
+                  <div key={field.id} className="relative p-6 bg-surface-container-low border-none rounded-[24px] shadow-sm group">
+                    <div className="flex justify-between items-center mb-5 pb-3 border-b border-border/50">
+                      <h4 className="font-bold text-sm text-foreground">รายการที่ {index + 1}</h4>
+                      <Button 
+                        type="button" variant="ghost" size="icon-sm" className="text-status-orange hover:bg-error-container hover:text-error rounded-full"
+                        onClick={() => removeRelated(index)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                      <div className="md:col-span-12">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">โครงการที่เกี่ยวข้อง</Label>
+                        <Textarea {...register(`relatedProjects.${index}.projectName`)} placeholder="ระบุชื่อโครงการ" rows={2} className="resize-none bg-surface" />
+                      </div>
+                      <div className="md:col-span-8">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">หน่วยงาน</Label>
+                        <Controller
+                          control={control}
+                          name={`relatedProjects.${index}.agency`}
+                          render={({ field: { onChange, value } }) => <AgencyComboBox value={value} onChange={onChange} />}
+                        />
+                      </div>
+                      <div className="md:col-span-4 flex flex-col justify-between">
+                        <Label className="text-xs text-slate-gray block mb-1.5">ปีงบประมาณ</Label>
+                        <Input {...register(`relatedProjects.${index}.fiscalYear`)} placeholder="เช่น 2567" className="bg-surface h-10" />
+                      </div>
+                      <div className="md:col-span-12">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">เกี่ยวข้องโดย (อธิบายความสัมพันธ์)</Label>
+                        <Textarea {...register(`relatedProjects.${index}.relationType`)} placeholder="เช่น ทดแทนระบบเดิม..." rows={2} className="resize-none bg-surface" />
+                      </div>
+                      <div className="md:col-span-12">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">หมายเหตุ</Label>
+                        <Input {...register(`relatedProjects.${index}.remark`)} placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)" className="bg-surface" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="border-t border-border" />
+
+        {/* ============================================================== */}
+        {/* --- ส่วนที่เพิ่มใหม่: สภาพปัจจุบัน (Current Status) --- */}
+        {/* ============================================================== */}
+        <div className="flex flex-col space-y-8">
+          <h3 className="text-xl font-bold text-foreground">สภาพปัจจุบัน</h3>
+          
+          <div className="space-y-6">
+            <div className="w-full">
+              <Label htmlFor="currentSystemStatus" className="text-sm font-medium text-foreground">
+                สถานภาพระบบงานคอมพิวเตอร์ปัจจุบัน <span className="text-status-orange">*</span>
+              </Label>
+              <Textarea id="currentSystemStatus" {...register("currentSystemStatus")} rows={3} placeholder="อธิบายสถานภาพระบบงานปัจจุบัน..." className="mt-1.5 resize-none bg-surface" />
+              {errors.currentSystemStatus && <p className="mt-1 text-sm text-status-orange">{errors.currentSystemStatus.message}</p>}
+            </div>
+
+            <div className="w-full">
+              <Label htmlFor="currentProblems" className="text-sm font-medium text-foreground">
+                สภาพปัญหาของผู้รับบริการ / เหตุผลความจำเป็น <span className="text-status-orange">*</span>
+              </Label>
+              <Textarea id="currentProblems" {...register("currentProblems")} rows={3} placeholder="อธิบายสภาพปัญหาปัจจุบัน..." className="mt-1.5 resize-none bg-surface" />
+              {errors.currentProblems && <p className="mt-1 text-sm text-status-orange">{errors.currentProblems.message}</p>}
+            </div>
+          </div>
+
+          <div className="border-t border-border border-dashed" />
+
+          {/* --- หัวข้อย่อย: คอมพิวเตอร์และอุปกรณ์ที่มีอยู่ --- */}
+          <div>
+            <div className="mb-6">
+              <h4 className="text-base font-bold text-foreground">คอมพิวเตอร์และอุปกรณ์ที่มีอยู่ในปัจจุบันของส่วนราชการ</h4>
+              <p className="text-sm text-slate-gray">(เฉพาะกรณีโครงการที่มีการจัดหาครุภัณฑ์) (ให้ระบุรายการอุปกรณ์ของส่วนราชการที่มีอยู่ในปัจจุบัน สถานที่ติดตั้งของระบบ ส่วนที่รับผิดชอบ)</p>
+            </div>
+
+            {/* 1. ตารางแสดงอัตรากำลัง */}
+            <div className="mb-10">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+                <Label className="text-sm font-bold text-foreground">1. ตารางแสดงอัตรากำลังของหน่วยงาน / ส่วนราชการ</Label>
+                <Button 
+                  type="button" variant="soft" size="sm" className="rounded-full gap-2"
+                  onClick={() => appendManpower({ agencyPart: "", positionLimit: 0, occupied: 0, vacant: 0 })}
+                >
+                  <Plus className="w-4 h-4" /> เพิ่มอัตรากำลัง
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {manpowerFields.length === 0 ? (
+                  <div className="p-4 text-center border-2 border-dashed border-border rounded-xl text-slate-gray text-sm">
+                    ไม่มีข้อมูลอัตรากำลัง (กดเพิ่มถ้าต้องการระบุ)
+                  </div>
+                ) : (
+                  manpowerFields.map((field, index) => (
+                    <div key={field.id} className="flex flex-wrap md:flex-nowrap gap-3 p-4 bg-surface-container-low rounded-xl items-end relative group">
+                      <div className="w-full md:w-2/5">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">ส่วนราชการ</Label>
+                        <Input {...register(`manpower.${index}.agencyPart`)} placeholder="ระบุส่วนราชการ" className="bg-surface" />
+                      </div>
+                      <div className="w-full md:flex-1">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">อัตราตำแหน่ง</Label>
+                        <Input type="number" {...register(`manpower.${index}.positionLimit`, { valueAsNumber: true })} placeholder="0" className="bg-surface" />
+                      </div>
+                      <div className="w-full md:flex-1">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">อัตราครอง</Label>
+                        <Input type="number" {...register(`manpower.${index}.occupied`, { valueAsNumber: true })} placeholder="0" className="bg-surface" />
+                      </div>
+                      <div className="w-full md:flex-1">
+                        <Label className="text-xs text-slate-gray mb-1.5 block">ว่าง</Label>
+                        <Input type="number" {...register(`manpower.${index}.vacant`, { valueAsNumber: true })} placeholder="0" className="bg-surface" />
+                      </div>
+                      <div className="w-full md:w-auto">
+                        <Button 
+                          type="button" variant="destructive" size="icon" className="w-full md:w-10 rounded-md"
+                          onClick={() => removeManpower(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* 2. ตารางแสดงครุภัณฑ์คอมพิวเตอร์ */}
+            <div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
+                <Label className="text-sm font-bold text-foreground">2. ตารางแสดงครุภัณฑ์คอมพิวเตอร์ที่มีอยู่</Label>
+                <Button 
+                  type="button" variant="soft" size="sm" className="rounded-full gap-2"
+                  onClick={() => appendEquipment({ itemName: "", ageYears: 0, quantity: 0, user: "", location: "", remark: "" })}
+                >
+                  <Plus className="w-4 h-4" /> เพิ่มครุภัณฑ์
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {equipmentFields.length === 0 ? (
+                  <div className="p-4 text-center border-2 border-dashed border-border rounded-xl text-slate-gray text-sm">
+                    ไม่มีข้อมูลครุภัณฑ์ (กดเพิ่มถ้าต้องการระบุ)
+                  </div>
+                ) : (
+                  equipmentFields.map((field, index) => (
+                    <div key={field.id} className="relative p-5 bg-surface-container-low border-none rounded-[24px] shadow-sm group">
+                      <div className="flex justify-between items-center mb-4 pb-3 border-b border-border/50">
+                        <h4 className="font-bold text-xs text-foreground">ครุภัณฑ์ที่ {index + 1}</h4>
+                        <Button 
+                          type="button" variant="ghost" size="icon-sm" className="text-status-orange hover:bg-error-container hover:text-error rounded-full"
+                          onClick={() => removeEquipment(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div className="md:col-span-12">
+                          <Label className="text-xs text-slate-gray mb-1.5 block">รายการครุภัณฑ์</Label>
+                          <Textarea {...register(`existingEquipment.${index}.itemName`)} placeholder="ระบุรายการครุภัณฑ์..." rows={2} className="resize-none bg-surface" />
+                        </div>
+                        <div className="md:col-span-3">
+                          <Label className="text-xs text-slate-gray mb-1.5 block">อายุการใช้งาน (ปี)</Label>
+                          <Input type="number" {...register(`existingEquipment.${index}.ageYears`, { valueAsNumber: true })} placeholder="0" className="bg-surface" />
+                        </div>
+                        <div className="md:col-span-3">
+                          <Label className="text-xs text-slate-gray mb-1.5 block">จำนวน (เครื่อง)</Label>
+                          <Input type="number" {...register(`existingEquipment.${index}.quantity`, { valueAsNumber: true })} placeholder="0" className="bg-surface" />
+                        </div>
+                        <div className="md:col-span-6">
+                          <Label className="text-xs text-slate-gray mb-1.5 block">ผู้ใช้งาน</Label>
+                          <Input {...register(`existingEquipment.${index}.user`)} placeholder="ระบุผู้ใช้งาน" className="bg-surface" />
+                        </div>
+                        <div className="md:col-span-6">
+                          <Label className="text-xs text-slate-gray mb-1.5 block">สถานที่ตั้ง</Label>
+                          <Input {...register(`existingEquipment.${index}.location`)} placeholder="ระบุสถานที่ตั้ง" className="bg-surface" />
+                        </div>
+                        <div className="md:col-span-6">
+                          <Label className="text-xs text-slate-gray mb-1.5 block">หมายเหตุ</Label>
+                          <Input {...register(`existingEquipment.${index}.remark`)} placeholder="หมายเหตุ (ถ้ามี)" className="bg-surface" />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>

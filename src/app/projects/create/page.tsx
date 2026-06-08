@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function CreateProjectPage() {
   return (
     <main className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         
         {/* 2. Page Header: ส่วนหัวของหน้าจอ */}
         <div className="mb-8">
