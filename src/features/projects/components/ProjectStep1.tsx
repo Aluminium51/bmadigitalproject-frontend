@@ -37,6 +37,7 @@ export const ProjectStep1 = () => {
             {...register("projectName")} 
             placeholder="ระบุชื่อโครงการ"
             className="mt-1.5"
+            error={!!errors.projectName}
           />
           {errors.projectName && <p className="mt-1 text-sm text-status-orange">{errors.projectName.message}</p>}
         </div>

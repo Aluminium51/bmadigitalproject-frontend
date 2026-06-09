@@ -16,12 +16,6 @@ const usefulLinks = [
   "เงื่อนไขการให้บริการ",
 ];
 
-const focusAreas = [
-  "บูรณาการข้อมูลระหว่างหน่วยงาน",
-  "สอดคล้องกับสถาปัตยกรรมองค์กร (EA)",
-  "ติดตามสถานะและงบประมาณโปร่งใส",
-];
-
 export default function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -38,7 +32,6 @@ export default function Home() {
                 priority
               />
             </span>
-            {/* 💡 ซ่อนข้อความบนจอมือถือเล็กๆ (hidden) และโชว์ตั้งแต่จอ sm ขึ้นไป เพื่อไม่ให้เบียดปุ่ม */}
             <span className="hidden sm:block truncate font-bold tracking-normal text-foreground text-sm md:text-lg uppercase">
               bmadigitalproject
             </span>
@@ -72,7 +65,6 @@ export default function Home() {
         <div className="absolute inset-x-0 top-24 -z-10 h-72 bg-surface-container-low/70" />
         <div className="absolute inset-x-0 top-0 -z-20 h-full bg-[linear-gradient(90deg,rgba(0,115,75,0.05)_1px,transparent_1px),linear-gradient(180deg,rgba(0,115,75,0.04)_1px,transparent_1px)] bg-[size:56px_56px]" />
 
-        {/* 💡 จัด Grid ให้สวยงาม: มือถือ=1 คอลัมน์, iPad=1 คอลัมน์ (แต่กว้างขึ้น), Desktop=2 คอลัมน์ */}
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
           
           <div className="max-w-3xl space-y-0 flex flex-col items-start text-left">
@@ -87,7 +79,7 @@ export default function Home() {
             </p>
 
             <div className="mt-6 flex flex-col w-full sm:w-auto gap-3 sm:flex-row">
-              <Button asChild size="lg" className="w-full sm:w-auto pl-5">
+              <Button asChild size="lg" className="w-full sm:w-auto px-5">
                 <a
                   href="https://webportal.bangkok.go.th/dsd"
                   target="_blank"
@@ -101,7 +93,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 💡 ให้กล่อง Carousel ขยายกว้างขึ้นบน iPad (sm:max-w-2xl) และเต็มพื้นที่บน Desktop (lg:max-w-none) */}
           <div className="w-full max-w-md sm:max-w-2xl mx-auto lg:max-w-none lg:mr-0 mt-8 lg:mt-0">
             <HeroCarousel />
           </div>
@@ -110,10 +101,9 @@ export default function Home() {
 
       <footer className="bg-surface-container-low px-4 py-12 sm:px-6">
         <div className="mx-auto max-w-7xl">
-          {/* 💡 จัด Footer Grid: มือถือ=1 คอลัมน์, iPad=2 คอลัมน์, Desktop=3 คอลัมน์ */}
+
           <div className="grid gap-10 rounded-[40px] border-none bg-surface p-6 shadow-level-1 sm:p-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
-            
-            {/* 💡 โลโก้และคำอธิบาย: ให้กินพื้นที่ 2 คอลัมน์เมื่ออยู่บน iPad */}
+
             <div className="sm:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-4 sm:gap-6">
                 <span className="flex size-11 items-center justify-center overflow-hidden rounded-full bg-surface-container-low shadow-sm">
