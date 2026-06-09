@@ -74,7 +74,7 @@ export const ProjectStep1 = () => {
           </div>
           <div>
             <Label htmlFor="dcioName" className="text-sm font-medium text-foreground">
-              DCIO <span className="text-status-orange">*</span>
+              ผู้บริหารเทคโนโลยีสารสนเทศระดับสูง (DCIO) <span className="text-status-orange">*</span>
             </Label>
             <Input 
               id="dcioName"

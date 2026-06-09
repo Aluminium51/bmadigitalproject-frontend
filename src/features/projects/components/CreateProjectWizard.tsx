@@ -14,6 +14,7 @@ import { ProjectStep1 } from "./ProjectStep1";
 import { ProjectStep2 } from "./ProjectStep2";
 import { ProjectStep3 } from "./ProjectStep3";
 import { ProjectStep4 } from "./ProjectStep4";
+import { ProjectStep4tmp } from "./ProjectStep4tmp";
 import { ProjectStep5 } from "./ProjectStep5";
 import { Button } from "@/components/ui/button";
 
@@ -78,7 +79,7 @@ const WizardForm = () => {
           {currentStep === 1 && <ProjectStep1 />}
           {currentStep === 2 && <ProjectStep2 />}
           {currentStep === 3 && <ProjectStep3 />}
-          {currentStep === 4 && <ProjectStep4 />}
+          {currentStep === 4 && <ProjectStep4tmp />}
           {currentStep === 5 && <ProjectStep5 />}
 
           <div className="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between border-t border-border gap-4">
