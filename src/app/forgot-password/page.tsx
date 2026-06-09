@@ -12,12 +12,12 @@ export default function ForgotPasswordPage() {
       maxWidth="max-w-lg"
     >
       <div className="space-y-4">
-        <p className="rounded-[24px] border border-border bg-surface p-4 text-sm leading-6 text-muted-foreground shadow-sm">
+        {/* <p className="rounded-[24px] border border-border bg-surface p-4 text-sm leading-6 text-muted-foreground shadow-sm">
           หากบัญชีของคุณต้องการรีเซ็ตรหัสผ่าน กรุณาติดต่อผู้ดูแลระบบหรือเพิ่ม flow สำหรับส่งอีเมลยืนยันในขั้นตอนถัดไป
         </p>
         <Button asChild className="h-12 w-full rounded-full border-none" variant="default">
           <Link href="/login">Back to Login</Link>
-        </Button>
+        </Button> */}
       </div>
     </AuthShell>
   );
