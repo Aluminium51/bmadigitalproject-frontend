@@ -1,121 +1,18 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
 import {
   useFormContext,
   Controller,
   useFieldArray,
   useWatch,
 } from "react-hook-form";
-import { Plus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { ProjectStep2Values } from "../types";
 
-import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-
-import { lu_division } from "@/data/lookup";
-
-// ==========================================
-// 🚀 Mockup Component: Combo Box สำหรับหน่วยงาน
-// ==========================================
-const AgencyComboBox = ({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-}) => {
-  const [open, setOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
-
-  const fetchAgencies = lu_division.map((item) => ({
-    id: item.id.toString(),
-    name: item.name,
-  }));
-
-  useEffect(() => {
-    setIsLoading(true);
-    const fetchMockData = setTimeout(() => {
-      setAgencies(fetchAgencies);
-      setIsLoading(false);
-    }, 600); 
-    return () => clearTimeout(fetchMockData);
-  }, []);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "w-full justify-between font-normal bg-surface border-border hover:bg-surface focus:ring-2 focus:ring-primary-light rounded-md px-3.5",
-            !value && "text-muted-foreground",
-          )}
-        >
-          {value
-            ? agencies.find((agency) => agency.name === value)?.name || value
-            : "ค้นหา หรือ เลือกหน่วยงาน..."}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-full p-0 shadow-level-2 border-border"
-        align="start"
-      >
-        <Command>
-          <CommandInput placeholder="พิมพ์ชื่อหน่วยงาน..." />
-          <CommandList>
-            <CommandEmpty>
-              {isLoading ? "กำลังโหลดข้อมูล..." : "ไม่พบหน่วยงานที่คุณค้นหา"}
-            </CommandEmpty>
-            <CommandGroup>
-              {agencies.map((agency) => (
-                <CommandItem
-                  key={agency.id}
-                  value={agency.name}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : agency.name);
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 text-primary",
-                      value === agency.name ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {agency.name}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-};
-// ==========================================
+import { AgencyComboBox } from "@/components/custom/DepartmentComboBox";
 
 export const ProjectStep2 = () => {
   const {

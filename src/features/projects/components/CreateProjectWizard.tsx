@@ -44,7 +44,7 @@ const WizardForm = () => {
   };
 
   const methods = useForm<ProjectFormValues>({
-    // 🟢 ล็อก Resolver หลักให้คงที่ เพื่อป้องกันไม่ให้ฟอร์มสั่งรีเซ็ตตัวเองระหว่างเปลี่ยนหน้า
+    // ล็อก Resolver หลักให้คงที่ เพื่อป้องกันไม่ให้ฟอร์มสั่งรีเซ็ตตัวเองระหว่างเปลี่ยนหน้า
     resolver: zodResolver(projectFormSchema as any) as unknown as Resolver<ProjectFormValues>,
     defaultValues: formData as unknown as ProjectFormValues,
     mode: "onChange",

@@ -96,7 +96,7 @@ function InputGroupButton({
       type={type}
       data-size={size}
       variant={variant}
-      className={cn(inputGroupButtonVariants({ size }), className)}
+      className={cn(inputGroupButtonVariants({ size }), className, "rounded-full p-2")}
       {...props}
     />
   )

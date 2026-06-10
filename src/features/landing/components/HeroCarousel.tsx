@@ -8,8 +8,6 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 
-// เตรียมข้อมูลภาพและข้อความสำหรับ Slider
-// 💡 อย่าลืมนำรูปภาพมาใส่ในโฟลเดอร์ public/pics/ นะครับ
 const carouselData = [
   {
     id: 1,
@@ -32,10 +30,6 @@ const carouselData = [
 ];
 
 export function HeroCarousel() {
-  // ตั้งค่า Autoplay ให้เปลี่ยนรูปทุกๆ 4 วินาที
-  // const plugin = React.useRef(
-  //   Autoplay({ delay: 4000, stopOnInteraction: false })
-  // );
 
   const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: false }));
 
@@ -68,9 +62,9 @@ export function HeroCarousel() {
 
                 {/* 3. ข้อความ */}
                 <div className="absolute bottom-0 left-0 w-full p-8 sm:p-10 transform transition-transform duration-500">
-                  <span className="inline-block px-3 py-1 mb-3 text-xs font-bold tracking-wider text-primary-foreground bg-primary rounded-full shadow-sm">
+                  {/* <span className="inline-block px-3 py-1 mb-3 text-xs font-bold tracking-wider text-primary-foreground bg-primary rounded-full shadow-sm">
                     IMPACT
-                  </span>
+                  </span> */}
                   <h2 className="text-2xl sm:text-3xl font-bold text-surface mb-2 leading-tight">
                     {slide.title}
                   </h2>
