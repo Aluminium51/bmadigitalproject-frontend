@@ -137,23 +137,23 @@ export function LoginForm() {
           Login
         </Button>
 
-        {/* 💡 เส้นคั่น "หรือ" (Responsive Divider) */}
+        {/* เส้นคั่น "หรือ" */}
         <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-border"></div>
-          <span className="flex-shrink mx-4 text-sm text-muted-foreground">
+          <div className="flex grow border-t border-border"></div>
+          <span className="flex shrink mx-4 text-sm text-muted-foreground">
             หรือ
           </span>
-          <div className="flex-grow border-t border-border"></div>
+          <div className="flex grow border-t border-border"></div>
         </div>
 
-        {/* 💡 ปุ่ม Login ด้วย Google (สไตล์คงเดิม: text-base + rounded-full) */}
+        {/* ปุ่ม Login ด้วย Google */}
         <Button
           type="button"
           variant="outline"
           onClick={handleGoogleLogin}
           className="h-12 w-full rounded-full bg-surface border border-border text-base font-medium flex items-center justify-center gap-3 active:scale-[0.99] transition-all hover:bg-surface-container-low"
         >
-          {/* SVG ไอคอน Google สีมาตรฐานเพื่อความน่าเชื่อถือ */}
+          {/* SVG ไอคอน Google สีมาตรฐาน */}
           <svg
             className="h-5 w-5 shrink-0"
             viewBox="0 0 24 24"
