@@ -34,7 +34,7 @@ export function HeroCarousel() {
   const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: false }));
 
   return (
-    <div className="w-full h-full min-h-[400px] sm:min-h-[500px] rounded-[32px] sm:rounded-[40px] overflow-hidden shadow-level-2 relative border-4 border-surface group">
+    <div className="w-full h-full min-h-100 sm:min-h-125 rounded-4xl sm:rounded-container overflow-hidden shadow-level-2 relative border-4 border-surface group">
       <Carousel
         plugins={[plugin.current]}
         className="w-full h-full"
@@ -47,18 +47,19 @@ export function HeroCarousel() {
               key={slide.id}
               className="relative h-full w-full pl-0"
             >
-              <div className="relative w-full h-[400px] sm:h-[500px]">
+              <div className="relative w-full h-100 sm:h-125">
                 {/* 1. รูปภาพพื้นหลัง */}
                 <Image
                   src={slide.image}
                   alt={slide.title}
                   fill
+                  sizes="(max-width: 640px) 100vw, 100vw"
                   className="object-cover"
                   priority={slide.id === 1} // โหลดรูปแรกก่อนเสมอ
                 />
 
                 {/* 2. Gradient Overlay (ทำให้ตัวหนังสืออ่านง่ายขึ้น) */}
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
 
                 {/* 3. ข้อความ */}
                 <div className="absolute bottom-0 left-0 w-full p-8 sm:p-10 transform transition-transform duration-500">
