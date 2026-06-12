@@ -1,0 +1,51 @@
+// prisma/schema.prisma
+
+model User {
+  id             String    @id @default(cuid())
+  username       String    @unique
+  password       String
+  role           Role      @default(USER) // ผูกกับ Role 5 ประเภท
+  departmentName String
+  projects       Project[] // 1 User สร้างได้หลาย Project
+}
+
+model Project {
+  id             String    @id @default(cuid())
+  projectName    String
+  agencyName     String
+  totalBudget    Float
+  status         ProjectStatus @default(DRAFT)
+  
+  // Relations
+  authorId       String
+  author         User      @relation(fields: [authorId], references: [id])
+  
+  budgetsByYear  Budget[]  // 1 Project มีได้หลายงบรายปี
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  year        String
+  amount      Float
+  budgetType  String
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  SECRETARY
+  ANALYTIC
+  USER
+}
+
+enum ProjectStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}

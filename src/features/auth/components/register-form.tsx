@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { z } from "zod";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -23,41 +23,9 @@ import {
   ComboboxItem,
   ComboboxEmpty,
 } from "@/components/ui/combobox";
+import { registerUserAction } from "@/app/actions/auth.actions";
+import { RegisterValues, RegisterFieldProps, registerSchema } from "../type";
 
-// ==============================================================
-// 1. Zod Schema
-// ==============================================================
-const registerSchema = z
-  .object({
-    username: z.string().min(3, "กรุณากรอกชื่อผู้ใช้อย่างน้อย 3 ตัวอักษร"),
-    password: z.string().min(8, "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร"),
-    confirmPassword: z.string().min(8, "กรุณายืนยันรหัสผ่าน"),
-    firstName: z.string().min(1, "กรุณากรอกชื่อ"),
-    lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
-    position: z.string().min(1, "กรุณากรอกตำแหน่ง"),
-    department: z.string().min(1, "กรุณากรอกหน่วยงาน"),
-    division: z.string().min(1, "กรุณากรอกส่วนราชการ"),
-    email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
-    mobilePhone: z.string().min(6, "กรุณากรอกเบอร์มือถือให้ถูกต้อง"),
-    officePhone: z.string().min(6, "กรุณากรอกเบอร์สำนักงานให้ถูกต้อง"),
-    internalExtension: z.string().min(1, "กรุณากรอกเบอร์ภายใน"),
-  })
-  .refine((values) => values.password === values.confirmPassword, {
-    message: "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน",
-    path: ["confirmPassword"],
-  });
-
-type RegisterValues = z.infer<typeof registerSchema>;
-
-// ==============================================================
-// 2. Component ย่อยสำหรับจัด Layout ฟอร์ม
-// ==============================================================
-type RegisterFieldProps = {
-  label: string;
-  error?: string;
-  className?: string;
-  children: React.ReactNode;
-};
 
 function RegisterField({ label, error, className, children }: RegisterFieldProps) {
   return (
@@ -70,7 +38,7 @@ function RegisterField({ label, error, className, children }: RegisterFieldProps
 }
 
 // ==============================================================
-// 3. Component ย่อยสำหรับ Combobox แบบใช้ซ้ำได้
+// Component ย่อยสำหรับ Combobox แบบใช้ซ้ำได้
 // ==============================================================
 interface FormComboboxProps {
   options: string[];
@@ -135,18 +103,22 @@ const FormCombobox = ({
 };
 
 // ==============================================================
-// 4. Component หลักของหน้าจอ
+// Component หลักของหน้าจอ
 // ==============================================================
 export function RegisterForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const {
     register,
     handleSubmit,
-    control,   // 💡 นำ control มาใช้สำหรับ Combobox (Controller)
-    watch,     // 💡 นำ watch มาใช้ตรวจสอบการเปลี่ยนค่า
-    setValue,  // 💡 นำ setValue มาใช้เคลียร์ค่าเมื่อสังกัดหลักเปลี่ยน
+    control,   // นำ control มาใช้สำหรับ Combobox (Controller)
+    watch,     // นำ watch มาใช้ตรวจสอบการเปลี่ยนค่า
+    setValue,  // นำ setValue มาใช้เคลียร์ค่าเมื่อสังกัดหลักเปลี่ยน
+    reset,
+    setError,  // นำ setError มาใช้สำหรับแสดง error จาก Server
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema as any),
@@ -185,7 +157,31 @@ export function RegisterForm() {
     ).filter(Boolean);
 
   const onSubmit = async (values: RegisterValues) => {
-    console.log("Register submit:", values);
+    setStatusMessage(null); 
+    const { confirmPassword, ...dataToSend } = values;
+
+    const response = await registerUserAction(dataToSend);
+
+    if (response.success) {
+      setStatusMessage({ type: 'success', text: response.message + " ระบบกำลังพาท่านไปหน้าเข้าสู่ระบบ..." });
+      reset(); 
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } else {
+      // 🟢 2. เช็คว่ามี field ระบุมาไหมว่าช่องไหนผิด
+      if (response.field) {
+        // โยน Error กลับไปที่ Input ช่องนั้นๆ
+        setError(response.field as keyof RegisterValues, {
+          type: "server",
+          message: response.message,
+        });
+      } else {
+        // ถ้าเป็น Error ทั่วไป (ไม่มีระบุช่อง) ให้โชว์แถบแดงด้านบน
+        setStatusMessage({ type: 'error', text: response.message });
+      }
+    }
   };
 
   return (
@@ -194,6 +190,14 @@ export function RegisterForm() {
       description="กรอกข้อมูลผู้ใช้งานและข้อมูลติดต่อเพื่อสร้างบัญชีใหม่ในระบบ"
       maxWidth="max-w-5xl"
     >
+      {/* Status Message */}
+      {statusMessage && (
+        <div className={`p-4 mb-6 rounded-md text-sm font-medium animate-in fade-in slide-in-from-top-2 ${
+          statusMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}>
+          {statusMessage.text}
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         
         {/* ============================================================== */}
@@ -418,7 +422,7 @@ export function RegisterForm() {
         {/* --- ปุ่มส่งข้อมูลและลิงก์สลับหน้า --- */}
         <div className="space-y-4 border-t border-border pt-6">
           <Button type="submit" size="lg" className="h-12 w-full rounded-full border-none text-base font-medium shadow-sm active:scale-[0.99] transition-transform" disabled={isSubmitting}>
-            ลงทะเบียน (Register)
+            {isSubmitting ? "กำลังส่งข้อมูล..." : "ลงทะเบียน (Register)"}
           </Button>
 
           <div className="flex flex-row items-center gap-1 mx-auto justify-center pt-2">
