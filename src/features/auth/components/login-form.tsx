@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
@@ -12,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { AuthShell } from "./auth-shell";
+import { loginUserAction } from "@/app/actions/auth.actions";
 
 const loginSchema = z.object({
   username: z.string().min(3, "กรุณากรอกชื่อผู้ใช้อย่างน้อย 3 ตัวอักษร"),
@@ -21,11 +23,13 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema as any),
@@ -37,7 +41,21 @@ export function LoginForm() {
   });
 
   const onSubmit = async (values: LoginValues) => {
-    console.log("Standard login submit:", values);
+    setStatusMessage(null);
+    const response = await loginUserAction(values);
+
+    if (response.success) {
+      setStatusMessage({ type: 'success', text: response.message });
+      setTimeout(() => router.push("/dashboard"), 1000); 
+    } else {
+      if (response.field) {
+        setError(response.field as keyof LoginValues, {
+          type: "server", message: response.message,
+        });
+      } else {
+        setStatusMessage({ type: 'error', text: response.message });
+      }
+    }
   };
 
   // 🚀 ฟังก์ชันสำหรับจัดการการล็อกอินด้วย Google
@@ -52,6 +70,13 @@ export function LoginForm() {
       description="ลงชื่อเข้าใช้เพื่อเข้าถึงระบบจัดการโครงการและข้อมูลบัญชีของคุณ"
       maxWidth="max-w-lg"
     >
+      {statusMessage && (
+        <div className={`p-4 mb-6 rounded-md text-sm font-medium animate-in fade-in slide-in-from-top-2 ${
+          statusMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}>
+          {statusMessage.text}
+        </div>
+      )}
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-5 sm:space-y-6"
