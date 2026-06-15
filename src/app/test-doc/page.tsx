@@ -1,0 +1,134 @@
+// src/app/test-doc/page.tsx
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { FileText, Download } from "lucide-react";
+import { generateProjectDocx } from "@/lib/documentGenerator"; // 👈 อย่าลืมเช็ค path ให้ตรงกับไฟล์ของคุณ
+
+// 🟢 1. จำลองข้อมูล (Mock Data) ให้ครบตาม Schema
+const mockProjectData = {
+  // --- Step 1 ---
+  projectName: "โครงการพัฒนาระบบบริหารจัดการข้อมูลอัจฉริยะ (Smart Data Management)",
+  agencyName: "สำนักยุทธศาสตร์และประเมินผล",
+  headOfAgency: "นายสมชาย ใจดี",
+  dcioName: "นางสาวสมหญิง รักงาน",
+  projectManager: "นายวิศวกร เก่งกาจ",
+  totalBudget: 15000000,
+  budgetsByYear: [
+    { year: "2567", amount: 5000000, budgetType: "งบลงทุน" },
+    { year: "2568", amount: 10000000, budgetType: "งบดำเนินงาน" },
+  ],
+
+  // --- Step 2 ---
+  background: "สำนักงานควบคุมอาคาร สำนักการโยธา กรุงเทพมหานคร เป็นหน่วยงานที่ดูแลเกี่ยวกับการอนุญาต ตรวจสอบ และควบคุมการใช้อาคาร รวมถึงอาคารที่ต้องจัดให้มีผู้ตรวจสอบ ตามกฎกระทรวงฯ พ.ศ. 2548 ที่กระจายตัวอยู่ตามพื้นที่ต่าง ๆ ในกรุงเทพมหานคร\n\tปัจจุบันระบบบริหารจัดการงานควบคุมอาคาร รองรับการขออนุญาตของประชาชน และอำนวยความสะดวกให้แก่เจ้าหน้าที่ในการพิจารณาอนุญาตก่อสร้าง ",
+  objective: "1. เพื่อเพิ่มประสิทธิภาพการทำงาน\n\t2. เพื่อลดกระดาษ (Paperless)",
+  target: "หน่วยงานในสังกัด กทม. จำนวน 50 เขต",
+  scope: "พัฒนาระบบ Web Application และ Mobile Application สำหรับเจ้าหน้าที่",
+  projectType: "ทดแทนระบบเดิม",
+  currentSystemStatus: "ใช้งานระบบฐานข้อมูลแบบเก่า (On-Premise) ซึ่งมีอายุเกิน 10 ปี",
+  currentProblems: "ระบบล่มบ่อยครั้ง ค้นหาข้อมูลช้า และไม่รองรับการทำงานผ่านมือถือ",
+  relatedProjects: [
+    { projectName: "โครงการติดตั้ง Cloud", agency: "สยป.", fiscalYear: "2566", relationType: "ระบบโครงสร้างพื้นฐาน" }
+  ],
+  manpower: [
+    { agencyPart: "ฝ่ายเทคโนโลยี", positionLimit: 10, occupied: 8, vacant: 2 }
+  ],
+  existingEquipment: [
+    { itemName: "Server รุ่นเก่า", ageYears: 8, quantity: 2, user: "ฝ่าย IT", location: "ห้อง Data Center", remark: "หมดประกันแล้ว" }
+  ],
+
+  // --- Step 3 ---
+  strategicAlignments: ["ยุทธศาสตร์ที่ 1: เมืองอัจฉริยะ", "ยุทธศาสตร์ที่ 3: บริหารจัดการโปร่งใส"],
+  obstacleLaws: "ไม่มีอุปสรรคทางข้อกฎหมาย",
+  appArchitecture: "ใช้สถาปัตยกรรมแบบ Microservices และเชื่อมต่อผ่าน API Gateway",
+  dataOwner: "สำนักยุทธศาสตร์และประเมินผล (สยป.)",
+  dataExchangePlan: "เชื่อมโยงข้อมูลกับกระทรวงมหาดไทยผ่านระบบ Linkage Center",
+
+  // --- Step 4 ---
+  hardwareCosts: [
+    { itemName: "เครื่องคอมพิวเตอร์แม่ข่าย (Server)", quantity: 2, unitPrice: 500000, reference: "เกณฑ์ ICT" }
+  ],
+  softwareCosts: [
+    { itemName: "ระบบปฏิบัติการ Windows Server", quantity: 2, unitPrice: 50000, reference: "ราคาตลาด" }
+  ],
+  personnelCosts: [
+    { roleLevel: "บุคลากรหลัก", position: "System Analyst", baseSalary: 50000, multiplier: 1.5, personCount: 2, durationMonths: 12 }
+  ],
+  otherCosts: [
+    { itemName: "ค่าฝึกอบรมการใช้งานระบบ", quantity: 1, unitPrice: 100000, remark: "จัดอบรม 2 วัน" }
+  ],
+
+  // --- Step 5 ---
+  operationDuration: 360,
+  currentIctStaff: [
+    { position: "นักวิชาการคอมพิวเตอร์", level: "ชำนาญการ", count: 3 },
+    { position: "นักวิชาการคอมพิวเตอร์", level: "ปฏิบัติการ", count: 2 }
+  ],
+  expectedBenefits: "1. ประชาชนได้รับบริการที่รวดเร็วขึ้น\n2. ลดงบประมาณการใช้กระดาษลง 50%",
+  submitterName: "นายเสนอ โครงการ",
+  submitterAgency: "กองสารสนเทศ สำนักยุทธศาสตร์ฯ",
+  submitterPhone: "02-123-4567 ต่อ 89",
+  submitterEmail: "test@bangkok.go.th",
+};
+
+export default function TestDocPage() {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleTestDownload = async () => {
+    setIsGenerating(true);
+    try {
+      // โยน Mock Data เข้าไปในฟังก์ชันสร้าง Word
+      await generateProjectDocx(mockProjectData as any);
+      
+      // ✅ Tip: ลอง console.log ดูโครงสร้าง data เผื่อเอาไปเทียบตอนทำ Word
+      console.log("Mock Data ที่ส่งไปทำ Word:", mockProjectData);
+    } catch (error) {
+      console.error(error);
+      alert("เกิดข้อผิดพลาดในการสร้างเอกสาร");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-surface-container-low p-8 flex items-center justify-center">
+      <div className="bg-surface p-8 rounded-xl shadow-sm border border-border max-w-2xl w-full">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="bg-primary-container p-4 rounded-full">
+            <FileText className="w-12 h-12 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">
+            เครื่องมือทดสอบการสร้างเอกสาร Word
+          </h1>
+          <p className="text-muted-foreground">
+            ทดสอบการนำ Mock Data ทั้ง 5 Steps หยอดลงในไฟล์ Template (<code>public/templates/project-proposal.docx</code>)
+          </p>
+          
+          <div className="w-full bg-surface-variant p-4 rounded-md text-left overflow-hidden h-32 mb-4 relative">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface-variant z-10 pointer-events-none" />
+            <pre className="text-xs text-muted-foreground whitespace-pre-wrap opacity-70">
+              {JSON.stringify(mockProjectData, null, 2)}
+            </pre>
+          </div>
+
+          <Button 
+            onClick={handleTestDownload} 
+            disabled={isGenerating}
+            size="lg"
+            className="gap-2 w-full sm:w-auto"
+          >
+            {isGenerating ? (
+              "กำลังสร้างเอกสาร..."
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                ดาวน์โหลดไฟล์ทดสอบ (.docx)
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
