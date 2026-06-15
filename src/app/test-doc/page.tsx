@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
-import { generateProjectDocx } from "@/lib/documentGenerator"; // 👈 อย่าลืมเช็ค path ให้ตรงกับไฟล์ของคุณ
+import { generateProjectDocx } from "@/lib/documentGenerator";
 
 // 🟢 1. จำลองข้อมูล (Mock Data) ให้ครบตาม Schema
 const mockProjectData = {
