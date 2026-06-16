@@ -25,11 +25,12 @@ type LoginValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error' | 'warning', text: string } | null>(null);
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema as any),
@@ -46,14 +47,17 @@ export function LoginForm() {
 
     if (response.success) {
       setStatusMessage({ type: 'success', text: response.message });
+      // 💡 ในอนาคตคุณจะเก็บ Token ลง localStorage/Cookies ตรงนี้
       setTimeout(() => router.push("/dashboard"), 1000); 
     } else {
-      if (response.field) {
-        setError(response.field as keyof LoginValues, {
-          type: "server", message: response.message,
-        });
+      if (response.field === "general") {
+         // กรณี 403: ยังไม่ยืนยันอีเมล
+         setStatusMessage({ type: 'warning', text: response.message || "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ" });
       } else {
-        setStatusMessage({ type: 'error', text: response.message });
+         // กรณี 401: Username หรือ Password ผิด (หรือ Error อื่นๆ)
+         setStatusMessage({ type: 'error', text: response.message || "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" });
+         // ตัวเลือก: สั่งล้างช่องรหัสผ่านเพื่อให้พิมพ์ใหม่ (เพิ่ม UX)
+         setValue("password", "");
       }
     }
   };
@@ -71,8 +75,12 @@ export function LoginForm() {
       maxWidth="max-w-lg"
     >
       {statusMessage && (
-        <div className={`p-4 mb-6 rounded-md text-sm font-medium animate-in fade-in slide-in-from-top-2 ${
-          statusMessage.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        <div className={`p-4 mb-6 rounded-md text-sm font-medium animate-in fade-in slide-in-from-top-2 border ${
+          statusMessage.type === 'success' 
+            ? 'bg-green-50 text-green-700 border-green-200' 
+            : statusMessage.type === 'warning'
+              ? 'bg-orange-50 text-orange-700 border-orange-200'
+              : 'bg-red-50 text-red-700 border-red-200'
         }`}>
           {statusMessage.text}
         </div>

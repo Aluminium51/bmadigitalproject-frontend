@@ -12,32 +12,41 @@ function VerifyContent() {
   const token = searchParams.get("token");
   
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("กำลังตรวจสอบข้อมูล...");
+  const [message, setMessage] = useState("กำลังตรวจสอบข้อมูลและเปิดใช้งานบัญชี...");
 
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setMessage("ลิงก์ไม่ถูกต้อง หรือไม่มีรหัสยืนยัน");
+      setMessage("ลิงก์ไม่ถูกต้อง หรือไม่มีรหัสยืนยันตัวตนส่งมา");
       return;
     }
 
-    // ยิง API ไปให้ Backend ตรวจสอบ Token
     const verifyToken = async () => {
       try {
-        // const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify?token=${token}`);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/verify?token=${token}`);
+        // ดึง URL ตัวหลักมาเช็ค
+        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081/api/v1";
+        console.log(`📡 Frontend is fetching to: ${baseUrl}/auth/verify?token=${token}`);
+
+        const res = await fetch(`${baseUrl}/auth/verify?token=${token}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        
         const data = await res.json();
+        console.log("📥 Backend response data:", data);
 
         if (res.ok) {
           setStatus("success");
-          setMessage("ยืนยันอีเมลสำเร็จ! บัญชีของคุณพร้อมใช้งานแล้ว");
+          setMessage(data.message || "ยืนยันอีเมลสำเร็จ! บัญชีของคุณพร้อมใช้งานแล้ว");
         } else {
           setStatus("error");
-          setMessage(data.error || "ไม่สามารถยืนยันตัวตนได้");
+          // 🟢 เอาข้อความ Error จริงๆ จากหลังบ้านมาแสดงโชว์ตรงๆ
+          setMessage(data.error || "ไม่สามารถยืนยันตัวตนได้ กรุณาลองใหม่อีกครั้ง");
         }
       } catch (error) {
+        console.error("🔴 Connection Error on Frontend:", error);
         setStatus("error");
-        setMessage("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+        setMessage("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ (CORS หรือ URL ไม่ถูกต้อง)");
       }
     };
 
@@ -52,17 +61,17 @@ function VerifyContent() {
         {status === "success" && <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />}
         {status === "error" && <XCircle className="w-16 h-16 text-status-orange mb-4" />}
 
-        <h1 className="text-2xl font-bold text-foreground mb-2">การยืนยันอีเมล</h1>
-        <p className="text-muted-foreground mb-8">{message}</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">ระบบยืนยันอีเมล</h1>
+        <p className="text-muted-foreground text-sm mb-8 px-4">{message}</p>
 
         {status === "success" && (
-          <Button onClick={() => router.push("/login")} className="w-full">
-            เข้าสู่ระบบเลย
+          <Button onClick={() => router.push("/login")} className="w-full font-medium">
+            ไปหน้าเข้าสู่ระบบ
           </Button>
         )}
         {status === "error" && (
-          <Button variant="outline" onClick={() => router.push("/")} className="w-full">
-            กลับสู่หน้าหลัก
+          <Button variant="outline" onClick={() => router.push("/register")} className="w-full font-medium">
+            กลับไปหน้าสมัครสมาชิก
           </Button>
         )}
       </div>
@@ -70,10 +79,9 @@ function VerifyContent() {
   );
 }
 
-// ใน Next.js กฎคือถ้ามีการอ่าน SearchParams ควรครอบด้วย Suspense เสมอครับ
 export default function VerifyPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">กำลังโหลด...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">กำลังโหลดหน้าต่างยืนยัน...</div>}>
       <VerifyContent />
     </Suspense>
   );

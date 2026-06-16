@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
 import { generateProjectDocx } from "@/lib/documentGenerator";
 
-// 🟢 1. จำลองข้อมูล (Mock Data) ให้ครบตาม Schema
+// จำลองข้อมูล (Mock Data) ให้ครบตาม Schema
 const mockProjectData = {
   // --- Step 1 ---
   projectName: "โครงการพัฒนาระบบบริหารจัดการข้อมูลอัจฉริยะ (Smart Data Management)",
@@ -29,7 +29,8 @@ const mockProjectData = {
   currentSystemStatus: "ใช้งานระบบฐานข้อมูลแบบเก่า (On-Premise) ซึ่งมีอายุเกิน 10 ปี",
   currentProblems: "ระบบล่มบ่อยครั้ง ค้นหาข้อมูลช้า และไม่รองรับการทำงานผ่านมือถือ",
   relatedProjects: [
-    { projectName: "โครงการติดตั้ง Cloud", agency: "สยป.", fiscalYear: "2566", relationType: "ระบบโครงสร้างพื้นฐาน" }
+    { projectName: "โครงการติดตั้ง Cloud", agency: "สยป.", fiscalYear: "2566", relationType: "ระบบโครงสร้างพื้นฐาน", remark: "ติดตั้ง Cloud เพื่อรองรับระบบใหม่" },
+    { projectName: "โครงการพัฒนาระบบฐานข้อมูลกลาง", agency: "สำนักสารสนเทศ", fiscalYear: "2567", relationType: "ระบบฐานข้อมูล" }
   ],
   manpower: [
     { agencyPart: "ฝ่ายเทคโนโลยี", positionLimit: 10, occupied: 8, vacant: 2 }
@@ -72,6 +73,18 @@ const mockProjectData = {
   submitterEmail: "test@bangkok.go.th",
 };
 
+// custom logic สำหรับแปลงข้อมูลก่อนหยอดลงใน Word
+const currentType = mockProjectData.projectType;
+const templateData = {
+  ...mockProjectData, // เอาข้อมูลเดิมมาทั้งหมด
+  
+  // สร้างตัวแปรใหม่ 3 ตัว สำหรับช่อง Checkbox
+  // ถ้าตรงกับเงื่อนไขให้เป็น ☑ ถ้าไม่ตรงให้เป็น ☐
+  chkNew: currentType === "จัดหาใหม่" ? "☑" : "☐",
+  chkReplace: currentType === "ทดแทนระบบเดิม" ? "☑" : "☐",
+  chkPhase: currentType.includes("ต่อเนื่อง") ? "☑" : "☐", 
+};
+
 export default function TestDocPage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -79,10 +92,10 @@ export default function TestDocPage() {
     setIsGenerating(true);
     try {
       // โยน Mock Data เข้าไปในฟังก์ชันสร้าง Word
-      await generateProjectDocx(mockProjectData as any);
+      await generateProjectDocx(templateData as any);
       
       // ✅ Tip: ลอง console.log ดูโครงสร้าง data เผื่อเอาไปเทียบตอนทำ Word
-      console.log("Mock Data ที่ส่งไปทำ Word:", mockProjectData);
+      console.log("Mock Data ที่ส่งไปทำ Word:", templateData);
     } catch (error) {
       console.error(error);
       alert("เกิดข้อผิดพลาดในการสร้างเอกสาร");
