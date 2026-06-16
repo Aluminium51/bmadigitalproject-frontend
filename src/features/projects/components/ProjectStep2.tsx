@@ -8,7 +8,8 @@ import { Plus, Trash2 } from "lucide-react";
 import { ProjectStep2Values } from "../types";
 
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea"; 
+import { RichTextarea } from "@/components/custom/RichTextarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,8 @@ export const ProjectStep2 = () => {
           <Label htmlFor="background" className="text-sm font-medium text-foreground">
             หลักการและเหตุผล / ความเป็นมา <span className="text-status-orange">*</span>
           </Label>
-          <Textarea id="background" {...register("background")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
+          {/* 🟢 เปลี่ยนเป็น RichTextarea */}
+          <RichTextarea id="background" {...register("background")} rows={4} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร (กด Tab เพื่อย่อหน้า)" className="mt-1.5 resize-none bg-surface" />
           {errors.background && <p className="mt-1 text-sm text-status-orange">{errors.background.message}</p>}
         </div>
 
@@ -66,7 +68,8 @@ export const ProjectStep2 = () => {
           <Label htmlFor="objective" className="text-sm font-medium text-foreground">
             วัตถุประสงค์ <span className="text-status-orange">*</span>
           </Label>
-          <Textarea id="objective" {...register("objective")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
+          {/* 🟢 เปลี่ยนเป็น RichTextarea */}
+          <RichTextarea id="objective" {...register("objective")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร (กด Tab เพื่อย่อหน้า)" className="mt-1.5 resize-none bg-surface" />
           {errors.objective && <p className="mt-1 text-sm text-status-orange">{errors.objective.message}</p>}
         </div>
 
@@ -74,7 +77,8 @@ export const ProjectStep2 = () => {
           <Label htmlFor="target" className="text-sm font-medium text-foreground">
             เป้าหมาย <span className="text-status-orange">*</span>
           </Label>
-          <Textarea id="target" {...register("target")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
+          {/* 🟢 เปลี่ยนเป็น RichTextarea */}
+          <RichTextarea id="target" {...register("target")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร (กด Tab เพื่อย่อหน้า)" className="mt-1.5 resize-none bg-surface" />
           {errors.target && <p className="mt-1 text-sm text-status-orange">{errors.target.message}</p>}
         </div>
 
@@ -82,7 +86,8 @@ export const ProjectStep2 = () => {
           <Label htmlFor="scope" className="text-sm font-medium text-foreground">
             ขอบเขตการดำเนินงาน <span className="text-status-orange">*</span>
           </Label>
-          <Textarea id="scope" {...register("scope")} rows={3} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร" className="mt-1.5 resize-none bg-surface" />
+          {/* 🟢 เปลี่ยนเป็น RichTextarea */}
+          <RichTextarea id="scope" {...register("scope")} rows={4} placeholder="พิมพ์อย่างน้อย 10 ตัวอักษร (กด Tab เพื่อย่อหน้า)" className="mt-1.5 resize-none bg-surface" />
           {errors.scope && <p className="mt-1 text-sm text-status-orange">{errors.scope.message}</p>}
         </div>
 
@@ -187,6 +192,7 @@ export const ProjectStep2 = () => {
               <Label htmlFor="currentSystemStatus" className="text-sm font-medium text-foreground">
                 สถานภาพระบบงานคอมพิวเตอร์ปัจจุบัน <span className="text-status-orange">*</span>
               </Label>
+              {/* ตรงนี้ใช้ Textarea ธรรมดาก็ได้ เพราะอธิบายสั้นๆ */}
               <Textarea id="currentSystemStatus" {...register("currentSystemStatus")} rows={3} placeholder="อธิบายสถานภาพระบบงานปัจจุบัน..." className="mt-1.5 resize-none bg-surface" />
               {errors.currentSystemStatus && <p className="mt-1 text-sm text-status-orange">{errors.currentSystemStatus.message}</p>}
             </div>
@@ -195,7 +201,8 @@ export const ProjectStep2 = () => {
               <Label htmlFor="currentProblems" className="text-sm font-medium text-foreground">
                 สภาพปัญหาของผู้รับบริการ / เหตุผลความจำเป็น <span className="text-status-orange">*</span>
               </Label>
-              <Textarea id="currentProblems" {...register("currentProblems")} rows={3} placeholder="อธิบายสภาพปัญหาปัจจุบัน..." className="mt-1.5 resize-none bg-surface" />
+              {/* 🟢 เปลี่ยนเป็น RichTextarea เพราะปัญหาอาจจะมีหลายข้อ/หลายบรรทัด */}
+              <RichTextarea id="currentProblems" {...register("currentProblems")} rows={4} placeholder="อธิบายสภาพปัญหาปัจจุบัน (กด Tab เพื่อย่อหน้า)" className="mt-1.5 resize-none bg-surface" />
               {errors.currentProblems && <p className="mt-1 text-sm text-status-orange">{errors.currentProblems.message}</p>}
             </div>
           </div>

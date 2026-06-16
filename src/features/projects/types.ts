@@ -70,14 +70,58 @@ export const projectStep2Schema = z.object({
 // Step 3: สถาปัตยกรรมองค์กร (Enterprise Architecture)
 // ---------------------------------------------------------------------------
 export const projectStep3Schema = z.object({
-  strategicAlignments: z.array(z.string()).min(1, "เลือกความสอดคล้องเชิงยุทธศาสตร์อย่างน้อย 1 ข้อ"),
-  obstacleLaws: z.string().optional(), // ให้เป็น Optional เผื่อไม่มีอุปสรรค
-  appArchitecture: z.string().min(5, "อธิบายด้านระบบสารสนเทศ"),
-  dataOwner: z.string().min(2, "ระบุหน่วยงานเจ้าของข้อมูล"),
-  dataExchangePlan: z.string().min(5, "อธิบายแนวทางการแลกเปลี่ยนข้อมูล"),
-  // สำหรับการแนบไฟล์ Diagram ให้ใช้ z.any() หรือ z.unknown() ไปก่อน แล้วค่อยดัก validation ฝั่ง UI
-  systemDiagramFiles: z.any().optional(),
-  networkDiagramFiles: z.any().optional(),
+  // ข้อ 1
+  isBmaPlan: z.boolean().default(false),
+  
+  // ข้อ 2
+  isAgencyPlan: z.boolean().default(false),
+  agencyStrategy: z.string().optional(),
+  agencyIssue: z.string().optional(),
+  agencyKpi: z.string().optional(),
+  
+  // ข้อ 3
+  isGovernorPolicy: z.boolean().default(false),
+  governorPolicyCode: z.string().optional(),
+  governorPolicyName: z.string().optional(),
+
+  obstacleLaws: z.string().optional(),
+  appArchitecture: z.string().min(5, "กรุณาอธิบายด้านระบบสารสนเทศ"),
+  dataOwner: z.string().min(2, "กรุณาระบุหน่วยงานเจ้าของข้อมูล"),
+  dataExchangePlan: z.string().min(5, "กรุณาอธิบายแนวทางการแลกเปลี่ยนข้อมูล"),
+  systemDiagramFiles: z.array(z.any()).max(1, "อัปโหลดได้ 1 ไฟล์").optional().default([]),
+  networkDiagramFiles: z.array(z.any()).max(1, "อัปโหลดได้ 1 ไฟล์").optional().default([]),
+}).superRefine((data, ctx) => {
+  // ตรวจสอบว่าต้องเลือกอย่างน้อย 1 ข้อ
+  if (!data.isBmaPlan && !data.isAgencyPlan && !data.isGovernorPolicy) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "กรุณาเลือกความสอดคล้องเชิงยุทธศาสตร์อย่างน้อย 1 ข้อ",
+      path: ["isBmaPlan"], // ชี้ error ไปที่ข้อแรกให้แสดงผล
+    });
+  }
+
+  // ดักจับถ้าติ๊กข้อ 2 แต่ไม่กรอกข้อมูล
+  if (data.isAgencyPlan) {
+    if (!data.agencyStrategy?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "กรุณาระบุแผนงาน", path: ["agencyStrategy"] });
+    }
+    if (!data.agencyIssue?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "กรุณาระบุประเด็น", path: ["agencyIssue"] });
+    }
+    if (!data.agencyKpi?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "กรุณาระบุตัวชี้วัด", path: ["agencyKpi"] });
+    }
+  }
+
+  // ดักจับถ้าติ๊กข้อ 3 แต่ไม่กรอกข้อมูล
+  if (data.isGovernorPolicy) {
+    if (!data.governorPolicyCode?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "กรุณาระบุรหัสนโยบาย", path: ["governorPolicyCode"] });
+    }
+    if (!data.governorPolicyName?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "กรุณาระบุนโยบาย", path: ["governorPolicyName"] });
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------

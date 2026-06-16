@@ -21,7 +21,7 @@ const mockProjectData = {
   ],
 
   // --- Step 2 ---
-  background: "สำนักงานควบคุมอาคาร สำนักการโยธา กรุงเทพมหานคร เป็นหน่วยงานที่ดูแลเกี่ยวกับการอนุญาต ตรวจสอบ และควบคุมการใช้อาคาร รวมถึงอาคารที่ต้องจัดให้มีผู้ตรวจสอบ ตามกฎกระทรวงฯ พ.ศ. 2548 ที่กระจายตัวอยู่ตามพื้นที่ต่าง ๆ ในกรุงเทพมหานคร\n\tปัจจุบันระบบบริหารจัดการงานควบคุมอาคาร รองรับการขออนุญาตของประชาชน และอำนวยความสะดวกให้แก่เจ้าหน้าที่ในการพิจารณาอนุญาตก่อสร้าง ",
+  background: "สำนักงานควบคุมอาคาร สำนักการโยธา กรุงเทพมหานคร เป็นหน่วยงานที่ดูแลเกี่ยวกับการอนุญาต...",
   objective: "1. เพื่อเพิ่มประสิทธิภาพการทำงาน\n\t2. เพื่อลดกระดาษ (Paperless)",
   target: "หน่วยงานในสังกัด กทม. จำนวน 50 เขต",
   scope: "พัฒนาระบบ Web Application และ Mobile Application สำหรับเจ้าหน้าที่",
@@ -30,7 +30,6 @@ const mockProjectData = {
   currentProblems: "ระบบล่มบ่อยครั้ง ค้นหาข้อมูลช้า และไม่รองรับการทำงานผ่านมือถือ",
   relatedProjects: [
     { projectName: "โครงการติดตั้ง Cloud", agency: "สยป.", fiscalYear: "2566", relationType: "ระบบโครงสร้างพื้นฐาน", remark: "ติดตั้ง Cloud เพื่อรองรับระบบใหม่" },
-    { projectName: "โครงการพัฒนาระบบฐานข้อมูลกลาง", agency: "สำนักสารสนเทศ", fiscalYear: "2567", relationType: "ระบบฐานข้อมูล" }
   ],
   manpower: [
     { agencyPart: "ฝ่ายเทคโนโลยี", positionLimit: 10, occupied: 8, vacant: 2 }
@@ -39,8 +38,17 @@ const mockProjectData = {
     { itemName: "Server รุ่นเก่า", ageYears: 8, quantity: 2, user: "ฝ่าย IT", location: "ห้อง Data Center", remark: "หมดประกันแล้ว" }
   ],
 
-  // --- Step 3 ---
-  strategicAlignments: ["ยุทธศาสตร์ที่ 1: เมืองอัจฉริยะ", "ยุทธศาสตร์ที่ 3: บริหารจัดการโปร่งใส"],
+  // --- Step 3 (🟢 อัปเดตโครงสร้างใหม่ที่นี่) ---
+  isBmaPlan: false,
+  isAgencyPlan: true,
+  agencyStrategy: "การบริหารจัดการเมือง",
+  agencyIssue: "การให้บริการประชาชนแบบดิจิทัล",
+  agencyKpi: "ร้อยละของกระบวนการที่ลดการใช้กระดาษ",
+  
+  isGovernorPolicy: true,
+  governorPolicyCode: "05-02",
+  governorPolicyName: "บริหารจัดการดี โปร่งใส",
+
   obstacleLaws: "ไม่มีอุปสรรคทางข้อกฎหมาย",
   appArchitecture: "ใช้สถาปัตยกรรมแบบ Microservices และเชื่อมต่อผ่าน API Gateway",
   dataOwner: "สำนักยุทธศาสตร์และประเมินผล (สยป.)",
@@ -63,8 +71,7 @@ const mockProjectData = {
   // --- Step 5 ---
   operationDuration: 360,
   currentIctStaff: [
-    { position: "นักวิชาการคอมพิวเตอร์", level: "ชำนาญการ", count: 3 },
-    { position: "นักวิชาการคอมพิวเตอร์", level: "ปฏิบัติการ", count: 2 }
+    { position: "นักวิชาการคอมพิวเตอร์", level: "ชำนาญการ", count: 3 }
   ],
   expectedBenefits: "1. ประชาชนได้รับบริการที่รวดเร็วขึ้น\n2. ลดงบประมาณการใช้กระดาษลง 50%",
   submitterName: "นายเสนอ โครงการ",
@@ -73,16 +80,28 @@ const mockProjectData = {
   submitterEmail: "test@bangkok.go.th",
 };
 
-// custom logic สำหรับแปลงข้อมูลก่อนหยอดลงใน Word
+// 🟢 อัปเดต Custom logic สำหรับแปลงข้อมูลก่อนหยอดลงใน Word
 const currentType = mockProjectData.projectType;
 const templateData = {
-  ...mockProjectData, // เอาข้อมูลเดิมมาทั้งหมด
+  ...mockProjectData,
   
-  // สร้างตัวแปรใหม่ 3 ตัว สำหรับช่อง Checkbox
-  // ถ้าตรงกับเงื่อนไขให้เป็น ☑ ถ้าไม่ตรงให้เป็น ☐
+  // Step 2: สร้างตัวแปรใหม่ 3 ตัว สำหรับช่อง Checkbox
   chkNew: currentType === "จัดหาใหม่" ? "☑" : "☐",
   chkReplace: currentType === "ทดแทนระบบเดิม" ? "☑" : "☐",
   chkPhase: currentType.includes("ต่อเนื่อง") ? "☑" : "☐", 
+
+  // Step 3: แปลง Boolean เป็นติ๊กถูก (☑) หรือเว้นว่าง (☐)
+  chkBma: mockProjectData.isBmaPlan ? "☑" : "☐",
+  chkAgency: mockProjectData.isAgencyPlan ? "☑" : "☐",
+  chkGov: mockProjectData.isGovernorPolicy ? "☑" : "☐",
+  
+  // Step 3: ถ้าไม่ได้ติ๊ก ให้แสดงจุดไข่ปลา หรือคำว่า "ไม่มี"
+  agencyStrategy: mockProjectData.isAgencyPlan ? mockProjectData.agencyStrategy : "..........................",
+  agencyIssue: mockProjectData.isAgencyPlan ? mockProjectData.agencyIssue : "..........................",
+  agencyKpi: mockProjectData.isAgencyPlan ? mockProjectData.agencyKpi : "..........................",
+  
+  governorPolicyCode: mockProjectData.isGovernorPolicy ? mockProjectData.governorPolicyCode : "..........................",
+  governorPolicyName: mockProjectData.isGovernorPolicy ? mockProjectData.governorPolicyName : "..........................",
 };
 
 export default function TestDocPage() {
@@ -91,10 +110,7 @@ export default function TestDocPage() {
   const handleTestDownload = async () => {
     setIsGenerating(true);
     try {
-      // โยน Mock Data เข้าไปในฟังก์ชันสร้าง Word
       await generateProjectDocx(templateData as any);
-      
-      // ✅ Tip: ลอง console.log ดูโครงสร้าง data เผื่อเอาไปเทียบตอนทำ Word
       console.log("Mock Data ที่ส่งไปทำ Word:", templateData);
     } catch (error) {
       console.error(error);
@@ -121,7 +137,7 @@ export default function TestDocPage() {
           <div className="w-full bg-surface-variant p-4 rounded-md text-left overflow-hidden h-32 mb-4 relative">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface-variant z-10 pointer-events-none" />
             <pre className="text-xs text-muted-foreground whitespace-pre-wrap opacity-70">
-              {JSON.stringify(mockProjectData, null, 2)}
+              {JSON.stringify(templateData, null, 2)}
             </pre>
           </div>
 
