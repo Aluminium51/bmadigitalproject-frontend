@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { CreateProjectWizard } from "@/features/projects/components/CreateProjectWizard";
-// หมายเหตุ: ปรับ Path การ import ให้ตรงกับ alias (เช่น @/) ที่คุณตั้งไว้ใน tsconfig.json
 
 // 1. ตั้งค่า Metadata สำหรับ SEO และ Title Bar (ทำได้เฉพาะใน Server Component)
 export const metadata: Metadata = {
@@ -11,7 +10,7 @@ export const metadata: Metadata = {
 export default function CreateProjectPage() {
   return (
     <main className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto w-full">
         
         {/* 2. Page Header: ส่วนหัวของหน้าจอ */}
         <div className="mb-8">

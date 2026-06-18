@@ -17,6 +17,16 @@ export const generateProjectDocx = async (formData: ProjectDraftValues) => {
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
+      nullGetter: function (part) {
+        if (!part.module) {
+          // ถ้าไม่มีข้อมูล ให้คืนค่าเป็นช่องว่าง (หรือจะเปลี่ยนเป็น "-" ก็ได้)
+          return ""; 
+        }
+        if (part.module === "rawxml") {
+          return "";
+        }
+      return "";
+      },
     });
 
     // 💡 4. แปลงข้อมูลก่อนหยอด (สำคัญมาก: ควร Format ตัวเลข/วันที่ ให้สวยงามก่อน)

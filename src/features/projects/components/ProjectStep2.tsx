@@ -248,7 +248,7 @@ export const ProjectStep2 = () => {
                         <Input type="number" {...register(`manpower.${index}.occupied`, { valueAsNumber: true })} placeholder="0" className="bg-surface" />
                       </div>
                       <div className="w-full md:flex-1">
-                        <Label className="text-xs text-slate-gray mb-1.5 block">ว่าง</Label>
+                        <Label className="text-xs text-slate-gray mb-1.5 block">อัตราว่าง</Label>
                         <Input type="number" {...register(`manpower.${index}.vacant`, { valueAsNumber: true })} placeholder="0" className="bg-surface" />
                       </div>
                       <div className="w-full md:w-auto">

@@ -127,48 +127,50 @@ export const projectStep3Schema = z.object({
 // ---------------------------------------------------------------------------
 // Step 4: แผนงานและรายละเอียดงบประมาณ (Budget Breakdown)
 // ---------------------------------------------------------------------------
+const hardwareCostSchema = z.object({
+  itemName: z.string().min(1, "กรุณาระบุรายการ"),
+  // แปลงค่าว่างเป็น 0 อัตโนมัติ แล้วดักด้วย .min(1)
+  quantity: z.coerce.number().min(1, "กรุณาระบุจำนวน"),
+  unitPrice: z.coerce.number().min(0, "ห้ามติดลบ"),
+  reference: z.string().min(1, "กรุณาเลือกที่มา"),
+});
+
+const softwareCostSchema = z.object({
+  itemName: z.string().min(1, "กรุณาระบุชื่อซอฟต์แวร์"),
+  quantity: z.coerce.number().min(1, "กรุณาระบุจำนวน"),
+  unitPrice: z.coerce.number().min(0, "ห้ามติดลบ"),
+  reference: z.string().min(1, "กรุณาเลือกที่มา"),
+});
+
+// 1. Schema สำหรับ บุคลากรหลัก และ บุคลากรผู้ช่วย (บังคับสาขาและตัวคูณ)
+const personnelCoreAndAsstSchema = z.object({
+  position: z.string().min(1, "ระบุตำแหน่ง"),
+  degree: z.string().min(1, "ระบุวุฒิ"),
+  fieldOfStudy: z.string().min(1, "ระบุสาขา"), // บังคับกรอก
+  experienceYears: z.coerce.number().min(0, "ระบุปี"),
+  baseSalary: z.coerce.number().min(1, "ระบุเงินเดือน"),
+  multiplier: z.coerce.number().min(0.1, "ระบุตัวคูณ"), // บังคับตัวเลขที่ > 0
+  personCount: z.coerce.number().min(1, "ระบุคน"),
+  durationMonths: z.coerce.number().min(1, "ระบุเดือน"),
+});
+
+// 2. Schema สำหรับ บุคลากรสนับสนุน (ไม่เอาสาขาและตัวคูณ)
+const personnelSuppSchema = z.object({
+  position: z.string().min(1, "ระบุตำแหน่ง"),
+  degree: z.string().min(1, "ระบุวุฒิ"),
+  experienceYears: z.coerce.number().min(0, "ระบุปี"),
+  baseSalary: z.coerce.number().min(1, "ระบุเงินเดือน"),
+  personCount: z.coerce.number().min(1, "ระบุคน"),
+  durationMonths: z.coerce.number().min(1, "ระบุเดือน"),
+});
+
 export const projectStep4Schema = z.object({
-  // หมวด 1: ครุภัณฑ์คอมพิวเตอร์
-  hardwareCosts: z.array(
-    z.object({
-      itemName: z.string().min(1, "ระบุรายการ"),
-      quantity: z.coerce.number().min(1, "ระบุจำนวน"),
-      unitPrice: z.coerce.number().min(1, "ระบุราคาต่อหน่วย"),
-      reference: z.string().optional(),
-    })
-  ).default([]),
-  
-  // หมวด 2: ซอฟต์แวร์
-  softwareCosts: z.array(
-    z.object({
-      softwareName: z.string().min(1, "ระบุชื่อซอฟต์แวร์"),
-      quantity: z.coerce.number().min(1, "ระบุจำนวน"),
-      unitPrice: z.coerce.number().min(1, "ระบุราคาต่อหน่วย"),
-      reference: z.string().optional(),
-    })
-  ).default([]),
-
-  // หมวด 3: ค่าใช้จ่ายบุคลากร (บังคับต้องมีอย่างน้อย 1 คน)
-  personnelCosts: z.array(
-    z.object({
-      roleLevel: z.enum(["บุคลากรหลัก", "บุคลากรผู้ช่วย", "บุคลากรสนับสนุน"]),
-      position: z.string().min(1, "ระบุตำแหน่ง"),
-      baseSalary: z.coerce.number().min(1, "ระบุเงินเดือน"),
-      multiplier: z.coerce.number().min(0.1, "ระบุตัวคูณ"),
-      personCount: z.coerce.number().min(1, "ระบุจำนวนคน"),
-      durationMonths: z.coerce.number().min(1, "ระบุจำนวนเดือน"),
-    })
-  ).min(1, "กรุณาเพิ่มบุคลากรอย่างน้อย 1 รายการ"),
-
-  // หมวด 4: ค่าใช้จ่ายอื่นๆ (รวมฝึกอบรม, สื่อประชาสัมพันธ์)
-  otherCosts: z.array(
-    z.object({
-      itemName: z.string().min(1, "ระบุรายการ"),
-      quantity: z.coerce.number().min(1, "ระบุจำนวน"),
-      unitPrice: z.coerce.number().min(1, "ระบุราคาต่อหน่วย"),
-      remark: z.string().optional(),
-    })
-  ).default([]),
+  hardwareCosts: z.array(hardwareCostSchema).default([]),
+  softwareCosts: z.array(softwareCostSchema).default([]),
+  // ใช้ Schema ที่แยกกันให้ตรงหมวด
+  personnelCoreCosts: z.array(personnelCoreAndAsstSchema).default([]),
+  personnelAsstCosts: z.array(personnelCoreAndAsstSchema).default([]),
+  personnelSuppCosts: z.array(personnelSuppSchema).default([]),
 });
 
 // ---------------------------------------------------------------------------

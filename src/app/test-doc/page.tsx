@@ -26,16 +26,19 @@ const mockProjectData = {
   target: "หน่วยงานในสังกัด กทม. จำนวน 50 เขต",
   scope: "พัฒนาระบบ Web Application และ Mobile Application สำหรับเจ้าหน้าที่",
   projectType: "ทดแทนระบบเดิม",
-  currentSystemStatus: "ใช้งานระบบฐานข้อมูลแบบเก่า (On-Premise) ซึ่งมีอายุเกิน 10 ปี",
-  currentProblems: "ระบบล่มบ่อยครั้ง ค้นหาข้อมูลช้า และไม่รองรับการทำงานผ่านมือถือ",
   relatedProjects: [
     { projectName: "โครงการติดตั้ง Cloud", agency: "สยป.", fiscalYear: "2566", relationType: "ระบบโครงสร้างพื้นฐาน", remark: "ติดตั้ง Cloud เพื่อรองรับระบบใหม่" },
+    { projectName: "โครงการอบรมทักษะดิจิทัล", agency: "สยป.", fiscalYear: "2567", relationType: "พัฒนาบุคลากร" }
   ],
+  currentSystemStatus: "ใช้งานระบบฐานข้อมูลแบบเก่า (On-Premise) ซึ่งมีอายุเกิน 10 ปี",
+  currentProblems: "ระบบล่มบ่อยครั้ง ค้นหาข้อมูลช้า และไม่รองรับการทำงานผ่านมือถือ",
   manpower: [
     { agencyPart: "ฝ่ายเทคโนโลยี", positionLimit: 10, occupied: 8, vacant: 2 }
   ],
   existingEquipment: [
-    { itemName: "Server รุ่นเก่า", ageYears: 8, quantity: 2, user: "ฝ่าย IT", location: "ห้อง Data Center", remark: "หมดประกันแล้ว" }
+    { itemName: "Server รุ่นเก่า", ageYears: 8, quantity: 2, user: "ฝ่าย IT", location: "ห้อง Data Center", remark: "หมดประกันแล้ว" },
+    { itemName: "เครื่องคอมพิวเตอร์", ageYears: 5, quantity: 20, user: "เจ้าหน้าที่", location: "สำนักงาน"},
+    { itemName: "เครื่องพิมพ์", ageYears: 6, quantity: 5, user: "เจ้าหน้าที่", location: "สำนักงาน", remark: "ใช้บ่อย" }
   ],
 
   // --- Step 3 (🟢 อัปเดตโครงสร้างใหม่ที่นี่) ---
@@ -90,10 +93,17 @@ const templateData = {
   chkReplace: currentType === "ทดแทนระบบเดิม" ? "☑" : "☐",
   chkPhase: currentType.includes("ต่อเนื่อง") ? "☑" : "☐", 
 
+  // Step 2 (ต่อ): จัดการ table ของรายการที่เกี่ยวข้อง
+  hasManpower: mockProjectData.manpower && mockProjectData.manpower.length > 0,
+  hasEquipment: mockProjectData.existingEquipment && mockProjectData.existingEquipment.length > 0,
+
   // Step 3: แปลง Boolean เป็นติ๊กถูก (☑) หรือเว้นว่าง (☐)
   chkBma: mockProjectData.isBmaPlan ? "☑" : "☐",
   chkAgency: mockProjectData.isAgencyPlan ? "☑" : "☐",
   chkGov: mockProjectData.isGovernorPolicy ? "☑" : "☐",
+
+  // Step 3 (ต่อ): จัดการ table ของโครงการที่เกี่ยวข้อง (ถ้าไม่มี ให้แสดงข้อความ "ไม่มีโครงการที่เกี่ยวข้อง")
+  hasRelatedProjects: mockProjectData.relatedProjects && mockProjectData.relatedProjects.length > 0,
   
   // Step 3: ถ้าไม่ได้ติ๊ก ให้แสดงจุดไข่ปลา หรือคำว่า "ไม่มี"
   agencyStrategy: mockProjectData.isAgencyPlan ? mockProjectData.agencyStrategy : "..........................",
