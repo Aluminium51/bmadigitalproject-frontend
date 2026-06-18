@@ -164,6 +164,61 @@ const personnelSuppSchema = z.object({
   durationMonths: z.coerce.number().min(1, "ระบุเดือน"),
 });
 
+// หน้าที่ความรับผิดชอบของบุคลากร (ใช้ร่วมกันทุกหมวด)
+const personnelResponsibilitySchema = z.object({
+  position: z.string(), // ไม่ต้องมี min(1) เพราะเราดึงมาอัตโนมัติ
+  responsibility: z.string().min(1, "กรุณาระบุหน้าที่ความรับผิดชอบ"),
+});
+
+const speakerCostSchema = z.object({
+  itemName: z.string().min(1, "ระบุรายการ"),
+  hours: z.coerce.number().min(1, "ระบุจำนวนชั่วโมง"),
+  ratePerHour: z.coerce.number().min(0, "ระบุอัตรา/ชั่วโมง"),
+  days: z.coerce.number().min(1, "ระบุระยะเวลา(วัน)"),
+});
+
+const foodCostSchema = z.object({
+  itemName: z.enum(["ค่าอาหาร (ไม่ครบมื้อ)", "ค่าอาหารและเครื่องดื่ม", "ค่าอาหารว่าง"]),
+  mealsCount: z.coerce.number().min(0),
+  ratePerMeal: z.coerce.number().min(0),
+  traineesCount: z.coerce.number().min(0),
+  days: z.coerce.number().min(0),
+});
+
+const trainingCourseSchema = z.object({
+  courseName: z.string().min(1, "กรุณาระบุหลักสูตร"),
+  trainingMethod: z.string().min(1, "กรุณาระบุวิธีการฝึกอบรม"),
+  locationType: z.enum(["สถานที่ราชการ", "สถานที่เอกชน"]),
+  
+  // ตารางวิทยากร (แสดง/ซ่อน ผ่าน UI แต่ข้อมูลเก็บตรงนี้)
+  hasSpeakerCost: z.boolean().default(false),
+  speakerReason: z.string().optional(),
+  speakerCosts: z.array(speakerCostSchema).default([]),
+
+  // ตารางค่าอาหาร (Fixed 3 รายการเสมอ แต่สร้าง schema ไว้รองรับการเก็บค่า)
+  foodCosts: z.array(foodCostSchema).default([
+    { itemName: "ค่าอาหาร (ไม่ครบมื้อ)", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
+    { itemName: "ค่าอาหารและเครื่องดื่ม", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
+    { itemName: "ค่าอาหารว่าง", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
+  ]),
+}).superRefine((data, ctx) => {
+  // ดักว่าถ้าติ๊ก "มีวิทยากร" ต้องกรอกเหตุผล
+  if (data.hasSpeakerCost && (!data.speakerReason || data.speakerReason.trim() === "")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "กรุณาระบุเหตุผลความจำเป็น",
+      path: ["speakerReason"],
+    });
+  }
+});
+
+const otherCostSchema = z.object({
+  itemName: z.string().min(1, "ระบุรายการ"),
+  quantity: z.coerce.number().min(1, "ระบุจำนวน"),
+  unitPrice: z.coerce.number().min(0, "ห้ามติดลบ"),
+  remark: z.string().optional(), // หมายเหตุเป็น Text ธรรมดา
+});
+
 export const projectStep4Schema = z.object({
   hardwareCosts: z.array(hardwareCostSchema).default([]),
   softwareCosts: z.array(softwareCostSchema).default([]),
@@ -171,6 +226,9 @@ export const projectStep4Schema = z.object({
   personnelCoreCosts: z.array(personnelCoreAndAsstSchema).default([]),
   personnelAsstCosts: z.array(personnelCoreAndAsstSchema).default([]),
   personnelSuppCosts: z.array(personnelSuppSchema).default([]),
+  personnelResponsibilities: z.array(personnelResponsibilitySchema).default([]),
+  trainingCourses: z.array(trainingCourseSchema).default([]),
+  otherCosts: z.array(otherCostSchema).default([]),
 });
 
 // ---------------------------------------------------------------------------
