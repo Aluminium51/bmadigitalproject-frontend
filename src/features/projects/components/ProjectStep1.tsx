@@ -1,5 +1,7 @@
+// ProjectStep1.tsx
+import { useEffect } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, AlertCircle } from "lucide-react";
 import { ProjectStep1Values } from "../types";
 
 import { Input } from "@/components/ui/input";
@@ -14,16 +16,22 @@ import {
 } from "@/components/ui/select";
 
 export const ProjectStep1 = () => {
-  const { register, control, formState: { errors } } = useFormContext<ProjectStep1Values>();
-  
-  // จัดการตารางงบประมาณรายปี
+  const { register, control, watch, setValue, formState: { errors } } = useFormContext<ProjectStep1Values>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "budgetsByYear",  
   });
 
+  const watchedBudgets = watch("budgetsByYear") || [];
+  const calculatedTotal = watchedBudgets.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+
+  // คอยส่งค่าผลรวมกลับเข้าไปอัปเดตในระบบฟอร์มเบื้องหลัง เพื่อให้ Zod เอาไป Validate ได้ตามปกติ
+  useEffect(() => {
+    setValue("totalBudget", calculatedTotal, { shouldValidate: true });
+  }, [calculatedTotal, setValue]);
+
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full min-w-0">
       
       {/* --- ส่วนที่ 1: ข้อมูลโครงการ (Project Info) --- */}
       <div>
@@ -42,9 +50,6 @@ export const ProjectStep1 = () => {
           {errors.projectName && <p className="mt-1 text-sm text-status-orange">{errors.projectName.message}</p>}
         </div>
       </div>
-
-      {/* เส้นแบ่งหมวดหมู่ */}
-      {/* <div className="border-t border-border" /> */}
 
       {/* --- ส่วนที่ 2: ส่วนราชการ (Agency Group) --- */}
       <div>
@@ -100,7 +105,6 @@ export const ProjectStep1 = () => {
         </div>
       </div>
 
-      {/* เส้นแบ่งหมวดหมู่ */}
       <div className="border-t border-border" />
 
       {/* --- ส่วนที่ 3: งบประมาณรายปี (Budget) --- */}
@@ -109,9 +113,9 @@ export const ProjectStep1 = () => {
           <h3 className="text-lg font-bold text-foreground">งบประมาณรายปี</h3>
           <Button 
             type="button" 
-            variant="soft" 
+            variant="default" 
             size="sm"
-            onClick={() => append({ year: "", amount: 0, budgetType: "งบประมาณรายจ่ายประจำปี" })}
+            onClick={() => append({ year: 0, amount: 0 as any, budgetType: "งบประมาณรายจ่ายประจำปี" })}
             className="rounded-full gap-2 pl-2.5"
           >
             <Plus className="w-4 h-4" /> เพิ่มปีงบประมาณ
@@ -125,7 +129,8 @@ export const ProjectStep1 = () => {
               <div className="w-full sm:w-1/4">
                 <Label className="text-xs text-slate-gray mb-1 block">ปี พ.ศ.</Label>
                 <Input 
-                  {...register(`budgetsByYear.${index}.year`)} 
+                  type="number"
+                  {...register(`budgetsByYear.${index}.year`, { valueAsNumber: true })}
                   placeholder="เช่น 2567" 
                 />
               </div>
@@ -138,7 +143,6 @@ export const ProjectStep1 = () => {
                 />
               </div>
               
-              {/* === เปลี่ยนมาใช้ Shadcn Select ตรงนี้ === */}
               <div className="w-full sm:flex-1">
                 <Label className="text-xs text-slate-gray mb-1 block">ประเภทงบประมาณ</Label>
                 <Controller
@@ -156,13 +160,11 @@ export const ProjectStep1 = () => {
                         <SelectItem value="งบแปรญัตติ">งบแปรญัตติ</SelectItem>
                         <SelectItem value="เงินนอกงบประมาณ">เงินนอกงบประมาณ</SelectItem>
                         <SelectItem value="งบประมาณแผ่นดิน">งบประมาณแผ่นดิน</SelectItem>
-                        
                       </SelectContent>
                     </Select>
                   )}
                 />
               </div>
-              {/* ================================== */}
 
               <div className="w-full my-auto md:ml-6 sm:w-auto flex flex-col items-center justify-center">
                 <Button 
@@ -179,21 +181,24 @@ export const ProjectStep1 = () => {
           ))}
         </div>
         
-        {/* สรุปรวมงบประมาณ */}
-        <div className="mt-6 p-5 bg-surface-container-low/30 border border-border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <Label htmlFor="totalBudget" className="text-sm font-bold text-foreground">
-            รวมงบประมาณทั้งโครงการ (บาท) <span className="text-status-orange">*</span>
-          </Label>
-          <div className="w-full sm:w-1/3">
-            <Input 
-              id="totalBudget"
-              type="number" 
-              {...register("totalBudget", { valueAsNumber: true })} 
-              placeholder="0.00"
-              className="text-right font-semibold text-primary-dark"
-            />
-            {errors.totalBudget && <p className="mt-1 text-sm text-status-orange text-right">{errors.totalBudget.message}</p>}
+        {/* 🟢 ส่วนสรุปรวมงบประมาณที่ปรับปรุงใหม่ (Read-only + จัดฟอร์แมตข้อความแบบใหม่) */}
+        <div className={`mt-6 p-5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors duration-300
+          ${errors.totalBudget ? 'bg-orange-50/50 border-status-orange' : 'bg-primary-container/20 border-primary/20'}
+        `}>
+          <div className="text-md font-bold text-foreground">
+            รวมวงเงินงบประมาณทั้งโครงการ เป็นจำนวน{" "}
+            <span className="text-2xl font-black text-primary mx-1">
+              {calculatedTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </span>{" "}
+            บาท
           </div>
+          
+          {errors.totalBudget && (
+            <div className="text-status-orange text-sm font-medium flex items-center gap-1.5 animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4" />
+              <span>{errors.totalBudget.message}</span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -9,11 +9,15 @@ export const projectStep1Schema = z.object({
   headOfAgency: z.string().min(2, "กรุณาระบุหัวหน้าส่วนราชการ"),
   dcioName: z.string().min(2, "กรุณาระบุ DCIO"),
   projectManager: z.string().min(2, "กรุณาระบุผู้รับผิดชอบโครงการ"),
-  totalBudget: z.coerce.number().min(1, "กรุณาระบุวงเงินงบประมาณ"),
+  totalBudget: z.coerce.number().min(1, "กรุณาเพิ่มรายการงบประมาณรายปีและระบุจำนวนเงิน"),
   // ตารางงบประมาณรายปี
   budgetsByYear: z.array(
     z.object({
-      year: z.string().min(4, "ระบุ พ.ศ."),
+      year: z.coerce
+        .number({ message: "กรุณาระบุ พ.ศ. เป็นตัวเลข" })
+        .int("ปี พ.ศ. ต้องเป็นจำนวนเต็ม")
+        .min(2500, "กรุณาระบุปี พ.ศ. ให้ถูกต้อง (เช่น 2567)")
+        .max(2600, "กรุณาระบุปี พ.ศ. ให้ถูกต้อง"),
       amount: z.coerce.number().min(1, "ระบุจำนวนเงิน"),
       budgetType: z.string().min(1, "ระบุประเภทงบประมาณ"),
     })
@@ -69,6 +73,15 @@ export const projectStep2Schema = z.object({
 // ---------------------------------------------------------------------------
 // Step 3: สถาปัตยกรรมองค์กร (Enterprise Architecture)
 // ---------------------------------------------------------------------------
+const imageWithDescriptionSchema = z.object({
+  id: z.string(),
+  file: typeof window === "undefined" ? z.any() : z.instanceof(File).refine(
+    (file) => file.type.startsWith("image/"),
+    { message: "ต้องเป็นไฟล์รูปภาพเท่านั้น" }
+  ),
+  description: z.string().min(1, "กรุณาระบุคำอธิบายรูปภาพ (บังคับ)"),
+});
+
 export const projectStep3Schema = z.object({
   // ข้อ 1
   isBmaPlan: z.boolean().default(false),
@@ -88,8 +101,8 @@ export const projectStep3Schema = z.object({
   appArchitecture: z.string().min(5, "กรุณาอธิบายด้านระบบสารสนเทศ"),
   dataOwner: z.string().min(2, "กรุณาระบุหน่วยงานเจ้าของข้อมูล"),
   dataExchangePlan: z.string().min(5, "กรุณาอธิบายแนวทางการแลกเปลี่ยนข้อมูล"),
-  systemDiagramFiles: z.array(z.any()).max(1, "อัปโหลดได้ 1 ไฟล์").optional().default([]),
-  networkDiagramFiles: z.array(z.any()).max(1, "อัปโหลดได้ 1 ไฟล์").optional().default([]),
+  systemDiagramFile: imageWithDescriptionSchema.optional().nullable(),
+  networkDiagramFile: imageWithDescriptionSchema.optional().nullable(),
 }).superRefine((data, ctx) => {
   // ตรวจสอบว่าต้องเลือกอย่างน้อย 1 ข้อ
   if (!data.isBmaPlan && !data.isAgencyPlan && !data.isGovernorPolicy) {
@@ -232,23 +245,24 @@ export const projectStep4Schema = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Step 5: ความพร้อม ผลสัมฤทธิ์ และเอกสารแนบ (Readiness & Attachments)
+// Step 5: ความพร้อม
 // ---------------------------------------------------------------------------
+const ictPersonnelSchema = z.object({
+  position: z.string().min(1, "ระบุตำแหน่ง"),
+  level: z.string().min(1, "ระบุระดับ"),
+  count: z.coerce.number().min(1, "ต้องมากกว่า 0"),
+});
+
 export const projectStep5Schema = z.object({
-  operationDuration: z.coerce.number().min(1, "ระบุระยะเวลาดำเนินงาน (วัน)"),
-  // ตารางบุคลากร ICT ที่มีอยู่ในปัจจุบัน
-  currentIctStaff: z.array(
-    z.object({
-      position: z.string().min(1, "ระบุตำแหน่ง"),
-      level: z.string().min(1, "ระบุระดับ"),
-      count: z.coerce.number().min(1, "ระบุจำนวนคน"),
-    })
-  ).default([]),
-  expectedBenefits: z.string().min(10, "ระบุประโยชน์ที่คาดว่าจะได้รับ"),
-  submitterName: z.string().min(2, "ระบุชื่อผู้เสนอโครงการ"),
-  submitterAgency: z.string().min(2, "ระบุหน่วยงาน"),
-  submitterPhone: z.string().min(9, "ระบุเบอร์โทรศัพท์"),
-  submitterEmail: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  durationDays: z.coerce
+    .number()
+    .min(1, "กรุณาระบุระยะเวลาดำเนินงาน"),
+  ictPersonnel: z.array(ictPersonnelSchema).default([]),
+  otherReadiness: z.string().optional(),
+  expectedBenefits: z.string().min(1, "กรุณาระบุประโยชน์ที่คาดว่าจะได้รับ"),
+  isInRoadmap: z.boolean({ 
+    message: "กรุณาเลือกสถานะ Roadmap" 
+  }),
 });
 
 // ---------------------------------------------------------------------------

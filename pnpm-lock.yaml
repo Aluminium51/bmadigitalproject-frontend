@@ -29,6 +29,9 @@ importers:
       docxtemplater:
         specifier: ^3.68.7
         version: 3.68.7
+      docxtemplater-image-module-free:
+        specifier: ^1.1.1
+        version: 1.1.1
       embla-carousel-autoplay:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
@@ -2072,6 +2075,9 @@ packages:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
 
+  docxtemplater-image-module-free@1.1.1:
+    resolution: {integrity: sha512-aWOzVQN7ggDYjfoy3pTTNrcrZ7/CJrQcI9cT+hmyHE6nRLR67nt5yPFPe9hm9VWbfYIED2fi+3itOnF0TE/RWQ==}
+
   docxtemplater@3.68.7:
     resolution: {integrity: sha512-FwgeAKqY2vc9eVm2V2XGg8bq25B0OQjtSDITGi9zNnvu5GbtR4WvGjM5QNld/ALB6ZbsSuHskBPK9SvPpKhsbA==}
     engines: {node: '>=0.10'}
@@ -3854,6 +3860,11 @@ packages:
   wsl-utils@0.3.1:
     resolution: {integrity: sha512-g/eziiSUNBSsdDJtCLB8bdYEUMj4jR7AGeUo96p/3dTafgjHhpF4RiCFPiRILwjQoDXx5MqkBr4fwWtR3Ky4Wg==}
     engines: {node: '>=20'}
+
+  xmldom@0.1.31:
+    resolution: {integrity: sha512-yS2uJflVQs6n+CyjHoaBmVSqIDevTAWrzMmjG1Gc7h1qQ7uVozNhEPJAwZXWyGQ/Gafo3fCwrcaokezLPupVyQ==}
+    engines: {node: '>=0.1'}
+    deprecated: Deprecated due to CVE-2021-21366 resolved in 0.5.0
 
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
@@ -5897,6 +5908,10 @@ snapshots:
   doctrine@2.1.0:
     dependencies:
       esutils: 2.0.3
+
+  docxtemplater-image-module-free@1.1.1:
+    dependencies:
+      xmldom: 0.1.31
 
   docxtemplater@3.68.7:
     dependencies:
@@ -8015,6 +8030,8 @@ snapshots:
     dependencies:
       is-wsl: 3.1.1
       powershell-utils: 0.1.0
+
+  xmldom@0.1.31: {}
 
   y18n@5.0.8: {}
 

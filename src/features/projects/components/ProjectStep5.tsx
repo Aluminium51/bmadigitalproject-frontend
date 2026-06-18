@@ -1,253 +1,191 @@
+// src/features/projects/components/ProjectStep5.tsx
 "use client";
 
 import { useState } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { Plus, Trash2, FileText, Download } from "lucide-react";
-
 import { ProjectStep5Values } from "../types";
-import { useProjectFormStore } from "../stores/useProjectFormStore";
-import { generateProjectDocx } from "@/lib/documentGenerator"; // 👈 ฟังก์ชันที่เราวางแผนไว้ก่อนหน้านี้
-
-// shadcn/ui components
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Trash2, Plus, AlertCircle, FileDown, Loader2 } from "lucide-react";
+import { generateProjectDocx } from "@/lib/documentGenerator";
 
 export const ProjectStep5 = () => {
-  const {
-    register,
-    control,
-    getValues,
-    formState: { errors },
-  } = useFormContext<ProjectStep5Values>();
+  const { register, control, setValue, watch, getValues, formState: { errors } } = useFormContext<ProjectStep5Values>();
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields: personnelFields, append: appendPersonnel, remove: removePersonnel } = useFieldArray({
     control,
-    name: "currentIctStaff",
+    name: "ictPersonnel",
   });
 
-  // 🟢 ดึงข้อมูลจาก Store สำหรับเอาไปสร้างเอกสาร
-  const formDataStore = useProjectFormStore((state) => state.formData);
+  const watchedDurationDays = watch("durationDays");
+  const isOverLimit = watchedDurationDays > 270;
+
+  // 🟢 State สำหรับคุมปุ่ม Loading ตอนกด Generate
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // ฟังก์ชันจัดการการโหลดไฟล์ Word
-  const handleDownloadWord = async () => {
+  // 🟢 ฟังก์ชันจัดการการกดปุ่ม Generate Document
+  const handleGenerateDocument = async () => {
     setIsGenerating(true);
     try {
-      // 💡 นำข้อมูลที่ผู้ใช้เพิ่งกรอกใน Step นี้ (แต่ยังไม่ได้กด Next/Save) มารวมกับข้อมูลใน Store
-      const currentStepValues = getValues();
-      const mergedData = { ...formDataStore, ...currentStepValues };
+      // ดึงข้อมูลทั้งหมดจาก Form ปัจจุบัน (รวมทุก Step)
+      const allFormData = getValues() as any; 
       
-      await generateProjectDocx(mergedData as any);
+      // เรียกฟังก์ชันสร้างไฟล์ Docx ที่เราทำไว้
+      const result = await generateProjectDocx(allFormData);
+      
+      if (!result.success) {
+        alert("เกิดข้อผิดพลาดในการสร้างเอกสาร: " + result.error);
+      }
     } catch (error) {
       console.error(error);
-      alert("เกิดข้อผิดพลาดในการสร้างเอกสาร");
+      alert("เกิดข้อผิดพลาดที่ไม่คาดคิด");
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full min-w-0 pb-10">
       
-      {/* 🟢 Header พร้อมปุ่มดาวน์โหลด Word */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border pb-4 gap-4">
-        <h2 className="text-2xl font-bold text-foreground">
-          5. ความพร้อมและข้อมูลผู้เสนอ
-        </h2>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleDownloadWord}
-          disabled={isGenerating}
-          className="gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800"
-        >
-          {isGenerating ? (
-            "กำลังสร้างเอกสาร..."
-          ) : (
-            <>
-              <FileText className="w-4 h-4" />
-              ดาวน์โหลดแบบร่าง (Word)
-              <Download className="w-4 h-4" />
-            </>
-          )}
-        </Button>
+      <div>
+        <h2 className="text-2xl font-bold text-foreground border-b border-border pb-2">5. ความพร้อมและประโยชน์ที่คาดว่าจะได้รับ</h2>
       </div>
 
-      {/* 🟢 ระยะเวลาดำเนินงาน */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="operationDuration">
-            ระยะเวลาดำเนินงาน (วัน) <span className="text-status-orange">*</span>
-          </Label>
-          <Input
-            id="operationDuration"
-            type="number"
-            {...register("operationDuration", { valueAsNumber: true })}
-            placeholder="เช่น 210"
-          />
-          {errors.operationDuration && (
-            <p className="text-sm text-status-orange font-medium">
-              {errors.operationDuration.message}
-            </p>
-          )}
+      {/* --- 1. ระยะเวลาดำเนินงาน (ปรับปรุงใหม่กรอกเป็นวัน) --- */}
+      <div className="bg-surface p-6 rounded-xl border border-border shadow-sm">
+        <Label className="text-lg font-bold text-foreground block mb-2">1. ระยะเวลาดำเนินงาน <span className="text-status-orange">*</span></Label>
+        <p className="text-sm text-muted-foreground mb-4">
+          (โครงการปีเดียว งบประมาณรายจ่ายประจำปี หรืองบกลาง ระยะเวลาไม่เกิน 270 วัน)
+        </p>
+        
+        <div className="flex items-center gap-3">
+          <div className="w-32">
+            <Input 
+              type="number" 
+              {...register("durationDays", { valueAsNumber: true })} 
+              className={`bg-surface text-center ${errors.durationDays ? 'border-status-orange' : ''}`}
+              placeholder="เช่น 180" 
+            />
+          </div>
+          <span className="text-md font-medium text-foreground">วัน</span>
         </div>
-      </div>
-
-      {/* 🟢 ตารางความพร้อมบุคลากร ICT */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <Label>ความพร้อมบุคลากร ICT ที่มีอยู่ในปัจจุบัน</Label>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() =>
-              append({
-                position: "นักวิชาการคอมพิวเตอร์",
-                level: "ชำนาญการ",
-                count: 1,
-              })
-            }
-            className="text-primary gap-1 h-8"
-          >
-            <Plus className="w-4 h-4" />
-            เพิ่มบุคลากร
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {fields.map((field, index) => (
-            <div
-              key={field.id}
-              className="flex flex-col sm:flex-row gap-3 p-3 border border-border rounded-lg bg-surface-container-low items-start sm:items-center"
-            >
-              <Input
-                {...register(`currentIctStaff.${index}.position`)}
-                placeholder="ตำแหน่ง (เช่น นักวิชาการคอมพิวเตอร์)"
-                className="flex-1"
-              />
-              <Input
-                {...register(`currentIctStaff.${index}.level`)}
-                placeholder="ระดับ (เช่น ชำนาญการ)"
-                className="w-full sm:w-1/3"
-              />
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <Input
-                  type="number"
-                  {...register(`currentIctStaff.${index}.count`, {
-                    valueAsNumber: true,
-                  })}
-                  placeholder="จำนวน"
-                  className="w-24 text-center"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => remove(index)}
-                  className="text-status-orange hover:text-status-orange hover:bg-red-50 shrink-0"
-                  aria-label="ลบบุคลากร"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-          {fields.length === 0 && (
-            <div className="p-6 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
-              ยังไม่มีข้อมูลบุคลากร กดปุ่ม + เพิ่มบุคลากร เพื่อเพิ่มข้อมูล
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 🟢 ประโยชน์ที่คาดว่าจะได้รับ */}
-      <div className="space-y-2">
-        <Label htmlFor="expectedBenefits">
-          ประโยชน์ที่คาดว่าจะได้รับ <span className="text-status-orange">*</span>
-        </Label>
-        <Textarea
-          id="expectedBenefits"
-          {...register("expectedBenefits")}
-          rows={4}
-          placeholder="อธิบายประโยชน์ที่จะเกิดขึ้นกับ กทม. และประชาชน"
-          className="resize-none"
-        />
-        {errors.expectedBenefits && (
-          <p className="text-sm text-status-orange font-medium">
-            {errors.expectedBenefits.message}
-          </p>
+        {errors.durationDays && <p className="text-status-orange text-sm mt-2">{errors.durationDays.message}</p>}
+        {isOverLimit && (
+          <div className="flex items-center gap-2 text-yellow-700 mt-4 text-sm bg-yellow-50 p-3 rounded-md border border-yellow-200 animate-in fade-in duration-300">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span><strong>หมายเหตุ:</strong> ระยะเวลาที่ระบุเกินกว่า 270 วัน โปรดตรวจสอบความถูกต้องของประเภทโครงการอีกครั้ง</span>
+          </div>
         )}
       </div>
 
-      {/* 🟢 ข้อมูลผู้เสนอโครงการ */}
-      <div className="bg-surface-container-low p-6 rounded-lg border border-border mt-4 space-y-6">
-        <div>
-          <h3 className="text-lg font-bold text-foreground">
-            ลงชื่อผู้เสนอโครงการ
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            (หัวหน้าส่วนราชการ หรือผู้ที่ได้รับมอบหมาย)
-          </p>
+      {/* --- 2. ความพร้อมของหน่วยงาน --- */}
+      <div className="bg-surface p-6 rounded-xl border border-border shadow-sm">
+        <Label className="text-lg font-bold text-foreground block mb-4">2. ความพร้อมของหน่วยงาน</Label>
+
+        {/* 2.1 ตารางบุคลากร ICT */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-3">
+            <Label className="text-md font-medium text-foreground">บุคลากร ICT ที่มีอยู่ในปัจจุบัน</Label>
+            <Button type="button" onClick={() => appendPersonnel({ position: "", level: "", count: "" as any })} size="sm" className="rounded-full gap-2">
+              <Plus className="w-4 h-4"/> เพิ่มบุคลากร
+            </Button>
+          </div>
+          
+          <div className="overflow-x-auto border border-border rounded-md">
+            <table className="w-full text-left min-w-[600px] text-sm">
+              <thead className="bg-surface-container-low text-slate-gray">
+                <tr>
+                  <th className="p-3 w-16 text-center">ลำดับ</th>
+                  <th className="p-3 w-[40%]">ตำแหน่ง</th>
+                  <th className="p-3 w-[30%]">ระดับ</th>
+                  <th className="p-3 w-32 text-center">จำนวน (คน)</th>
+                  <th className="p-3 w-16 text-center">ลบ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {personnelFields.length === 0 && (
+                  <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">ไม่มีข้อมูลบุคลากร</td></tr>
+                )}
+                {personnelFields.map((field, index) => {
+                  const rowErrors = errors?.ictPersonnel?.[index] || {} as any;
+                  return (
+                    <tr key={field.id} className="border-t border-surface-variant">
+                      <td className="p-2 text-center text-muted-foreground">{index + 1}</td>
+                      <td className="p-2"><Input {...register(`ictPersonnel.${index}.position`)} className={`bg-surface ${rowErrors.position ? 'border-status-orange' : ''}`} placeholder="เช่น นักวิชาการคอมพิวเตอร์" /></td>
+                      <td className="p-2"><Input {...register(`ictPersonnel.${index}.level`)} className={`bg-surface ${rowErrors.level ? 'border-status-orange' : ''}`} placeholder="เช่น ปฏิบัติการ" /></td>
+                      <td className="p-2"><Input type="number" {...register(`ictPersonnel.${index}.count`, { valueAsNumber: true })} className={`bg-surface text-center ${rowErrors.count ? 'border-status-orange' : ''}`} /></td>
+                      <td className="p-2 text-center"><Button type="button" onClick={() => removePersonnel(index)} variant="ghost" size="icon" className="text-status-orange hover:bg-red-100 hover:text-red-600 rounded-full"><Trash2 className="w-4 h-4" /></Button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="submitterName">
-              ชื่อ-นามสกุล <span className="text-status-orange">*</span>
-            </Label>
-            <Input id="submitterName" {...register("submitterName")} />
-            {errors.submitterName && (
-              <p className="text-sm text-status-orange font-medium">
-                {errors.submitterName.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="submitterAgency">
-              หน่วยงาน <span className="text-status-orange">*</span>
-            </Label>
-            <Input id="submitterAgency" {...register("submitterAgency")} />
-            {errors.submitterAgency && (
-              <p className="text-sm text-status-orange font-medium">
-                {errors.submitterAgency.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="submitterPhone">
-              โทรศัพท์ติดต่อ <span className="text-status-orange">*</span>
-            </Label>
-            <Input
-              id="submitterPhone"
-              type="tel"
-              {...register("submitterPhone")}
-            />
-            {errors.submitterPhone && (
-              <p className="text-sm text-status-orange font-medium">
-                {errors.submitterPhone.message}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="submitterEmail">
-              อีเมล (e-Mail) <span className="text-status-orange">*</span>
-            </Label>
-            <Input
-              id="submitterEmail"
-              type="email"
-              {...register("submitterEmail")}
-            />
-            {errors.submitterEmail && (
-              <p className="text-sm text-status-orange font-medium">
-                {errors.submitterEmail.message}
-              </p>
-            )}
-          </div>
+        {/* 2.2 ประเด็นความพร้อมด้านอื่นๆ */}
+        <div>
+          <Label className="text-md font-medium text-foreground block mb-2">ประเด็นความพร้อมด้านอื่น ๆ (ถ้ามี)</Label>
+          <Textarea 
+            {...register("otherReadiness")} 
+            placeholder="อธิบายประเด็นความพร้อมด้านอื่นๆ..." 
+            className="min-h-[150px] bg-surface resize-y" 
+          />
         </div>
       </div>
+
+      {/* --- 3. ประโยชน์ที่คาดว่าจะได้รับ --- */}
+      <div className="bg-surface p-6 rounded-xl border border-border shadow-sm">
+        <Label className="text-lg font-bold text-foreground block mb-2">3. ประโยชน์ที่คาดว่าจะได้รับ <span className="text-status-orange">*</span></Label>
+        <Textarea 
+          {...register("expectedBenefits")} 
+          placeholder="อธิบายประโยชน์ที่คาดว่าจะได้รับจากโครงการนี้อย่างชัดเจน..." 
+          className={`min-h-[200px] bg-surface resize-y ${errors.expectedBenefits ? 'border-status-orange' : ''}`} 
+        />
+        {errors.expectedBenefits && <p className="text-status-orange text-sm mt-2">{errors.expectedBenefits.message}</p>}
+      </div>
+
+      {/* --- 4. โครงการนี้อยู่ใน Roadmap ของหน่วยงานหรือไม่ --- */}
+      <div className="bg-surface p-6 rounded-xl border border-border shadow-sm mb-4">
+        <Label className="text-lg font-bold text-foreground block mb-4">4. โครงการนี้อยู่ใน Roadmap ของหน่วยงานหรือไม่ <span className="text-status-orange">*</span></Label>
+        <RadioGroup 
+          value={watch("isInRoadmap") !== undefined ? String(watch("isInRoadmap")) : undefined} 
+          onValueChange={(val) => setValue("isInRoadmap", val === "true", { shouldValidate: true })}
+          className="flex flex-col sm:flex-row gap-8 pl-2"
+        >
+          <div className="flex items-center space-x-3">
+            <RadioGroupItem value="true" id="roadmap-yes" className="w-5 h-5" />
+            <Label htmlFor="roadmap-yes" className="text-md cursor-pointer">อยู่</Label>
+          </div>
+          <div className="flex items-center space-x-3">
+            <RadioGroupItem value="false" id="roadmap-no" className="w-5 h-5" />
+            <Label htmlFor="roadmap-no" className="text-md cursor-pointer">ไม่อยู่</Label>
+          </div>
+        </RadioGroup>
+        {errors.isInRoadmap && <p className="text-status-orange text-sm mt-3">{errors.isInRoadmap.message}</p>}
+      </div>
+
+      {/* 🟢 --- ส่วนเพิ่มปุ่ม Generate Document --- */}
+      <div className="flex justify-end mt-4 pt-6 border-t border-border">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={handleGenerateDocument}
+          disabled={isGenerating}
+          className="gap-2 bg-primary-container/20 hover:bg-primary-container/40 text-primary-dark border-primary/30"
+        >
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <FileDown className="w-4 h-4" />
+          )}
+          {isGenerating ? "กำลังสร้างเอกสาร..." : "สร้างแบบเสนอโครงการ (Word)"}
+        </Button>
+      </div>
+
     </div>
   );
 };
