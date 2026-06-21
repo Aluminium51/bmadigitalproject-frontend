@@ -41,7 +41,7 @@ const mockProjectData = {
     { itemName: "เครื่องพิมพ์", ageYears: 6, quantity: 5, user: "เจ้าหน้าที่", location: "สำนักงาน", remark: "ใช้บ่อย" }
   ],
 
-  // --- Step 3 (🟢 อัปเดตโครงสร้างใหม่ที่นี่) ---
+  // --- Step 3 ---
   isBmaPlan: false,
   isAgencyPlan: true,
   agencyStrategy: "การบริหารจัดการเมือง",
@@ -59,10 +59,25 @@ const mockProjectData = {
 
   // --- Step 4 ---
   hardwareCosts: [
-    { itemName: "เครื่องคอมพิวเตอร์แม่ข่าย (Server)", quantity: 2, unitPrice: 500000, reference: "เกณฑ์ ICT" }
+    { 
+      itemName: "เครื่องคอมพิวเตอร์แม่ข่าย (Server)", 
+      quantity: 2, 
+      unitPrice: 500000, 
+      referenceType: "MARKET",
+      marketCount: 3,
+      marketCompany: "บริษัท ไอที โซลูชั่น จำกัด"
+    }
   ],
   softwareCosts: [
-    { itemName: "ระบบปฏิบัติการ Windows Server", quantity: 2, unitPrice: 50000, reference: "ราคาตลาด" }
+    { 
+      itemName: "ระบบปฏิบัติการ Windows Server", 
+      quantity: 2, 
+      unitPrice: 50000, 
+      referenceType: "MDES",
+      mdesMonth: "มีนาคม",
+      mdesYear: "2567",
+      mdesItemNo: "4.1.2"
+    }
   ],
   personnelCosts: [
     { roleLevel: "บุคลากรหลัก", position: "System Analyst", baseSalary: 50000, multiplier: 1.5, personCount: 2, durationMonths: 12 }
@@ -83,35 +98,68 @@ const mockProjectData = {
   submitterEmail: "test@bangkok.go.th",
 };
 
-// 🟢 อัปเดต Custom logic สำหรับแปลงข้อมูลก่อนหยอดลงใน Word
+// Custom logic สำหรับแปลงข้อมูลก่อนหยอดลงใน Word
+// 🟢 เพิ่มจุดที่ 1: ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word
+const mapCostItemsForWord = (items: any[]) => {
+  if (!items || items.length === 0) return [];
+  return items.map((item, index) => ({
+    ...item,
+    index: index + 1, // สามารถนำ {index} ไปใช้เป็นเลข ลำดับ (๑, ๒, ๓) ในตารางได้ด้วย
+    
+    // แปลงค่า Enum ที่มาจาก Zod ให้เป็น Checkbox ☑ / ☐
+    chkMdes: item.referenceType === "MDES" ? "☑" : "☐",
+    chkMarket: item.referenceType === "MARKET" ? "☑" : "☐",
+    chkPrev: item.referenceType === "PREVIOUS" ? "☑" : "☐",
+    chkOther: item.referenceType === "OTHER" ? "☑" : "☐",
+    
+    // เติมจุดไข่ปลาป้องกันค่า undefined โผล่ใน Word กรณีฟิลด์นั้นไม่ได้ถูกกรอก
+    mdesMonth: item.mdesMonth || "..........",
+    mdesYear: item.mdesYear || "........",
+    mdesItemNo: item.mdesItemNo || "........",
+    marketCount: item.marketCount || "........",
+    marketCompany: item.marketCompany || "................................",
+    prevProject: item.prevProject || "................................",
+    prevYear: item.prevYear || "........",
+    otherDetail: item.otherDetail || "................................",
+    
+    // คำนวณราคารวมของแถวนั้นๆ ให้ Word นำไปแสดงผลได้ทันที {rowTotal}
+    rowTotal: (item.quantity * item.unitPrice).toLocaleString(),
+    unitPriceStr: item.unitPrice.toLocaleString(),
+  }));
+};
 const currentType = mockProjectData.projectType;
 const templateData = {
   ...mockProjectData,
   
-  // Step 2: สร้างตัวแปรใหม่ 3 ตัว สำหรับช่อง Checkbox
+// Step 2: Checkbox ประเภทโครงการ
   chkNew: currentType === "จัดหาใหม่" ? "☑" : "☐",
   chkReplace: currentType === "ทดแทนระบบเดิม" ? "☑" : "☐",
   chkPhase: currentType.includes("ต่อเนื่อง") ? "☑" : "☐", 
 
-  // Step 2 (ต่อ): จัดการ table ของรายการที่เกี่ยวข้อง
+  // Step 2 (ต่อ): เช็กข้อมูล Array สำหรับเปิด/ปิดตารางข้อมูลเดิม
   hasManpower: mockProjectData.manpower && mockProjectData.manpower.length > 0,
   hasEquipment: mockProjectData.existingEquipment && mockProjectData.existingEquipment.length > 0,
 
-  // Step 3: แปลง Boolean เป็นติ๊กถูก (☑) หรือเว้นว่าง (☐)
+  // Step 3: Checkbox ยุทธศาสตร์และความสอดคล้อง
   chkBma: mockProjectData.isBmaPlan ? "☑" : "☐",
   chkAgency: mockProjectData.isAgencyPlan ? "☑" : "☐",
   chkGov: mockProjectData.isGovernorPolicy ? "☑" : "☐",
 
-  // Step 3 (ต่อ): จัดการ table ของโครงการที่เกี่ยวข้อง (ถ้าไม่มี ให้แสดงข้อความ "ไม่มีโครงการที่เกี่ยวข้อง")
-  hasRelatedProjects: mockProjectData.relatedProjects && mockProjectData.relatedProjects.length > 0,
-  
-  // Step 3: ถ้าไม่ได้ติ๊ก ให้แสดงจุดไข่ปลา หรือคำว่า "ไม่มี"
+  // Step 3 (ต่อ): ป้องกันค่าว่าง
   agencyStrategy: mockProjectData.isAgencyPlan ? mockProjectData.agencyStrategy : "..........................",
   agencyIssue: mockProjectData.isAgencyPlan ? mockProjectData.agencyIssue : "..........................",
   agencyKpi: mockProjectData.isAgencyPlan ? mockProjectData.agencyKpi : "..........................",
-  
   governorPolicyCode: mockProjectData.isGovernorPolicy ? mockProjectData.governorPolicyCode : "..........................",
   governorPolicyName: mockProjectData.isGovernorPolicy ? mockProjectData.governorPolicyName : "..........................",
+
+  hasRelatedProjects: mockProjectData.relatedProjects && mockProjectData.relatedProjects.length > 0,
+
+  // Step 4 : Boolean Flag เพื่อซ่อน/แสดงตารางราคา
+  hasHardwareCosts: mockProjectData.hardwareCosts && mockProjectData.hardwareCosts.length > 0,
+  hasSoftwareCosts: mockProjectData.softwareCosts && mockProjectData.softwareCosts.length > 0,
+  
+  hardwareCosts: mapCostItemsForWord(mockProjectData.hardwareCosts),
+  softwareCosts: mapCostItemsForWord(mockProjectData.softwareCosts),
 };
 
 export default function TestDocPage() {

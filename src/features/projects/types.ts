@@ -140,19 +140,90 @@ export const projectStep3Schema = z.object({
 // ---------------------------------------------------------------------------
 // Step 4: แผนงานและรายละเอียดงบประมาณ (Budget Breakdown)
 // ---------------------------------------------------------------------------
-const hardwareCostSchema = z.object({
+export const hardwareCostSchema = z.object({
   itemName: z.string().min(1, "กรุณาระบุรายการ"),
-  // แปลงค่าว่างเป็น 0 อัตโนมัติ แล้วดักด้วย .min(1)
   quantity: z.coerce.number().min(1, "กรุณาระบุจำนวน"),
   unitPrice: z.coerce.number().min(0, "ห้ามติดลบ"),
-  reference: z.string().min(1, "กรุณาเลือกที่มา"),
+  
+// ตัวแปรหลักสำหรับเก็บว่า User เลือกตัวเลือกไหน
+  referenceType: z.enum(["MDES", "MARKET", "PREVIOUS", "OTHER"], {
+    message: "กรุณาเลือกที่มาของราคากลาง 1 รายการ",
+  }),
+
+  // ฟิลด์ย่อยทั้งหมด (ตั้งเป็น optional ไว้ก่อน เพราะจะถูกดักด้วย superRefine)
+  mdesMonth: z.string().optional(),
+  mdesYear: z.string().optional(),
+  mdesItemNo: z.string().optional(),
+  
+  marketCount: z.coerce.number().optional(),
+  marketCompany: z.string().optional(),
+  
+  prevProject: z.string().optional(),
+  prevYear: z.string().optional(),
+  
+  otherDetail: z.string().optional(),
+
+}).superRefine((data, ctx) => {
+  // ดักจับ Validation ตามตัวเลือกที่ถูกเลือก
+  if (data.referenceType === "MDES") {
+    if (!data.mdesMonth) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุเดือน", path: ["mdesMonth"] });
+    if (!data.mdesYear) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุ พ.ศ.", path: ["mdesYear"] });
+    if (!data.mdesItemNo) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุรายการที่", path: ["mdesItemNo"] });
+  }
+  if (data.referenceType === "MARKET") {
+    if (!data.marketCount || data.marketCount < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุจำนวนราย", path: ["marketCount"] });
+    if (!data.marketCompany) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุชื่อบริษัท", path: ["marketCompany"] });
+  }
+  if (data.referenceType === "PREVIOUS") {
+    if (!data.prevProject) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุชื่อโครงการ", path: ["prevProject"] });
+    if (!data.prevYear) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุ พ.ศ.", path: ["prevYear"] });
+  }
+  if (data.referenceType === "OTHER") {
+    if (!data.otherDetail) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุรายละเอียด", path: ["otherDetail"] });
+  }
 });
 
-const softwareCostSchema = z.object({
-  itemName: z.string().min(1, "กรุณาระบุชื่อซอฟต์แวร์"),
+export const softwareCostSchema = z.object({
+  itemName: z.string().min(1, "กรุณาระบุรายการ"),
   quantity: z.coerce.number().min(1, "กรุณาระบุจำนวน"),
   unitPrice: z.coerce.number().min(0, "ห้ามติดลบ"),
-  reference: z.string().min(1, "กรุณาเลือกที่มา"),
+
+  // ตัวแปรหลักสำหรับเก็บว่า User เลือกตัวเลือกไหน
+  referenceType: z.enum(["MDES", "MARKET", "PREVIOUS", "OTHER"], {
+    message: "กรุณาเลือกที่มาของราคากลาง 1 รายการ",
+  }),
+
+  // ฟิลด์ย่อยทั้งหมด (ตั้งเป็น optional ไว้ก่อน เพราะจะถูกดักด้วย superRefine)
+  mdesMonth: z.string().optional(),
+  mdesYear: z.string().optional(),
+  mdesItemNo: z.string().optional(),
+  
+  marketCount: z.coerce.number().optional(),
+  marketCompany: z.string().optional(),
+  
+  prevProject: z.string().optional(),
+  prevYear: z.string().optional(),
+  
+  otherDetail: z.string().optional(),
+
+}).superRefine((data, ctx) => {
+  // ดักจับ Validation ตามตัวเลือกที่ถูกเลือก
+  if (data.referenceType === "MDES") {
+    if (!data.mdesMonth) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุเดือน", path: ["mdesMonth"] });
+    if (!data.mdesYear) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุ พ.ศ.", path: ["mdesYear"] });
+    if (!data.mdesItemNo) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุรายการที่", path: ["mdesItemNo"] });
+  }
+  if (data.referenceType === "MARKET") {
+    if (!data.marketCount || data.marketCount < 1) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุจำนวนราย", path: ["marketCount"] });
+    if (!data.marketCompany) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุชื่อบริษัท", path: ["marketCompany"] });
+  }
+  if (data.referenceType === "PREVIOUS") {
+    if (!data.prevProject) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุชื่อโครงการ", path: ["prevProject"] });
+    if (!data.prevYear) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุ พ.ศ.", path: ["prevYear"] });
+  }
+  if (data.referenceType === "OTHER") {
+    if (!data.otherDetail) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "ระบุรายละเอียด", path: ["otherDetail"] });
+  }
 });
 
 // 1. Schema สำหรับ บุคลากรหลัก และ บุคลากรผู้ช่วย (บังคับสาขาและตัวคูณ)
