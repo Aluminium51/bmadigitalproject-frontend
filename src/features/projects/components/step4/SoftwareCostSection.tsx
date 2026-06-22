@@ -1,7 +1,5 @@
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Trash2, Plus, CornerDownRight } from "lucide-react";
-
-// 🟢 นำเข้า shadcn/ui components (ปรับ path ตามโปรเจกต์ของคุณ)
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -43,7 +41,7 @@ export function SoftwareCostSection() {
         </Button>
       </div>
 
-      {/* 🟢 Table-Grid Layout */}
+      {/* Table-Grid Layout */}
       <div className="border rounded-md bg-card overflow-hidden shadow-sm">
         
         {/* หัวตาราง (ซ่อนในจอมือถือ) */}
@@ -72,8 +70,8 @@ export function SoftwareCostSection() {
                 
                 {/* แถวหลัก: ข้อมูลพื้นฐาน */}
                 <div className="flex flex-col md:flex-row items-start gap-3">
-                  
-                  {/* 📍 เลข Index */}
+                
+                  {/* เลข Index */}
                   <div className="hidden md:flex w-8 h-9 items-center justify-center text-sm font-medium text-muted-foreground">
                     {index + 1}.
                   </div>
@@ -146,7 +144,7 @@ export function SoftwareCostSection() {
                   </div>
                 </div>
 
-                {/* 🟢 Conditional UI: ซ้อนอยู่ด้านล่างแถวหลัก */}
+                {/* Conditional UI: ซ้อนอยู่ด้านล่างแถวหลัก */}
                 <div className="mt-3 flex gap-2">
                   {/* เว้นพื้นที่ให้ตรงกับคอลัมน์ Index และชี้ลูกศร */}
                   <div className="hidden md:flex w-8 justify-center pt-2 text-muted-foreground/40">

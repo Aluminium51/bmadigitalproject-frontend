@@ -7,8 +7,9 @@ import { RichTextarea } from "@/components/custom/RichTextarea";
 import { Label } from "@/components/ui/label";
 import { EAStrategySection } from "./EAStrategySection";
 import { CloudUpload, FileImage, X, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// --- 🟢 Component สำหรับอัปโหลด 1 ไฟล์รูปภาพ + คำอธิบาย ---
+// --- Component สำหรับอัปโหลด 1 ไฟล์รูปภาพ + คำอธิบาย ---
 const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: any) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +50,7 @@ const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: a
 
     const file = Array.from(files)[0];
 
-    // 🟢 ตรวจสอบว่าเป็นไฟล์รูปภาพเท่านั้น (เผื่อกรณีลากไฟล์จากนอกเบราว์เซอร์มาวาง)
+    // ตรวจสอบว่าเป็นไฟล์รูปภาพเท่านั้น (เผื่อกรณีลากไฟล์จากนอกเบราว์เซอร์มาวาง)
     if (!file.type.startsWith("image/")) {
       alert("รองรับเฉพาะไฟล์รูปภาพเท่านั้น (เช่น PNG, JPG)");
       return;
@@ -61,7 +62,7 @@ const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: a
       description: "",
     };
 
-    // 🟢 เซ็ตค่าเป็น Object ไม่ใช่ Array แล้ว
+    // เซ็ตค่าเป็น Object ไม่ใช่ Array แล้ว
     setValue(name, mappedFile, { shouldValidate: true });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -75,7 +76,7 @@ const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: a
   };
 
   const removeFile = () => {
-    // 🟢 เคลียร์ค่าด้วย null แทน Array ว่าง
+    // เคลียร์ค่าด้วย null แทน Array ว่าง
     setValue(name, null, { shouldValidate: true });
   };
 
@@ -112,7 +113,7 @@ const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: a
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          {/* 🟢 บังคับให้หน้าต่างเลือกไฟล์แสดงเฉพาะรูปภาพ */}
+          {/* บังคับให้หน้าต่างเลือกไฟล์แสดงเฉพาะรูปภาพ */}
           <input 
             type="file" accept="image/png, image/jpeg, image/jpg" className="hidden" ref={fileInputRef}
             onChange={(e) => e.target.files && handleFilesAdded(e.target.files)}
@@ -159,7 +160,6 @@ const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: a
 
 // --- Component หลัก ---
 export const ProjectStep3 = () => {
-  // ✅ ลบ watch("projectImage") ทิ้งไปแล้ว เพราะไม่ได้ใช้ในหน้านี้
   const { register, watch, setValue, formState: { errors } } = useFormContext<ProjectStep3Values>();
 
   return (
@@ -175,15 +175,30 @@ export const ProjectStep3 = () => {
         </div>
         <div className="space-y-2">
           <Label>สถาปัตยกรรมด้านระบบสารสนเทศ (Application Architecture) <span className="text-status-orange">*</span></Label>
-          <RichTextarea {...register("appArchitecture")} placeholder="อธิบายการทำงานร่วมกันโดยการแลกเปลี่ยนข้อมูล (กด Tab เพื่อย่อหน้า)" rows={4} className="resize-none" />
+          <RichTextarea {...register("appArchitecture")} placeholder="อธิบายการทำงานร่วมกันโดยการแลกเปลี่ยนข้อมูล (กด Tab เพื่อย่อหน้า)" rows={4} className={cn("resize-none", errors.appArchitecture && "border-status-orange focus-visible:ring-status-orange")}  />
+          {errors.appArchitecture && (
+            <p className="text-sm text-status-orange flex items-center gap-1 mt-1">
+              <AlertCircle className="w-4 h-4" /> {errors.appArchitecture.message}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>หน่วยงานเจ้าของข้อมูล <span className="text-status-orange">*</span></Label>
-          <Input {...register("dataOwner")} placeholder="ระบุชื่อหน่วยงาน" />
+          <Input {...register("dataOwner")} placeholder="ระบุชื่อหน่วยงาน" className={cn(errors.dataOwner && "border-status-orange focus-visible:ring-status-orange")} />
+            {errors.dataOwner && (
+            <p className="text-sm text-status-orange flex items-center gap-1 mt-1">
+              <AlertCircle className="w-4 h-4" /> {errors.dataOwner.message}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>แนวทางการแลกเปลี่ยน/เชื่อมโยงข้อมูล <span className="text-status-orange">*</span></Label>
-          <RichTextarea {...register("dataExchangePlan")} placeholder="ระบุแนวทางการเชื่อมโยงข้อมูล (กด Tab เพื่อย่อหน้า)" rows={4} className="resize-none" />
+          <RichTextarea {...register("dataExchangePlan")} placeholder="ระบุแนวทางการเชื่อมโยงข้อมูล (กด Tab เพื่อย่อหน้า)" rows={4} className={cn("resize-none", errors.dataExchangePlan && "border-status-orange focus-visible:ring-status-orange")} />
+          {errors.dataExchangePlan && (
+            <p className="text-sm text-status-orange flex items-center gap-1 mt-1">
+              <AlertCircle className="w-4 h-4" /> {errors.dataExchangePlan.message} 
+            </p>
+          )}
         </div>
       </div>
 

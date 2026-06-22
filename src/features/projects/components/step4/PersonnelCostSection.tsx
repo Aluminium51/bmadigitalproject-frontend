@@ -74,7 +74,7 @@ const PersonnelTable = ({
       <div className="border rounded-md bg-white shadow-sm overflow-hidden">
         {/* ให้ความกว้างขั้นต่ำ (min-w) เพื่อดันให้เกิด Scrollbar แนวนอน ป้องกัน Input เบียดกันในจอเล็ก */}
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-[12px] min-w-[900px]">
+          <table className="w-full text-[12px] min-w-225">
             
             {/* --- 2.2.1 หัวตาราง (Thead) --- */}
             <thead>
@@ -113,7 +113,7 @@ const PersonnelTable = ({
                 </tr>
               )}
               
-              {/* 📍 ใส่ Type Record ให้ field เพื่อปิด Error: Property 'position' does not exist */}
+              {/* ใส่ Type Record ให้ field เพื่อปิด Error: Property 'position' does not exist */}
               {fields.map((field: Record<"id", string> & Partial<PersonnelCostItem>, index) => {
                 const row = watchedRows[index] || {} as PersonnelCostItem;
                 const rowErr = tableErrors[index] || {};

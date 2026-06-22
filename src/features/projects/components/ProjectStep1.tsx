@@ -1,8 +1,9 @@
-// ProjectStep1.tsx
+// src/features/projects/components/ProjectStep1.tsx
 import { useEffect } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Plus, Trash2, AlertCircle } from "lucide-react";
 import { ProjectStep1Values } from "../types";
+import { cn } from "@/lib/utils"; // 📍 นำเข้า cn
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,9 @@ export const ProjectStep1 = () => {
     setValue("totalBudget", calculatedTotal, { shouldValidate: true });
   }, [calculatedTotal, setValue]);
 
+  // ตัวแปรช่วยดึง Error ของตาราง (ป้องกัน TypeScript บ่นตอน map)
+  const budgetErrors = (errors.budgetsByYear as any) || [];
+
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full min-w-0">
       
@@ -44,10 +48,13 @@ export const ProjectStep1 = () => {
             id="projectName"
             {...register("projectName")} 
             placeholder="ระบุชื่อโครงการ"
-            className="mt-1.5"
-            error={!!errors.projectName}
+            className={cn("mt-1.5", errors.projectName && "border-status-orange focus-visible:ring-status-orange")}
           />
-          {errors.projectName && <p className="mt-1 text-sm text-status-orange">{errors.projectName.message}</p>}
+          {errors.projectName && (
+            <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" /> {errors.projectName.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -62,9 +69,13 @@ export const ProjectStep1 = () => {
             <Input 
               id="agencyName"
               {...register("agencyName")} 
-              className="mt-1.5"
+              className={cn("mt-1.5", errors.agencyName && "border-status-orange focus-visible:ring-status-orange")}
             />
-            {errors.agencyName && <p className="mt-1 text-sm text-status-orange">{errors.agencyName.message}</p>}
+            {errors.agencyName && (
+              <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" /> {errors.agencyName.message}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="headOfAgency" className="text-sm font-medium text-foreground">
@@ -73,10 +84,14 @@ export const ProjectStep1 = () => {
             <Input 
               id="headOfAgency"
               {...register("headOfAgency")} 
-              className="mt-1.5"
+              className={cn("mt-1.5", errors.headOfAgency && "border-status-orange focus-visible:ring-status-orange")}
               placeholder="ex. นายสมชาย ใจดี"
             />
-            {errors.headOfAgency && <p className="mt-1 text-sm text-status-orange">{errors.headOfAgency.message}</p>}
+            {errors.headOfAgency && (
+              <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" /> {errors.headOfAgency.message}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="dcioName" className="text-sm font-medium text-foreground">
@@ -85,10 +100,14 @@ export const ProjectStep1 = () => {
             <Input 
               id="dcioName"
               {...register("dcioName")} 
-              className="mt-1.5"
+              className={cn("mt-1.5", errors.dcioName && "border-status-orange focus-visible:ring-status-orange")}
               placeholder="ex. นายสมชาย ใจดี"
             />
-            {errors.dcioName && <p className="mt-1 text-sm text-status-orange">{errors.dcioName.message}</p>}
+            {errors.dcioName && (
+              <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" /> {errors.dcioName.message}
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="projectManager" className="text-sm font-medium text-foreground">
@@ -97,10 +116,14 @@ export const ProjectStep1 = () => {
             <Input 
               id="projectManager"
               {...register("projectManager")} 
-              className="mt-1.5"
+              className={cn("mt-1.5", errors.projectManager && "border-status-orange focus-visible:ring-status-orange")}
               placeholder="ex. นายสมชาย ใจดี"
             />
-            {errors.projectManager && <p className="mt-1 text-sm text-status-orange">{errors.projectManager.message}</p>}
+            {errors.projectManager && (
+              <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" /> {errors.projectManager.message}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -124,64 +147,74 @@ export const ProjectStep1 = () => {
         
         {/* รายการงบประมาณ */}
         <div className="space-y-2.5">
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex flex-wrap sm:flex-nowrap gap-3 items-start bg-surface p-4 rounded-lg border border-border shadow-sm">
-              <div className="w-full sm:w-1/4">
-                <Label className="text-xs text-slate-gray mb-1 block">ปี พ.ศ.</Label>
-                <Input 
-                  type="number"
-                  {...register(`budgetsByYear.${index}.year`, { valueAsNumber: true })}
-                  placeholder="เช่น 2567" 
-                />
-              </div>
-              <div className="w-full sm:flex-1">
-                <Label className="text-xs text-slate-gray mb-1 block">จำนวนเงิน (บาท)</Label>
-                <Input 
-                  type="number" 
-                  {...register(`budgetsByYear.${index}.amount`, { valueAsNumber: true })} 
-                  placeholder="0.00" 
-                />
-              </div>
-              
-              <div className="w-full sm:flex-1">
-                <Label className="text-xs text-slate-gray mb-1 block">ประเภทงบประมาณ</Label>
-                <Controller
-                  control={control}
-                  name={`budgetsByYear.${index}.budgetType`}
-                  render={({ field: { onChange, value } }) => (
-                    <Select onValueChange={onChange} value={value || "งบประมาณรายจ่ายประจำปี"}>
-                      <SelectTrigger className="w-full h-10 bg-background border-input focus:ring-primary-light focus:border-primary-container">
-                        <SelectValue placeholder="เลือกประเภทงบประมาณ" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="งบประมาณรายจ่ายประจำปี">งบประมาณรายจ่ายประจำปี</SelectItem>
-                        <SelectItem value="งบกลาง">งบกลาง</SelectItem>
-                        <SelectItem value="งบประมาณรายจ่ายประจำปี(เพิ่มเติม)">งบประมาณรายจ่ายประจำปี(เพิ่มเติม)</SelectItem>
-                        <SelectItem value="งบแปรญัตติ">งบแปรญัตติ</SelectItem>
-                        <SelectItem value="เงินนอกงบประมาณ">เงินนอกงบประมาณ</SelectItem>
-                        <SelectItem value="งบประมาณแผ่นดิน">งบประมาณแผ่นดิน</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
+          {fields.map((field, index) => {
+            const rowErr = budgetErrors[index] || {}; // ดึง Error แต่ละแถว
 
-              <div className="w-full my-auto md:ml-6 sm:w-auto flex flex-col items-center justify-center">
-                <Button 
-                  type="button" 
-                  variant="destructive" 
-                  size="icon"
-                  className="w-full sm:w-10 rounded-md"
-                  onClick={() => remove(index)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+            return (
+              <div key={field.id} className="flex flex-wrap sm:flex-nowrap gap-3 items-start bg-surface p-4 rounded-lg border border-border shadow-sm">
+                <div className="w-full sm:w-1/4">
+                  <Label className="text-xs text-slate-gray mb-1 block">ปี พ.ศ. <span className="text-status-orange">*</span></Label>
+                  <Input 
+                    type="number"
+                    {...register(`budgetsByYear.${index}.year`, { valueAsNumber: true })}
+                    placeholder="เช่น 2567" 
+                    // เปลี่ยนขอบแดงถ้าลืมกรอก หรือกรอกปีผิด
+                    className={cn(rowErr.year && "border-status-orange bg-orange-50/50 focus-visible:ring-status-orange")}
+                  />
+                  {rowErr.year && <span className="text-[10px] text-status-orange mt-1 block">{rowErr.year.message}</span>}
+                </div>
+                <div className="w-full sm:flex-1">
+                  <Label className="text-xs text-slate-gray mb-1 block">จำนวนเงิน (บาท) <span className="text-status-orange">*</span></Label>
+                  <Input 
+                    type="number" 
+                    {...register(`budgetsByYear.${index}.amount`, { valueAsNumber: true })} 
+                    placeholder="0.00" 
+                    // เปลี่ยนขอบแดงถ้าลืมกรอกจำนวนเงิน
+                    className={cn(rowErr.amount && "border-status-orange bg-orange-50/50 focus-visible:ring-status-orange")}
+                  />
+                  {rowErr.amount && <span className="text-[10px] text-status-orange mt-1 block">{rowErr.amount.message}</span>}
+                </div>
+                
+                <div className="w-full sm:flex-1">
+                  <Label className="text-xs text-slate-gray mb-1 block">ประเภทงบประมาณ</Label>
+                  <Controller
+                    control={control}
+                    name={`budgetsByYear.${index}.budgetType`}
+                    render={({ field: { onChange, value } }) => (
+                      <Select onValueChange={onChange} value={value || "งบประมาณรายจ่ายประจำปี"}>
+                        <SelectTrigger className="w-full h-10 bg-background border-input focus:ring-primary-light focus:border-primary-container">
+                          <SelectValue placeholder="เลือกประเภทงบประมาณ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="งบประมาณรายจ่ายประจำปี">งบประมาณรายจ่ายประจำปี</SelectItem>
+                          <SelectItem value="งบกลาง">งบกลาง</SelectItem>
+                          <SelectItem value="งบประมาณรายจ่ายประจำปี(เพิ่มเติม)">งบประมาณรายจ่ายประจำปี(เพิ่มเติม)</SelectItem>
+                          <SelectItem value="งบแปรญัตติ">งบแปรญัตติ</SelectItem>
+                          <SelectItem value="เงินนอกงบประมาณ">เงินนอกงบประมาณ</SelectItem>
+                          <SelectItem value="งบประมาณแผ่นดิน">งบประมาณแผ่นดิน</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full my-auto md:ml-6 sm:w-auto flex flex-col items-center justify-center pt-5">
+                  <Button 
+                    type="button" 
+                    variant="destructive" 
+                    size="icon"
+                    className="w-full sm:w-10 rounded-md h-10"
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         
-        {/* 🟢 ส่วนสรุปรวมงบประมาณที่ปรับปรุงใหม่ (Read-only + จัดฟอร์แมตข้อความแบบใหม่) */}
+        {/* ส่วนสรุปรวมงบประมาณที่ปรับปรุงใหม่ (Read-only + จัดฟอร์แมตข้อความแบบใหม่) */}
         <div className={`mt-6 p-5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors duration-300
           ${errors.totalBudget ? 'bg-orange-50/50 border-status-orange' : 'bg-primary-container/20 border-primary/20'}
         `}>

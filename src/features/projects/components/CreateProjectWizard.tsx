@@ -46,29 +46,27 @@ const WizardForm = () => {
   const methods = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema as any) as unknown as Resolver<ProjectFormValues>,
     defaultValues: formData as unknown as ProjectFormValues,
-    mode: "onChange",
+    mode: "all",
   });
 
   const { handleSubmit, formState: { errors } } = methods;
 
-  // 📍 ฟังก์ชันสำหรับการเช็ค Validation โดยไม่บังคับย้ายหน้า (ใช้ตอนกด Stepper)
+  // ฟังก์ชันสำหรับการเช็ค Validation โดยไม่บังคับย้ายหน้า (ใช้ตอนกด Stepper)
   const validateCurrentStep = async (): Promise<boolean> => {
-    methods.clearErrors();
+    // 1. ดึงรายชื่อ Field ทั้งหมดที่อยู่ใน Schema ของหน้าปัจจุบัน
     const currentSchema = getCurrentSchema(currentStep);
-    const currentValues = methods.getValues();
+    const fieldsInStep = Object.keys(currentSchema.shape) as any;
 
-    const result = currentSchema.safeParse(currentValues);
+    // 2. สั่งให้ React Hook Form ตรวจสอบ Field เหล่านั้น "ทันที"
+    // คำสั่ง trigger นี้จะไประบายขอบสีแดงให้ใน UI อัตโนมัติ (และจะจำสีแดงไว้ให้ด้วย)
+    const isValid = await methods.trigger(fieldsInStep);
 
-    if (result.success) {
-      removeStepError(currentStep); // เอาสเต็ปนี้ออกจากรายการ Error
+    // 3. จัดการสถานะ Error ที่ Stepper (ไอคอน X ด้านบน)
+    if (isValid) {
+      removeStepError(currentStep);
       return true;
     } else {
-      // ระบายขอบแดงให้ช่องที่กรอกผิด
-      result.error.issues.forEach((issue) => {
-        const path = issue.path.join(".") as any;
-        methods.setError(path, { type: "manual", message: issue.message });
-      });
-      addStepError(currentStep); // บันทึกว่าสเต็ปนี้พัง
+      addStepError(currentStep);
       return false;
     }
   };
