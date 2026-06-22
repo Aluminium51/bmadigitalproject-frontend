@@ -74,14 +74,13 @@ const WizardForm = () => {
   };
 
   // Validation Check สำหรับปุ่ม "ถัดไป" (Next)
-  const handleNext = async () => {
-    const isValid = await validateCurrentStep();
-    if (isValid) {
-      nextStep();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      console.error(`Validation Failed at Step ${currentStep}!`);
-    }
+    const handleNext = async () => {
+    // 1. เรียก validateCurrentStep() เพื่อตรวจข้อมูลปัจจุบัน
+    await validateCurrentStep(); 
+    
+    // 2. ขยับไปหน้าถัดไปเลย โดยไม่สนว่าผลลัพธ์ของ isValid จะเป็น true หรือ false
+    nextStep();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePrev = async () => {

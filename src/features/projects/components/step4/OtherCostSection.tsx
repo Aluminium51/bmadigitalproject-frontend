@@ -1,9 +1,9 @@
-import React from "react";
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
 
 export const OtherCostSection = () => {
   const { control, register, setValue, formState: { errors } } = useFormContext();
@@ -18,17 +18,18 @@ export const OtherCostSection = () => {
 
   return (
     <div className="space-y-3 mt-4">
-      <div className="flex justify-end items-center mb-2">
+      <div className="flex justify-between items-center mb-2">
+        <Label className="text-md font-bold text-foreground">ค่าใช้จ่ายอื่น ๆ ที่ไม่อยู่ในหมวดฮาร์ดแวร์ ซอฟต์แวร์ บุคลากร หรือการฝึกอบรม</Label>
         <Button
           type="button"
-          variant="outline"
+          variant="default"
           size="sm"
-          className="h-7 text-[11px] border-dashed bg-white hover:bg-slate-50"
+          className=""
           onClick={() => append({ 
             itemName: "", 
             quantity: 1, 
             unitPrice: 0, 
-            costType: "IT", // 📍 กำหนดค่าเริ่มต้นเป็น IT หรือปล่อยว่าง "" ก็ได้
+            costType: "IT", // กำหนดค่าเริ่มต้นเป็น IT หรือปล่อยว่าง "" ก็ได้
             remark: "" 
           })}
         >
@@ -38,7 +39,7 @@ export const OtherCostSection = () => {
 
       <div className="border rounded-md bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-[12px] min-w-[800px]">
+          <table className="w-full text-[12px] min-w-200">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600">
                 <th className="p-2 w-8 text-center font-medium">#</th>
@@ -81,7 +82,7 @@ export const OtherCostSection = () => {
                       />
                     </td>
                     
-                    {/* 📍 ส่วนที่ให้เลือก IT / Non-IT แบบ Custom Radio (Segmented Control) */}
+                    {/* ส่วนที่ให้เลือก IT / Non-IT แบบ Custom Radio (Segmented Control) */}
                     <td className="p-1.5 text-center">
                       <div className="flex items-center h-8 bg-slate-100 p-0.5 rounded-md border border-slate-200">
                         <button
