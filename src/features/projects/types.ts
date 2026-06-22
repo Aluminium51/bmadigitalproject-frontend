@@ -301,6 +301,10 @@ const otherCostSchema = z.object({
   quantity: z.coerce.number().min(1, "ระบุจำนวน"),
   unitPrice: z.coerce.number().min(0, "ห้ามติดลบ"),
   remark: z.string().optional(), // หมายเหตุเป็น Text ธรรมดา
+
+  costType: z.enum(["IT", "NON_IT"], {
+    message: "กรุณาเลือกประเภท (IT / Non-IT)",
+  }),
 });
 
 export const projectStep4Schema = z.object({

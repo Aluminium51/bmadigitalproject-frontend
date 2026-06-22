@@ -4,7 +4,7 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // 🟢 ใช้ Label ของ shadcn
+import { Label } from "@/components/ui/label";
 
 export const EAStrategySection = () => {
   const { register, setValue, control, formState: { errors } } = useFormContext<any>(); // ใช้ any ชั่วคราว หรือ import Type มา

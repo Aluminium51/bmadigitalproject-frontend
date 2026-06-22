@@ -30,21 +30,20 @@ const AutoSaveWatcher = () => {
 };
 
 const WizardForm = () => {
-  const { currentStep, nextStep, prevStep, formData, resetForm, lastSavedAt } = useProjectFormStore();
+  const { currentStep, nextStep, prevStep, formData, resetForm, lastSavedAt, addStepError, removeStepError } = useProjectFormStore();
 
-  // ฟังก์ชันจับคู่ Schema ประจำแต่ละสเต็ปสำหรับการทำ Partial Validation
-  const getCurrentSchema = () => {
-    switch (currentStep) {
+  const getCurrentSchema = (step: number) => { // 📍 รับค่า step เพื่อให้เช็คได้ตรงกับหน้า
+    switch (step) {
       case 1: return projectStep1Schema;
       case 2: return projectStep2Schema;
       case 3: return projectStep3Schema;
       case 4: return projectStep4Schema;
+      // case 5: return projectStep5Schema; (ถ้ามี)
       default: return projectStep1Schema;
     }
   };
 
   const methods = useForm<ProjectFormValues>({
-    // ล็อก Resolver หลักให้คงที่ เพื่อป้องกันไม่ให้ฟอร์มสั่งรีเซ็ตตัวเองระหว่างเปลี่ยนหน้า
     resolver: zodResolver(projectFormSchema as any) as unknown as Resolver<ProjectFormValues>,
     defaultValues: formData as unknown as ProjectFormValues,
     mode: "onChange",
@@ -52,60 +51,74 @@ const WizardForm = () => {
 
   const { handleSubmit, formState: { errors } } = methods;
 
-  // เคลียร์ Error ของหน้าเก่าออกเมื่อเปลี่ยนสเต็ป เพื่อให้กรอกข้อมูลสเต็ปใหม่ได้อย่างสบายตา
-  useEffect(() => {
+  // 📍 ฟังก์ชันสำหรับการเช็ค Validation โดยไม่บังคับย้ายหน้า (ใช้ตอนกด Stepper)
+  const validateCurrentStep = async (): Promise<boolean> => {
     methods.clearErrors();
-  }, [currentStep, methods]);
-
-  // Validation Check ก่อนเปลี่ยนหน้า
-  const handleNext = async () => {
-    methods.clearErrors();
-    
-    const currentSchema = getCurrentSchema();
+    const currentSchema = getCurrentSchema(currentStep);
     const currentValues = methods.getValues();
 
-    // ตรวจสอบข้อมูลเฉพาะของหน้าปัจจุบันด้วย safeParse ของ Zod โดยตรง (ไม่เปลี่ยน Reference ของฟอร์ม)
     const result = currentSchema.safeParse(currentValues);
 
     if (result.success) {
-      nextStep();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      removeStepError(currentStep); // เอาสเต็ปนี้ออกจากรายการ Error
+      return true;
     } else {
-      // แมปข้อความแจ้งเตือน Error ของ Zod กลับเข้าสู่ระบบ Input เพื่อให้แสดงขอบแดงพ่นข้อความเตือน
+      // ระบายขอบแดงให้ช่องที่กรอกผิด
       result.error.issues.forEach((issue) => {
         const path = issue.path.join(".") as any;
-        methods.setError(path, {
-          type: "manual",
-          message: issue.message,
-        });
+        methods.setError(path, { type: "manual", message: issue.message });
       });
-      console.error(`Validation Failed at Step ${currentStep}! รายการ Error:`, result.error.format());
+      addStepError(currentStep); // บันทึกว่าสเต็ปนี้พัง
+      return false;
     }
   };
 
+  // Validation Check สำหรับปุ่ม "ถัดไป" (Next)
+  const handleNext = async () => {
+    const isValid = await validateCurrentStep();
+    if (isValid) {
+      nextStep();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      console.error(`Validation Failed at Step ${currentStep}!`);
+    }
+  };
+
+  const handlePrev = async () => {
+    await validateCurrentStep(); // เช็คแล้วเก็บ Error ไว้ก่อนกดย้อนกลับด้วย
+    prevStep();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const onSubmit: SubmitHandler<ProjectFormValues> = async (data) => {
+    // 📍 เช็ค Validation ของทุกสเต็ปพร้อมกันตอนกดปุ่มสุดท้าย
+    const result = projectFormSchema.safeParse(data);
+    if (!result.success) {
+       console.error("มีข้อผิดพลาดบางหน้าที่ยังกรอกไม่ครบ");
+       // คุณอาจจะเพิ่ม logic เด้งกลับไปหน้าที่ error หน้าแรกตรงนี้ได้
+       return; 
+    }
+
     console.log("🚀 Final Submit to API:", data);
-    // TODO: เรียกใช้ API จริงเพื่อบันทึกข้อมูลลง Database ที่นี่
     resetForm();
   };
 
   return (
     <div className="mx-auto w-full rounded-container border bg-surface p-6 sm:p-10 shadow-level-1">
-      <StepperIndicator />
+      {/* 📍 โยนฟังก์ชัน validate เข้าไปให้ Stepper ใช้ */}
+      <StepperIndicator validateCurrentStep={validateCurrentStep} />
 
       <FormProvider {...methods}>
         <AutoSaveWatcher />
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
           
-          {/* แสดง Component ย่อยตาม Step ปัจจุบัน */}
           {currentStep === 1 && <ProjectStep1 />}
           {currentStep === 2 && <ProjectStep2 />}
           {currentStep === 3 && <ProjectStep3 />}
           {currentStep === 4 && <ProjectStep4 />}
           {currentStep === 5 && <ProjectStep5 />}
 
-          {/* ส่วนของปุ่มควบคุมด้านล่างฟอร์ม */}
           <div className="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between border-t border-border gap-4">
             <div className="text-sm text-slate-gray order-2 sm:order-1 w-full">
               {lastSavedAt && `บันทึกร่างล่าสุดเมื่อ: ${new Date(lastSavedAt).toLocaleTimeString()}`}
@@ -115,7 +128,7 @@ const WizardForm = () => {
               {currentStep > 1 && (
                 <Button 
                   type="button" 
-                  onClick={prevStep} 
+                  onClick={handlePrev} // 📍 ใช้ handlePrev เพื่อบันทึก Error ก่อนถอย
                   variant="outline" 
                   className="px-6 py-4 w-full sm:w-auto font-medium"
                 >
@@ -124,7 +137,6 @@ const WizardForm = () => {
               )}
 
               {currentStep < 5 ? (
-                // ระบุคลาส key="next-btn" ป้องกันไม่ให้ React รีไซเคิลธาตุปุ่มไปส่งผลกระทบให้เกิด Submit
                 <Button 
                   key="next-btn"
                   type="button" 
@@ -135,7 +147,6 @@ const WizardForm = () => {
                   ถัดไป
                 </Button>
               ) : (
-                // ปุ่มสุดท้ายสำหรับการยืนยันส่งข้อมูลไปหลังบ้านจริง
                 <Button 
                   key="submit-btn"
                   type="submit" 

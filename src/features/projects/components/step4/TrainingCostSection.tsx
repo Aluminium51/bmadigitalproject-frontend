@@ -164,7 +164,7 @@ export const TrainingCostSection = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <Label className="text-md font-bold text-foreground">4. ค่าใช้จ่ายการฝึกอบรม (หลักสูตร วิธีการฝึกอบรม ระยะเวลา ค่าใช้จ่าย จำนวนผู้ฝึกอบรมและวิทยากร)</Label>
+        <Label className="text-md font-bold text-foreground">ค่าใช้จ่ายการฝึกอบรม (หลักสูตร วิธีการฝึกอบรม ระยะเวลา ค่าใช้จ่าย จำนวนผู้ฝึกอบรมและวิทยากร)</Label>
         <Button 
           type="button" 
           onClick={() => appendCourse({ 

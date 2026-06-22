@@ -46,7 +46,7 @@ const PersonnelTable = ({
   const tableErrors = (errors[nameArray] as any) || [];
 
   return (
-    <div className="space-y-3 mt-6">
+    <div className="space-y-3 mt-3">
       
       {/* 2.1 ส่วนหัว: ชื่อตาราง และ ปุ่มเพิ่มแถว */}
       <div className="flex justify-between items-center">
@@ -245,16 +245,9 @@ export const PersonnelCostSection = () => {
   }, [watchedCore, watchedAsst, watchedSupp, replaceResp]); // ให้ทำงานทุกครั้งที่มีการพิมพ์ตำแหน่งใหม่
 
   return (
-    <div className="space-y-6">
-      
-      {/* 3.1 หัวข้อหลัก */}
-      <div className="flex items-center gap-2 pb-2 border-b">
-        <div className="bg-primary h-6 w-1 rounded-full" />
-        <Label className="text-base font-bold text-foreground">3. ค่าใช้จ่ายบุคลากรที่ใช้ในการพัฒนาระบบ</Label>
-      </div>
-
+    <div className="space-y-4">
       {/* 3.2 ตารางทั้ง 3 กลุ่ม */}
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 space-y-2">
         <PersonnelTable title="บุคลากรหลัก" nameArray="personnelCoreCosts" />
         <PersonnelTable title="บุคลากรผู้ช่วย" nameArray="personnelAsstCosts" />
         <PersonnelTable title="บุคลากรสนับสนุน" nameArray="personnelSuppCosts" isSupport={true} />
@@ -295,7 +288,7 @@ export const PersonnelCostSection = () => {
                           {...register(`personnelResponsibilities.${index}.responsibility`)}
                           placeholder="ระบุหน้าที่... เช่น พัฒนาส่วนงาน Frontend, ออกแบบฐานข้อมูล ฯลฯ"
                           className={cn(
-                            "min-h-[80px] text-sm bg-slate-50/30 focus:bg-white transition-colors",
+                            "min-h-20 text-sm bg-slate-50/30 focus:bg-white transition-colors",
                             error && "border-orange-500 focus-visible:ring-orange-500"
                           )}
                         />

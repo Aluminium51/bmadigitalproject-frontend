@@ -20,7 +20,7 @@ export function SoftwareCostSection() {
   });
 
   return (
-    <div className="space-y-4 mt-8">
+    <div className="space-y-4">
       {/* ส่วนหัวของ Section */}
       <div className="flex justify-between items-center">
         <h3 className="text-base font-semibold text-foreground">
