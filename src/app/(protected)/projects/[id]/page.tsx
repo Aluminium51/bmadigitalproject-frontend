@@ -84,7 +84,7 @@ export default function ProjectWorkspacePage() {
         <div className="sm:w-1/2 flex justify-end">
           {file ? (
             // แสดง Chip ไฟล์เมื่ออัปโหลดแล้ว
-            <div className="flex items-center justify-between pl-2 pr-3 py-2 bg-white rounded-full border border-[#D1CDC7] group hover:border-[#00734b]/40 transition-all shadow-sm w-full max-w-[300px]">
+            <div className="flex items-center justify-between pl-2 pr-3 py-2 bg-white rounded-full border border-[#D1CDC7] group hover:border-[#00734b]/40 transition-all shadow-sm w-full max-w-75">
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className={`p-2 rounded-full shrink-0 ${file.type === "pdf" ? "text-red-500 bg-red-50" : "text-orange-500 bg-orange-50"}`}>
                   {file.type === "pdf" ? <FileText className="w-4 h-4" /> : <Presentation className="w-4 h-4" />}
@@ -130,7 +130,7 @@ export default function ProjectWorkspacePage() {
   );
 
   const DiagramUploadPlaceholder = () => (
-    <div className="border-2 border-dashed border-[#D1CDC7] rounded-[20px] p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50 hover:border-[#00734b]/50 transition-colors cursor-pointer group h-full min-h-[120px]">
+    <div className="border-2 border-dashed border-[#D1CDC7] rounded-[20px] p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50 hover:border-[#00734b]/50 transition-colors cursor-pointer group h-full min-h-30">
       <div className="w-10 h-10 bg-slate-100 group-hover:bg-[#00734b]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
         <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-[#00734b]" />
       </div>
@@ -206,7 +206,7 @@ export default function ProjectWorkspacePage() {
 
       {/* 2. Call to Action (Proposal Form) */}
       {!projectDetail.hasProposal && (
-        <div className="bg-orange-50/80 border border-status-orange/30 p-8 rounded-[40px] flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+        <div className="bg-orange-50/80 border border-status-orange/30 p-8 rounded-container flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
           <div className="flex items-center gap-5">
             <div className="size-14 bg-status-orange/10 text-status-orange rounded-full shrink-0 flex items-center justify-center">
               <Clock className="w-7 h-7" />
@@ -237,7 +237,7 @@ export default function ProjectWorkspacePage() {
           <p className="text-sm text-slate-500 mt-1">กรุณาอัปโหลดเอกสารสำคัญเหล่านี้ให้ครบถ้วนก่อนส่งโครงการ</p>
         </div>
 
-        <Card className="rounded-[40px] border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
+        <Card className="rounded-container border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
           {/* ลบ Padding ออก เพื่อให้เส้นแบ่ง (divide-y) ชนขอบสวยงาม */}
           <CardContent className="p-0">
             <div className="flex flex-col divide-y divide-[#ededf4]">
@@ -261,7 +261,7 @@ export default function ProjectWorkspacePage() {
           </div>
         </div>
 
-        <Card className="rounded-[40px] border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
+        <Card className="rounded-container border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
           <CardHeader className="border-b border-[#ededf4] px-8 py-2 flex flex-row items-center justify-between rounded-none">
             <CardTitle className="text-[15px] font-bold text-[#191c20]">ไฟล์รูปภาพ Diagram</CardTitle>
             <span className="bg-white text-slate-600 px-4 py-1.5 rounded-full border border-[#D1CDC7] text-xs font-bold shadow-sm">

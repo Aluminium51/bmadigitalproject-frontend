@@ -193,7 +193,7 @@ export default function TestDocPage() {
           </p>
           
           <div className="w-full bg-surface-variant p-4 rounded-md text-left overflow-hidden h-32 mb-4 relative">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-surface-variant z-10 pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-b from-transparent to-surface-variant z-10 pointer-events-none" />
             <pre className="text-xs text-muted-foreground whitespace-pre-wrap opacity-70">
               {JSON.stringify(templateData, null, 2)}
             </pre>

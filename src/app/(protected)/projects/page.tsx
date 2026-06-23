@@ -111,7 +111,7 @@ export default function ProjectsDashboard() {
         </div>
         <button 
           onClick={() => setIsDialogOpen(true)}
-          className="flex items-center gap-2 bg-[#00734b] hover:bg-[#005838] text-white px-6 py-3 rounded-full font-bold transition-all shadow-sm active:scale-95"
+          className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-full font-bold transition-all shadow-sm active:scale-95"
         >
           <Plus className="w-5 h-5" />
           สร้างโครงการใหม่
@@ -288,7 +288,7 @@ export default function ProjectsDashboard() {
           </table>
         </div>
 
-        {/* --- 📍 ส่วนแสดง Pagination ของ shadcn --- */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="border-t border-[#ededf4] p-4 bg-white shrink-0 ">
             <Pagination>
