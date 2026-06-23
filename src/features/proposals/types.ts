@@ -3,7 +3,7 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 // Step 1: ข้อมูลเบื้องต้นและภาพรวม (General Information)
 // ---------------------------------------------------------------------------
-export const projectStep1Schema = z.object({
+export const proposalStep1Schema = z.object({
   projectName: z.string().min(5, "กรุณาระบุชื่อโครงการอย่างน้อย 5 ตัวอักษร"),
   agencyName: z.string().min(2, "กรุณาระบุชื่อหน่วยงาน"),
   headOfAgency: z.string().min(2, "กรุณาระบุหัวหน้าส่วนราชการ"),
@@ -27,7 +27,7 @@ export const projectStep1Schema = z.object({
 // ---------------------------------------------------------------------------
 // Step 2: สาระสำคัญและขอบเขตโครงการ (Context & Scope)
 // ---------------------------------------------------------------------------
-export const projectStep2Schema = z.object({
+export const proposalStep2Schema = z.object({
   background: z.string().min(10, "กรุณาระบุความเป็นมา"),
   objective: z.string().min(10, "กรุณาระบุวัตถุประสงค์"),
   target: z.string().min(10, "กรุณาระบุเป้าหมาย"),
@@ -82,7 +82,7 @@ const imageWithDescriptionSchema = z.object({
   description: z.string().min(1, "กรุณาระบุคำอธิบายรูปภาพ (บังคับ)"),
 });
 
-export const projectStep3Schema = z.object({
+export const proposalStep3Schema = z.object({
   // ข้อ 1
   isBmaPlan: z.boolean().default(false),
   
@@ -307,7 +307,7 @@ const otherCostSchema = z.object({
   }),
 });
 
-export const projectStep4Schema = z.object({
+export const proposalStep4Schema = z.object({
   hardwareCosts: z.array(hardwareCostSchema).default([]),
   softwareCosts: z.array(softwareCostSchema).default([]),
   // ใช้ Schema ที่แยกกันให้ตรงหมวด
@@ -328,7 +328,7 @@ const ictPersonnelSchema = z.object({
   count: z.coerce.number().min(1, "ต้องมากกว่า 0"),
 });
 
-export const projectStep5Schema = z.object({
+export const proposalStep5Schema = z.object({
   durationDays: z.coerce
     .number()
     .min(1, "กรุณาระบุระยะเวลาดำเนินงาน"),
@@ -343,20 +343,20 @@ export const projectStep5Schema = z.object({
 // ---------------------------------------------------------------------------
 // Master Schemas & Types
 // ---------------------------------------------------------------------------
-export const projectFormSchema = z.object({
-  ...projectStep1Schema.shape,
-  ...projectStep2Schema.shape,
-  ...projectStep3Schema.shape,
-  ...projectStep4Schema.shape,
-  ...projectStep5Schema.shape,
+export const proposalFormSchema = z.object({
+  ...proposalStep1Schema.shape,
+  ...proposalStep2Schema.shape,
+  ...proposalStep3Schema.shape,
+  ...proposalStep4Schema.shape,
+  ...proposalStep5Schema.shape,
 });
 
-export const projectDraftSchema = projectFormSchema.partial();
+export const proposalDraftSchema = proposalFormSchema.partial();
 
-export type ProjectStep1Values = z.infer<typeof projectStep1Schema>;
-export type ProjectStep2Values = z.infer<typeof projectStep2Schema>;
-export type ProjectStep3Values = z.infer<typeof projectStep3Schema>;
-export type ProjectStep4Values = z.infer<typeof projectStep4Schema>;
-export type ProjectStep5Values = z.infer<typeof projectStep5Schema>;
-export type ProjectFormValues = z.infer<typeof projectFormSchema>;
-export type ProjectDraftValues = z.infer<typeof projectDraftSchema>;
+export type ProposalStep1Values = z.infer<typeof proposalStep1Schema>;
+export type ProposalStep2Values = z.infer<typeof proposalStep2Schema>;
+export type ProposalStep3Values = z.infer<typeof proposalStep3Schema>;
+export type ProposalStep4Values = z.infer<typeof proposalStep4Schema>;
+export type ProposalStep5Values = z.infer<typeof proposalStep5Schema>;
+export type ProposalFormValues = z.infer<typeof proposalFormSchema>;
+export type ProposalDraftValues = z.infer<typeof proposalDraftSchema>;

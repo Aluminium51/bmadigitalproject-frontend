@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ProjectStep4Values } from "../../types";
+import { ProposalStep4Values } from "../../types";
 
 const TrainingCourseItem = ({ index, control, register, setValue, watch, remove, errors }: any) => {
   const coursePath = `trainingCourses.${index}`;
@@ -158,7 +158,7 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
 };
 
 export const TrainingCostSection = () => {
-  const { control, register, setValue, watch, formState: { errors } } = useFormContext<ProjectStep4Values>();
+  const { control, register, setValue, watch, formState: { errors } } = useFormContext<ProposalStep4Values>();
   const { fields: courseFields, append: appendCourse, remove: removeCourse } = useFieldArray({ control, name: "trainingCourses" });
 
   return (

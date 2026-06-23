@@ -2,7 +2,7 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { ProjectDraftValues } from "@/features/projects/types";
+import { ProposalDraftValues } from "@/features/proposals/types";
 
 // @ts-ignore
 import ImageModule from "docxtemplater-image-module-free";
@@ -29,9 +29,9 @@ const isBlankImage = (base64String: string) => {
 };
 
 
-export const generateProjectDocx = async (formData: ProjectDraftValues) => {
+export const generateProposalDocx = async (formData: ProposalDraftValues) => {
   try {
-    const response = await fetch("/templates/project-proposal.docx");
+    const response = await fetch("/templates/proposal.docx");
     const arrayBuffer = await response.arrayBuffer();
 
     const zip = new PizZip(arrayBuffer);

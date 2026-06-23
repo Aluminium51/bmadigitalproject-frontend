@@ -3,17 +3,17 @@
 
 import { useState } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { ProjectStep5Values } from "../types";
+import { ProposalStep5Values } from "../types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Trash2, Plus, AlertCircle, FileDown, Loader2 } from "lucide-react";
-import { generateProjectDocx } from "@/lib/documentGenerator";
+import { generateProposalDocx } from "@/lib/documentGenerator";
 
-export const ProjectStep5 = () => {
-  const { register, control, setValue, watch, getValues, formState: { errors } } = useFormContext<ProjectStep5Values>();
+export const ProposalStep5 = () => {
+  const { register, control, setValue, watch, getValues, formState: { errors } } = useFormContext<ProposalStep5Values>();
 
   const { fields: personnelFields, append: appendPersonnel, remove: removePersonnel } = useFieldArray({
     control,
@@ -23,10 +23,10 @@ export const ProjectStep5 = () => {
   const watchedDurationDays = watch("durationDays");
   const isOverLimit = watchedDurationDays > 270;
 
-  // 🟢 State สำหรับคุมปุ่ม Loading ตอนกด Generate
+  // State สำหรับคุมปุ่ม Loading ตอนกด Generate
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // 🟢 ฟังก์ชันจัดการการกดปุ่ม Generate Document
+  // ฟังก์ชันจัดการการกดปุ่ม Generate Document
   const handleGenerateDocument = async () => {
     setIsGenerating(true);
     try {
@@ -34,7 +34,7 @@ export const ProjectStep5 = () => {
       const allFormData = getValues() as any; 
       
       // เรียกฟังก์ชันสร้างไฟล์ Docx ที่เราทำไว้
-      const result = await generateProjectDocx(allFormData);
+      const result = await generateProposalDocx(allFormData);
       
       if (!result.success) {
         alert("เกิดข้อผิดพลาดในการสร้างเอกสาร: " + result.error);

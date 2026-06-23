@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
-import { generateProjectDocx } from "@/lib/documentGenerator";
+import { generateProposalDocx } from "@/lib/documentGenerator";
 
 // จำลองข้อมูล (Mock Data) ให้ครบตาม Schema
 const mockProjectData = {
@@ -168,7 +168,7 @@ export default function TestDocPage() {
   const handleTestDownload = async () => {
     setIsGenerating(true);
     try {
-      await generateProjectDocx(templateData as any);
+      await generateProposalDocx(templateData as any);
       console.log("Mock Data ที่ส่งไปทำ Word:", templateData);
     } catch (error) {
       console.error(error);

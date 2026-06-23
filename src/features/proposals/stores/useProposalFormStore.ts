@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { ProjectDraftValues } from "../types";
+import { ProposalDraftValues } from "../types";
 
 // ----------------------------------------------------------------------
 // 1. กำหนดโครงสร้างของ Store (Interfaces)
 // ----------------------------------------------------------------------
-interface ProjectFormState {
+interface ProposalFormState {
   // State
   currentStep: number;
-  formData: ProjectDraftValues;
+  formData: ProposalDraftValues;
   lastSavedAt: string | null;
   stepErrors: number[]; // เก็บหมายเลข Step ที่มี Error (เช่น [1, 3])
 
@@ -16,7 +16,7 @@ interface ProjectFormState {
   setStep: (step: number) => void;
   nextStep: () => void;
   prevStep: () => void;
-  updateFormData: (data: Partial<ProjectDraftValues>) => void;
+  updateFormData: (data: Partial<ProposalDraftValues>) => void;
   setLastSavedAt: (timestamp: string) => void;
   resetForm: () => void;
 
@@ -31,7 +31,7 @@ interface ProjectFormState {
 // ----------------------------------------------------------------------
 const initialState = {
   currentStep: 1,
-  formData: {} as ProjectDraftValues, // ระบุ Type ป้องกัน TypeScript บ่นตอนเริ่มต้น
+  formData: {} as ProposalDraftValues, // ระบุ Type ป้องกัน TypeScript บ่นตอนเริ่มต้น
   lastSavedAt: null,
   stepErrors: [], // เริ่มต้นมาจะยังไม่มี Error ใดๆ
 };
@@ -39,7 +39,7 @@ const initialState = {
 // ----------------------------------------------------------------------
 // 3. สร้าง Zustand Store พร้อม Persist Middleware
 // ----------------------------------------------------------------------
-export const useProjectFormStore = create<ProjectFormState>()(
+export const useProposalFormStore = create<ProposalFormState>()(
   persist(
     (set) => ({
       ...initialState,

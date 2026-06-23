@@ -1,15 +1,15 @@
 import { Check, X } from "lucide-react";
-import { useProjectFormStore } from "../stores/useProjectFormStore";
+import { useProposalFormStore } from "../stores/useProposalFormStore";
 
 export const StepperIndicator = ({ validateCurrentStep }: { validateCurrentStep: () => Promise<boolean> }) => {
-  const currentStep = useProjectFormStore((state) => state.currentStep);
-  const setStep = useProjectFormStore((state) => state.setStep);
-  const stepErrors = useProjectFormStore((state) => state.stepErrors); // 📍 ดึง Error State มาใช้
+  const currentStep = useProposalFormStore((state) => state.currentStep);
+  const setStep = useProposalFormStore((state) => state.setStep);
+  const stepErrors = useProposalFormStore((state) => state.stepErrors);
   
   const steps = ["ข้อมูลทั่วไป", "สาระสำคัญ", "สถาปัตยกรรม (EA)", "งบประมาณ", "ความพร้อม"];
   const stepsSm = ["ข้อมูลทั่วไป", "สาระสำคัญ", "EA", "งบ", "ความพร้อม"];
 
-  // 📍 ฟังก์ชันเปลี่ยนสเต็ปจากการคลิก
+  // ฟังก์ชันเปลี่ยนสเต็ปจากการคลิก
   const handleStepClick = async (targetStep: number) => {
     if (targetStep === currentStep) return;
     
@@ -30,14 +30,14 @@ export const StepperIndicator = ({ validateCurrentStep }: { validateCurrentStep:
           const isActive = currentStep === stepNum;
           const isPast = currentStep > stepNum;
           const isLast = stepNum === steps.length;
-          const hasError = stepErrors.includes(stepNum); // 📍 ตรวจสอบว่ามี Error ไหม
+          const hasError = stepErrors.includes(stepNum); // ตรวจสอบว่ามี Error ไหม
 
           return (
             <div key={fullLabel} className={`flex items-center ${isLast ? "flex-none" : "flex-1"}`}>
               
               <div 
                 className="relative flex flex-col items-center group cursor-pointer"
-                onClick={() => handleStepClick(stepNum)} // 📍 สั่งให้กดเพื่อย้ายหน้าได้
+                onClick={() => handleStepClick(stepNum)} // สั่งให้กดเพื่อย้ายหน้าได้
               >
                 {/* วงกลม (Step Circle) */}
                 <div
@@ -45,15 +45,15 @@ export const StepperIndicator = ({ validateCurrentStep }: { validateCurrentStep:
                     isActive && !hasError
                       ? "bg-primary-container text-primary shadow-md ring-2 ring-primary scale-110" 
                     : isActive && hasError
-                      ? "bg-red-100 text-red-600 shadow-md ring-2 ring-red-500 scale-110" // 📍 สีตอน Active แบบมี Error
+                      ? "bg-red-100 text-red-600 shadow-md ring-2 ring-red-500 scale-110" // สีตอน Active แบบมี Error
                     : hasError
-                      ? "bg-red-500 text-white shadow-sm ring-2 ring-red-200" // 📍 สีตอนไม่ได้ Active แต่มี Error ค้าง
+                      ? "bg-red-500 text-white shadow-sm ring-2 ring-red-200" // สีตอนไม่ได้ Active แต่มี Error ค้าง
                     : isPast
                       ? "bg-primary text-surface shadow-sm hover:bg-primary/90" 
                     : "bg-surface-container border-2 border-border text-slate-gray hover:border-primary/50" 
                   }`}
                 >
-                  {/* 📍 สลับการแสดงผล Icon (Error, Success, Number) */}
+                  {/* สลับการแสดงผล Icon (Error, Success, Number) */}
                   {hasError && !isActive ? (
                     <X className="h-5 w-5 stroke-[3px] text-white" />
                   ) : isPast && !hasError ? (
@@ -68,7 +68,7 @@ export const StepperIndicator = ({ validateCurrentStep }: { validateCurrentStep:
                   <span
                     className={`text-xs sm:text-sm text-center transition-all duration-300 ${
                       isActive && !hasError ? "font-bold text-primary-container"
-                      : hasError ? "font-bold text-red-500" // 📍 ตัวหนังสือแดงถ้ามี Error
+                      : hasError ? "font-bold text-red-500" // ตัวหนังสือแดงถ้ามี Error
                       : isPast ? "font-medium text-foreground"
                       : "font-medium text-slate-gray group-hover:text-primary/70"
                     }`}

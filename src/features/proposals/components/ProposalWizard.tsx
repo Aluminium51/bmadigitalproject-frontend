@@ -5,23 +5,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 
 import { 
-  projectFormSchema, 
-  projectStep1Schema, 
-  projectStep2Schema, 
-  projectStep3Schema, 
-  projectStep4Schema,
-  ProjectFormValues 
+  proposalFormSchema, 
+  proposalStep1Schema, 
+  proposalStep2Schema, 
+  proposalStep3Schema, 
+  proposalStep4Schema,
+  ProposalFormValues 
 } from "../types";
 
-import { useProjectFormStore } from "../stores/useProjectFormStore";
+import { useProposalFormStore } from "../stores/useProposalFormStore";
 import { useAutoSaveForm } from "../hooks/useAutoSaveForm";
 
 import { StepperIndicator } from "./StepperIndicator";
-import { ProjectStep1 } from "./ProjectStep1";
-import { ProjectStep2 } from "./ProjectStep2";
-import { ProjectStep3 } from "./ProjectStep3";
-import { ProjectStep4 } from "./ProjectStep4";
-import { ProjectStep5 } from "./ProjectStep5";
+import { ProposalStep1 } from "./ProposalStep1";
+import { ProposalStep2 } from "./ProposalStep2";
+import { ProposalStep3 } from "./ProposalStep3";
+import { ProposalStep4 } from "./ProposalStep4";
+import { ProposalStep5 } from "./ProposalStep5";
 import { Button } from "@/components/ui/button";
 
 const AutoSaveWatcher = () => {
@@ -30,22 +30,22 @@ const AutoSaveWatcher = () => {
 };
 
 const WizardForm = () => {
-  const { currentStep, nextStep, prevStep, formData, resetForm, lastSavedAt, addStepError, removeStepError } = useProjectFormStore();
+  const { currentStep, nextStep, prevStep, formData, resetForm, lastSavedAt, addStepError, removeStepError } = useProposalFormStore();
 
   const getCurrentSchema = (step: number) => { // 📍 รับค่า step เพื่อให้เช็คได้ตรงกับหน้า
     switch (step) {
-      case 1: return projectStep1Schema;
-      case 2: return projectStep2Schema;
-      case 3: return projectStep3Schema;
-      case 4: return projectStep4Schema;
-      // case 5: return projectStep5Schema; (ถ้ามี)
-      default: return projectStep1Schema;
+      case 1: return proposalStep1Schema;
+      case 2: return proposalStep2Schema;
+      case 3: return proposalStep3Schema;
+      case 4: return proposalStep4Schema;
+      // case 5: return proposalStep5Schema; (ถ้ามี)
+      default: return proposalStep1Schema;
     }
   };
 
-  const methods = useForm<ProjectFormValues>({
-    resolver: zodResolver(projectFormSchema as any) as unknown as Resolver<ProjectFormValues>,
-    defaultValues: formData as unknown as ProjectFormValues,
+  const methods = useForm<ProposalFormValues>({
+    resolver: zodResolver(proposalFormSchema as any) as unknown as Resolver<ProposalFormValues>,
+    defaultValues: formData as unknown as ProposalFormValues,
     mode: "all",
   });
 
@@ -87,9 +87,9 @@ const WizardForm = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const onSubmit: SubmitHandler<ProjectFormValues> = async (data) => {
+  const onSubmit: SubmitHandler<ProposalFormValues> = async (data) => {
     // 📍 เช็ค Validation ของทุกสเต็ปพร้อมกันตอนกดปุ่มสุดท้าย
-    const result = projectFormSchema.safeParse(data);
+    const result = proposalFormSchema.safeParse(data);
     if (!result.success) {
        console.error("มีข้อผิดพลาดบางหน้าที่ยังกรอกไม่ครบ");
        // คุณอาจจะเพิ่ม logic เด้งกลับไปหน้าที่ error หน้าแรกตรงนี้ได้
@@ -110,11 +110,11 @@ const WizardForm = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
           
-          {currentStep === 1 && <ProjectStep1 />}
-          {currentStep === 2 && <ProjectStep2 />}
-          {currentStep === 3 && <ProjectStep3 />}
-          {currentStep === 4 && <ProjectStep4 />}
-          {currentStep === 5 && <ProjectStep5 />}
+          {currentStep === 1 && <ProposalStep1 />}
+          {currentStep === 2 && <ProposalStep2 />}
+          {currentStep === 3 && <ProposalStep3 />}
+          {currentStep === 4 && <ProposalStep4 />}
+          {currentStep === 5 && <ProposalStep5 />}
 
           <div className="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between border-t border-border gap-4">
             <div className="text-sm text-slate-gray order-2 sm:order-1 w-full">
@@ -161,7 +161,7 @@ const WizardForm = () => {
   );
 };
 
-export const CreateProjectWizard = () => {
+export const CreateProposalWizard = () => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

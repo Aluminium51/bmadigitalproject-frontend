@@ -2,8 +2,8 @@
 import { useEffect } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Plus, Trash2, AlertCircle } from "lucide-react";
-import { ProjectStep1Values } from "../types";
-import { cn } from "@/lib/utils"; // 📍 นำเข้า cn
+import { ProposalStep1Values } from "../types";
+import { cn } from "@/lib/utils";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const ProjectStep1 = () => {
-  const { register, control, watch, setValue, formState: { errors } } = useFormContext<ProjectStep1Values>();
+export const ProposalStep1 = () => {
+  const { register, control, watch, setValue, formState: { errors } } = useFormContext<ProposalStep1Values>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "budgetsByYear",  

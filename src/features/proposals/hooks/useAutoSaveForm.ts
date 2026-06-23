@@ -1,21 +1,21 @@
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import { useProjectFormStore } from "../stores/useProjectFormStore";
-import { ProjectDraftValues } from "../types";
+import { useProposalFormStore } from "../stores/useProposalFormStore";
+import { ProposalDraftValues } from "../types";
 
 export const useAutoSaveForm = () => {
   // ดึงค่า watch จาก FormProvider ของหน้าแม่
-  const { watch } = useFormContext<ProjectDraftValues>();
+  const { watch } = useFormContext<ProposalDraftValues>();
 
-  const updateFormData = useProjectFormStore((state) => state.updateFormData);
-  const setLastSavedAt = useProjectFormStore((state) => state.setLastSavedAt);
+  const updateFormData = useProposalFormStore((state) => state.updateFormData);
+  const setLastSavedAt = useProposalFormStore((state) => state.setLastSavedAt);
 
   useEffect(() => {
     // RHF watch จะทำงานทุกครั้งที่มีการเปลี่ยนค่าในฟอร์ม
     const subscription = watch((value) => {
       // ทำ Debounce 1 วินาที (1000ms) ก่อนเซฟลง Store
       const handler = setTimeout(() => {
-        updateFormData(value as Partial<ProjectDraftValues>);
+        updateFormData(value as Partial<ProposalDraftValues>);
         setLastSavedAt(new Date().toISOString());
 
         // TODO: ตรงนี้สามารถแทรกโค้ด React Query (useMutation)

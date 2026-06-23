@@ -5,10 +5,9 @@ import {
   useFieldArray,
   useWatch,
 } from "react-hook-form";
-import { Plus, Trash2, AlertCircle } from "lucide-react"; // 📍 1. นำเข้า AlertCircle
-import { ProjectStep2Values } from "../types";
-import { cn } from "@/lib/utils"; // 📍 2. นำเข้า cn สำหรับสลับ class error
-
+import { Plus, Trash2, AlertCircle } from "lucide-react";
+import { ProposalStep2Values } from "../types";
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea"; 
 import { RichTextarea } from "@/components/custom/RichTextarea";
@@ -17,12 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AgencyComboBox } from "@/components/custom/DepartmentComboBox";
 
-export const ProjectStep2 = () => {
+export const ProposalStep2 = () => {
   const {
     register,
     control,
     formState: { errors },
-  } = useFormContext<ProjectStep2Values>();
+  } = useFormContext<ProposalStep2Values>();
 
   const selectedProjectType = useWatch({
     control,

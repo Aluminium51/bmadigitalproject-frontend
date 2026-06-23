@@ -1,7 +1,7 @@
 // ProjectStep3.tsx
 import { useState, useRef, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import { ProjectStep3Values } from "../types";
+import { ProposalStep3Values } from "../types";
 import { Input } from "@/components/ui/input";
 import { RichTextarea } from "@/components/custom/RichTextarea";
 import { Label } from "@/components/ui/label";
@@ -159,8 +159,8 @@ const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: a
 };
 
 // --- Component หลัก ---
-export const ProjectStep3 = () => {
-  const { register, watch, setValue, formState: { errors } } = useFormContext<ProjectStep3Values>();
+export const ProposalStep3 = () => {
+  const { register, watch, setValue, formState: { errors } } = useFormContext<ProposalStep3Values>();
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">

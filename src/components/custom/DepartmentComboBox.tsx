@@ -1,86 +1,83 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import * as React from "react";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
-  Combobox,
-  ComboboxInput,
-  ComboboxContent,
-  ComboboxList,
-  ComboboxItem,
-  ComboboxEmpty,
-} from "@/components/ui/combobox";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 import { department } from "@/data/lookup";
 
-// หน่วยงาน
-export const AgencyComboBox = ({
-  value,
-  onChange,
-}: {
+interface AgencyComboBoxProps {
   value: string;
-  onChange: (val: string) => void;
-}) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
-  
-  // เพิ่ม State สำหรับเก็บข้อความที่ผู้ใช้กำลังพิมพ์ค้นหา
-  const [inputValue, setInputValue] = useState("");
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string; // 📍 1. เพิ่ม prop className
+}
 
-  const fetchAgencies = department.map((item) => ({
-    id: item.id.toString(),
-    name: item.name,
-  }));
-
-  useEffect(() => {
-    setIsLoading(true);
-    const fetchMockData = setTimeout(() => {
-      setAgencies(fetchAgencies);
-      setIsLoading(false);
-    }, 600); 
-    return () => clearTimeout(fetchMockData);
-  }, []);
-
-  // Logic กรองข้อมูล (Filter) หากคำที่พิมพ์ตรงกับชื่อหน่วยงาน ให้แสดงแค่รายการนั้น
-  const filteredAgencies = agencies.filter((agency) =>
-    agency.name.toLowerCase().includes(inputValue.toLowerCase())
-  );
+export function AgencyComboBox({ value, onChange, disabled, className }: AgencyComboBoxProps) { // 📍 2. รับค่า className เข้ามา
+  const [open, setOpen] = React.useState(false);
 
   return (
-    <Combobox
-      value={value || null} 
-      onValueChange={(val) => onChange(val || "")}
-      // ผูก State การค้นหาเข้ากับ Combobox
-      inputValue={inputValue}
-      onInputValueChange={(val) => setInputValue(val)}
-    >
-      <ComboboxInput
-        placeholder="ค้นหา หรือ เลือกหน่วยงาน..."
-        className="w-full bg-surface py-[1.175rem]"
-        showTrigger={true}
-        showClear={!!value}
-      />
-      <ComboboxContent
-        align="start"
-        className="w-full p-0 shadow-level-2 border-border"
-      >
-        <ComboboxList>
-          {isLoading ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              กำลังโหลดข้อมูล...
-            </div>
-          ) : (
-            <>
-              {/* ComboboxEmpty จะแสดงอัตโนมัติเมื่อข้อมูลที่ map ด้านล่างเป็น 0 รายการ */}
-              {/* <ComboboxEmpty>ไม่พบหน่วยงานที่คุณค้นหา</ComboboxEmpty> */}
-              
-              {/* นำ filteredAgencies มา map แสดงผลแทน agencies ตัวเต็ม */}
-              {filteredAgencies.map((agency) => (
-                <ComboboxItem key={agency.id} value={agency.name}>
-                  {agency.name}
-                </ComboboxItem>
-              ))}
-            </>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className={cn(
+            "w-full justify-between font-normal bg-surface hover:bg-surface-variant/30",
+            !value && "text-muted-foreground",
+            className // 📍 3. นำ className มาต่อท้ายด้วย cn() เพื่อให้มัน Overwrite ค่า default ได้
           )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
+        >
+          {value
+            ? department.find((dept) => dept.name === value)?.name || value
+            : "เลือกหน่วยงาน..."}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="ค้นหาหน่วยงาน..." />
+          <CommandList>
+            <CommandEmpty>ไม่พบหน่วยงานที่ค้นหา</CommandEmpty>
+            <CommandGroup>
+              {department.map((dept) => (
+                <CommandItem
+                  key={dept.id}
+                  value={dept.name}
+                  onSelect={() => {
+                    onChange(dept.name === value ? "" : dept.name);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === dept.name ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {dept.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
-};
+}
