@@ -3,6 +3,7 @@
 import { useForm, FormProvider, Resolver, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Send } from "lucide-react";
 
 import { 
   proposalFormSchema, 
@@ -10,6 +11,7 @@ import {
   proposalStep2Schema, 
   proposalStep3Schema, 
   proposalStep4Schema,
+  proposalStep5Schema,
   ProposalFormValues 
 } from "../types";
 
@@ -29,16 +31,16 @@ const AutoSaveWatcher = () => {
   return null;
 };
 
-const WizardForm = () => {
+const WizardForm = ({ projectId }: { projectId: string }) => {
   const { currentStep, nextStep, prevStep, formData, resetForm, lastSavedAt, addStepError, removeStepError } = useProposalFormStore();
 
-  const getCurrentSchema = (step: number) => { // 📍 รับค่า step เพื่อให้เช็คได้ตรงกับหน้า
+  const getCurrentSchema = (step: number) => {
     switch (step) {
       case 1: return proposalStep1Schema;
       case 2: return proposalStep2Schema;
       case 3: return proposalStep3Schema;
       case 4: return proposalStep4Schema;
-      // case 5: return proposalStep5Schema; (ถ้ามี)
+      case 5: return proposalStep5Schema; 
       default: return proposalStep1Schema;
     }
   };
@@ -51,17 +53,12 @@ const WizardForm = () => {
 
   const { handleSubmit, formState: { errors } } = methods;
 
-  // ฟังก์ชันสำหรับการเช็ค Validation โดยไม่บังคับย้ายหน้า (ใช้ตอนกด Stepper)
   const validateCurrentStep = async (): Promise<boolean> => {
-    // 1. ดึงรายชื่อ Field ทั้งหมดที่อยู่ใน Schema ของหน้าปัจจุบัน
     const currentSchema = getCurrentSchema(currentStep);
     const fieldsInStep = Object.keys(currentSchema.shape) as any;
 
-    // 2. สั่งให้ React Hook Form ตรวจสอบ Field เหล่านั้น "ทันที"
-    // คำสั่ง trigger นี้จะไประบายขอบสีแดงให้ใน UI อัตโนมัติ (และจะจำสีแดงไว้ให้ด้วย)
     const isValid = await methods.trigger(fieldsInStep);
 
-    // 3. จัดการสถานะ Error ที่ Stepper (ไอคอน X ด้านบน)
     if (isValid) {
       removeStepError(currentStep);
       return true;
@@ -71,38 +68,38 @@ const WizardForm = () => {
     }
   };
 
-  // Validation Check สำหรับปุ่ม "ถัดไป" (Next)
-    const handleNext = async () => {
-    // 1. เรียก validateCurrentStep() เพื่อตรวจข้อมูลปัจจุบัน
+  const handleNext = async () => {
     await validateCurrentStep(); 
-    
-    // 2. ขยับไปหน้าถัดไปเลย โดยไม่สนว่าผลลัพธ์ของ isValid จะเป็น true หรือ false
     nextStep();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePrev = async () => {
-    await validateCurrentStep(); // เช็คแล้วเก็บ Error ไว้ก่อนกดย้อนกลับด้วย
+    await validateCurrentStep();
     prevStep();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const onSubmit: SubmitHandler<ProposalFormValues> = async (data) => {
-    // 📍 เช็ค Validation ของทุกสเต็ปพร้อมกันตอนกดปุ่มสุดท้าย
     const result = proposalFormSchema.safeParse(data);
     if (!result.success) {
        console.error("มีข้อผิดพลาดบางหน้าที่ยังกรอกไม่ครบ");
-       // คุณอาจจะเพิ่ม logic เด้งกลับไปหน้าที่ error หน้าแรกตรงนี้ได้
        return; 
     }
 
-    console.log("🚀 Final Submit to API:", data);
+    const payload = {
+      projectId: projectId,
+      ...data
+    };
+
+    console.log("🚀 Final Submit to API:", payload);
     resetForm();
+    // ตรงนี้อาจจะเพิ่ม router.push(`/projects/${projectId}`) กลับไปหน้า Workspace
   };
 
   return (
-    <div className="mx-auto w-full rounded-container border bg-surface p-6 sm:p-10 shadow-level-1">
-      {/* 📍 โยนฟังก์ชัน validate เข้าไปให้ Stepper ใช้ */}
+    <div className="mx-auto w-full rounded-[40px] border border-[#D1CDC7] bg-white p-6 sm:p-10 shadow-sm overflow-hidden">
+      
       <StepperIndicator validateCurrentStep={validateCurrentStep} />
 
       <FormProvider {...methods}>
@@ -110,26 +107,30 @@ const WizardForm = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
           
-          {currentStep === 1 && <ProposalStep1 />}
-          {currentStep === 2 && <ProposalStep2 />}
-          {currentStep === 3 && <ProposalStep3 />}
-          {currentStep === 4 && <ProposalStep4 />}
-          {currentStep === 5 && <ProposalStep5 />}
+          <div className="min-h-[400px]"> {/* กันการกระตุกเวลาเปลี่ยนหน้า */}
+            {currentStep === 1 && <ProposalStep1 />}
+            {currentStep === 2 && <ProposalStep2 />}
+            {currentStep === 3 && <ProposalStep3 />}
+            {currentStep === 4 && <ProposalStep4 />}
+            {currentStep === 5 && <ProposalStep5 />}
+          </div>
 
-          <div className="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between border-t border-border gap-4">
-            <div className="text-sm text-slate-gray order-2 sm:order-1 w-full">
+          <div className="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between border-t border-[#ededf4] gap-4">
+            
+            <div className="text-xs font-medium text-slate-400 order-2 sm:order-1 w-full flex items-center">
               {lastSavedAt && `บันทึกร่างล่าสุดเมื่อ: ${new Date(lastSavedAt).toLocaleTimeString()}`}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 order-1 sm:order-2 w-full justify-start sm:justify-end">
+            <div className="flex flex-col sm:flex-row gap-3 order-1 sm:order-2 w-full justify-start sm:justify-end">
               {currentStep > 1 && (
                 <Button 
                   type="button" 
-                  onClick={handlePrev} // 📍 ใช้ handlePrev เพื่อบันทึก Error ก่อนถอย
+                  onClick={handlePrev}
                   variant="outline" 
-                  className="px-6 py-4 w-full sm:w-auto font-medium"
+                  // 📍 ปรับปุ่ม ย้อนกลับ เป็นทรง Capsule
+                  className="px-6 h-12 w-full sm:w-auto font-bold rounded-full border-[1.5px] border-[#D1CDC7] text-[#3f4942] hover:bg-surface-variant hover:text-[#191c20]"
                 >
-                  ย้อนกลับ
+                  <ArrowLeft className="w-4 h-4 mr-2" /> ย้อนกลับ
                 </Button>
               )}
 
@@ -138,19 +139,18 @@ const WizardForm = () => {
                   key="next-btn"
                   type="button" 
                   onClick={handleNext} 
-                  variant="default" 
-                  className="px-6 py-4 w-full sm:w-auto font-medium border-none"
+                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-[#00734b] hover:bg-[#005838] text-white shadow-sm transition-transform active:scale-[0.99]"
                 >
-                  ถัดไป
+                  ถัดไป <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
                 <Button 
                   key="submit-btn"
                   type="submit" 
-                  variant="default" 
-                  className="px-6 py-4 w-full sm:w-auto font-medium border-none"
+                  // ปรับปุ่ม Submit ท้ายสุด ให้สีโดดเด่น
+                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-status-orange hover:bg-[#d65f00] text-white shadow-sm transition-transform active:scale-[0.99]"
                 >
-                  ส่งโครงการ
+                  <Send className="w-4 h-4 mr-2" /> ยื่นเสนอโครงการ
                 </Button>
               )}
             </div>
@@ -161,7 +161,8 @@ const WizardForm = () => {
   );
 };
 
-export const CreateProposalWizard = () => {
+// ให้ Wrapper รับ projectId ด้วย
+export const CreateProposalWizard = ({ projectId }: { projectId: string }) => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -172,5 +173,5 @@ export const CreateProposalWizard = () => {
   }, []);
 
   if (!isMounted) return null; 
-  return <WizardForm />;
+  return <WizardForm projectId={projectId} />;
 };
