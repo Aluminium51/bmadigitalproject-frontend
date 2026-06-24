@@ -23,7 +23,7 @@ import {
   ComboboxItem,
   ComboboxEmpty,
 } from "@/components/ui/combobox";
-import { registerUserAction } from "@/app/actions/auth.actions";
+import { registerUserAction } from "@/features/auth/actions/auth.actions";
 import { RegisterValues, RegisterFieldProps, registerSchema } from "../type";
 
 

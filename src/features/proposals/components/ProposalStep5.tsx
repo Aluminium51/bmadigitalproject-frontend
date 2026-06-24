@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Trash2, Plus, AlertCircle, FileDown, Loader2 } from "lucide-react";
-import { generateProposalDocx } from "@/lib/documentGenerator";
+import { generateProposalDocx } from "@/features/proposals/utils/documentGenerator";
 
 export const ProposalStep5 = () => {
   const { register, control, setValue, watch, getValues, formState: { errors } } = useFormContext<ProposalStep5Values>();

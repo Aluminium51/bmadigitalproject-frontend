@@ -344,7 +344,6 @@ export default function ProjectWorkspacePage() {
         </div>
 
         <Card className="rounded-container border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
-          {/* ลบ Padding ออก เพื่อให้เส้นแบ่ง (divide-y) ชนขอบสวยงาม */}
           <CardContent className="p-0">
             <div className="flex flex-col divide-y divide-[#ededf4]">
               <MandatoryDocRow
@@ -391,7 +390,7 @@ export default function ProjectWorkspacePage() {
           </div>
         </div>
 
-        <Card className="rounded-[40px] border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
+        <Card className="rounded-container border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
           <CardHeader className="border-b border-[#ededf4] px-8 py-4 flex flex-row items-center justify-between rounded-none bg-surface/30">
             <CardTitle className="text-lg font-bold text-[#191c20]">
               ไฟล์รูปภาพประกอบ 4 หมวด

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { AuthShell } from "./auth-shell";
-import { loginUserAction } from "@/app/actions/auth.actions";
+import { loginUserAction } from "@/features/auth/actions/auth.actions";
 
 const loginSchema = z.object({
   username: z.string().min(3, "กรุณากรอกชื่อผู้ใช้อย่างน้อย 3 ตัวอักษร"),

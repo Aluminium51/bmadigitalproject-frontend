@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, Download } from "lucide-react";
-import { generateProposalDocx } from "@/lib/documentGenerator";
+import { generateProposalDocx } from "@/features/proposals/utils/documentGenerator";
 
 // จำลองข้อมูล (Mock Data) ให้ครบตาม Schema
 const mockProjectData = {
