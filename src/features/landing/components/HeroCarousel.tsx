@@ -38,8 +38,8 @@ export function HeroCarousel() {
       <Carousel
         plugins={[plugin.current]}
         className="w-full h-full"
-        onMouseEnter={plugin.current.stop} // เอาเมาส์ชี้แล้วหยุดเลื่อน
-        onMouseLeave={plugin.current.reset} // เอาเมาส์ออกแล้วเลื่อนต่อ
+        onMouseEnter={() => plugin.current.stop()} // เอาเมาส์ชี้แล้วหยุดเลื่อน
+        onMouseLeave={() => plugin.current.reset()} // เอาเมาส์ออกแล้วเลื่อนต่อ
       >
         <CarouselContent className="h-full ml-0">
           {carouselData.map((slide) => (

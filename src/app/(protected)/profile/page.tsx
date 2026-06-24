@@ -17,7 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-// 1. Type Definition (ตาม Schema)
+// ==========================================
+// 1. Type Definitions
+// ==========================================
+
 interface UserProfileData {
   id: number;
   username: string;
@@ -35,7 +38,17 @@ interface UserProfileData {
   user_inf_mobile_no: string;
 }
 
+// กำหนด Type ของ Icon เป็น React.ElementType
+interface InfoRowProps {
+  icon: React.ElementType; 
+  label: string;
+  value: string;
+}
+
+// ==========================================
 // 2. Mock Data
+// ==========================================
+
 const mockUserData: UserProfileData = {
   id: 1001,
   username: "somchai.p",
@@ -46,35 +59,49 @@ const mockUserData: UserProfileData = {
   user_inf_nm: "สมชาย",
   user_inf_srnm: "พัฒนาเมือง",
   user_inf_pst_nm: "ผู้ดูแลระบบ",
-  user_inf_dep_cod: "26000000", // หน่วยงาน
-  user_inf_div_cod: "26020000", // ส่วนราชการ
+  user_inf_dep_cod: "26000000",
+  user_inf_div_cod: "26020000",
   user_inf_ofc_tel_no: "02-222-3333",
   user_inf_ofc_tel_int_no: "4567",
   user_inf_mobile_no: "081-999-8888",
 };
 
+// ==========================================
+// 3. Sub-Components (ย้ายออกมานอก Component หลัก)
+// ==========================================
+
+
+// คอมโพเนนต์สำหรับแสดงป้ายสถานะ (Badge)
+const StatusBadge = ({ status }: { status: number }) => {
+  if (status === 10) {
+    return <Badge className="bg-primary/10 text-primary border-none px-3 py-1 text-sm font-medium">Active User</Badge>;
+  }
+  if (status === 0) {
+    return <Badge variant="destructive" className="px-3 py-1 text-sm">Inactive</Badge>;
+  }
+  return <Badge variant="secondary" className="px-3 py-1 text-sm">Unknown</Badge>;
+};
+
+
+// คอมโพเนนต์สำหรับแสดงข้อมูลแต่ละบรรทัด (Clean Style)
+const InfoRow = ({ icon: Icon, label, value }: InfoRowProps) => (
+  <div className="flex items-start gap-4 p-2 transition-colors rounded-lg hover:bg-surface-container-low/50">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary">
+      <Icon className="h-5 w-5" />
+    </div>
+    <div className="flex flex-col">
+      <span className="text-sm font-medium text-slate-gray">{label}</span>
+      <span className="text-base font-semibold text-foreground mt-0.5">{value || "-"}</span>
+    </div>
+  </div>
+);
+
+// ==========================================
+// 4. Main Component
+// ==========================================
+
 export default function UserProfile() {
   const data = mockUserData;
-
-  // ฟังก์ชันแปลง Status
-  const getStatusBadge = (status: number) => {
-    if (status === 10) return <Badge className="bg-primary/10 text-primary border-none px-3 py-1 text-sm font-medium">Active User</Badge>;
-    if (status === 0) return <Badge variant="destructive" className="px-3 py-1 text-sm">Inactive</Badge>;
-    return <Badge variant="secondary" className="px-3 py-1 text-sm">Unknown</Badge>;
-  };
-
-  // คอมโพเนนต์สำหรับแสดงข้อมูลแต่ละบรรทัด (Clean Style)
-  const InfoRow = ({ icon: Icon, label, value }: { icon: any, label: string, value: string }) => (
-    <div className="flex items-start gap-4 p-2 transition-colors rounded-lg hover:bg-surface-container-low/50">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="flex flex-col">
-        <span className="text-sm font-medium text-slate-gray">{label}</span>
-        <span className="text-base font-semibold text-foreground mt-0.5">{value || "-"}</span>
-      </div>
-    </div>
-  );
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -107,7 +134,7 @@ export default function UserProfile() {
             </p>
             
             <div className="mb-8">
-              {getStatusBadge(data.status)}
+              <StatusBadge status={data.status} />
             </div>
 
             <Separator className="w-full mb-6 opacity-50" />
@@ -116,7 +143,7 @@ export default function UserProfile() {
               <Button variant="default" className="w-full rounded-full h-11 text-base">
                 แก้ไขข้อมูลส่วนตัว
               </Button>
-              <Button variant="soft" className="w-full rounded-full h-11 text-base">
+              <Button variant="outline" className="w-full rounded-full h-11 text-base"> {/* 🟢 สมมติว่าไม่มี variant="soft" ขออนุญาตเปลี่ยนเป็น outline ชั่วคราวนะครับ */}
                 เปลี่ยนรหัสผ่าน
               </Button>
             </div>

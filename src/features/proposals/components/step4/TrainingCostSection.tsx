@@ -60,7 +60,7 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
         {hasSpeaker && (
           <div className="pl-6 border-l-2 border-primary/20 space-y-4 animate-in fade-in slide-in-from-top-2">
             <div className="overflow-x-auto border border-border rounded-md">
-              <table className="w-full text-left min-w-[800px] text-xs">
+              <table className="w-full text-left min-w-200 text-xs">
                 <thead className="bg-surface-container-low text-slate-gray text-center">
                   <tr>
                     <th className="p-2 w-12" rowSpan={2}>ลำดับ</th>
@@ -101,7 +101,7 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
             
             <div>
               <Label className="mb-1 block">เหตุผลความจำเป็นที่ต้องใช้วิทยากรเชี่ยวชาญเฉพาะด้าน <span className="text-status-orange">*</span></Label>
-              <Textarea {...register(`${coursePath}.speakerReason`)} className={`bg-surface min-h-[60px] ${rowErrors.speakerReason ? 'border-status-orange' : ''}`} placeholder="ระบุเหตุผล..." />
+              <Textarea {...register(`${coursePath}.speakerReason`)} className={`bg-surface min-h-15 ${rowErrors.speakerReason ? 'border-status-orange' : ''}`} placeholder="ระบุเหตุผล..." />
               {rowErrors.speakerReason && <p className="text-status-orange text-xs mt-1">{rowErrors.speakerReason.message}</p>}
             </div>
             <div className="text-right text-sm font-bold text-foreground">รวมค่าวิทยากร: {totalSpkCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</div>
@@ -112,7 +112,7 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
       <div>
         <Label className="font-bold text-md text-foreground block mb-3">ตารางค่าอาหาร อาหารว่างและเครื่องดื่ม</Label>
         <div className="overflow-x-auto border border-border rounded-md">
-          <table className="w-full text-left min-w-[800px] text-xs">
+          <table className="w-full text-left min-w-200 text-xs">
             <thead className="bg-surface-container-low text-slate-gray text-center">
               <tr>
                 <th className="p-2 w-12" rowSpan={2}>ลำดับ</th>

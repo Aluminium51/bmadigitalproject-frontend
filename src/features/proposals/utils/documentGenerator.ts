@@ -4,10 +4,10 @@ import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 import { ProposalDraftValues } from "@/features/proposals/types";
 
-// @ts-ignore
+// @ts-expect-error - ImageModule ไม่มี Type definition ของ TypeScript อย่างเป็นทางการ
 import ImageModule from "docxtemplater-image-module-free";
 
-// 1. ฟังก์ชันช่วยเหลือ: แปลง File เป็น Base64 String แบบ Promise
+// แปลงไฟล์ (File) เป็น Base64 String
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -17,28 +17,34 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// 2. สร้างฟังก์ชันจำลองรูปภาพโปร่งใสเป็น Base64
-const getBlankImageBase64 = () => {
-  // Data URL ของรูปภาพโปร่งใสขนาด 1x1 พิกเซล
+
+// ดึงค่า Base64 ของรูปภาพโปร่งใสขนาด 1x1 px (ใช้สำหรับ Placeholder)
+const getBlankImageBase64 = (): string => {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 };
 
-// 3. ฟังก์ชันตรวจสอบว่าเป็น Blank Image หรือไม่
-const isBlankImage = (base64String: string) => {
+
+// ตรวจสอบว่าเป็นรูปภาพ Placeholder หรือไม่
+const isBlankImage = (base64String: string): boolean => {
   return base64String === getBlankImageBase64();
 };
 
 
+// ฟังก์ชันหลักในการสร้างเอกสาร Word (.docx)
 export const generateProposalDocx = async (formData: ProposalDraftValues) => {
   try {
-    const response = await fetch("/templates/proposal.docx");
+    // 1. โหลดไฟล์ Template (.docx)
+    const response = await fetch("/templates/project-proposal.docx");
+    
+    if (!response.ok) {
+      throw new Error(`ดาวน์โหลด Template ไม่สำเร็จ (Status: ${response.status}) - กรุณาเช็คว่ามีไฟล์ public/templates/project-proposal.docx อยู่จริง`);
+    }
+    
     const arrayBuffer = await response.arrayBuffer();
-
     const zip = new PizZip(arrayBuffer);
-
     const blankImageBase64 = getBlankImageBase64();
 
-    // 🟢 แปลงรูปภาพเป็น Base64 แทนที่จะใช้ ArrayBuffer
+    // 2. จัดเตรียมและแปลงไฟล์รูปภาพเป็น Base64
     let systemImageBase64 = blankImageBase64;
     if (formData.systemDiagramFile?.file) {
       systemImageBase64 = await fileToBase64(formData.systemDiagramFile.file);
@@ -49,46 +55,47 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
       networkImageBase64 = await fileToBase64(formData.networkDiagramFile.file);
     }
 
+    // 3. กำหนดค่าออปชันสำหรับ Image Module
     const imageOptions = {
       centered: true,
-      getImage: function (tagValue: any) {
-        // 🟢 อ่านค่า Base64 แล้วแปลงเป็น Buffer ให้ docxtemplater นำไปใช้งาน
-        // tagValue ที่ได้มาคือ "data:image/png;base64,iVBORw0..."
+      getImage: function (tagValue: string): ArrayBuffer {
+        // แปลง Base64 String กลับเป็น ArrayBuffer เพื่อส่งให้ docxtemplater
         const base64Data = tagValue.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
         const binaryString = window.atob(base64Data);
         const len = binaryString.length;
         const bytes = new Uint8Array(len);
+        
         for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
+          bytes[i] = binaryString.charCodeAt(i);
         }
-        return bytes.buffer; 
+        return bytes.buffer;
       },
-      getSize: function (img: any, tagValue: any, tagName: string) {
-        // 🟢 เช็คว่ารูปนี้คือรูปโปร่งใสที่เราสร้างขึ้นมาหลอกหรือไม่
+      getSize: function (img: ArrayBuffer, tagValue: string, tagName: string): [number, number] {
+        // ถ้ารูปเป็น Placeholder ให้ย่อขนาดเหลือ 1x1 px (ซ่อนรูป)
         if (isBlankImage(tagValue)) {
-          return [1, 1]; // ย่อให้เหลือ 1px
+          return [1, 1];
         }
         
-        // ขนาดของภาพปกติ (กว้าง x สูง)
+        // กำหนดขนาดภาพตามชื่อ Tag ใน Template
         if (tagName === "systemImage") return [500, 350];
         if (tagName === "networkImage") return [500, 350];
-        return [400, 300]; 
+        return [400, 300];
       },
     };
     
     const imageModule = new ImageModule(imageOptions);
 
+    // 4. ตั้งค่าและสร้าง Docxtemplater Instance
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
       modules: [imageModule],
-      nullGetter: function (part) {
-        if (!part.module) return ""; 
-        if (part.module === "rawxml") return "";
-        return "";
+      nullGetter: function () {
+        return ""; // ถ้าเจอข้อมูลที่เป็น null/undefined ให้ใส่เป็นค่าว่างแทน
       },
     });
 
+    // 5. จัดเตรียม Data Mapping สำหรับ Mapping เข้าเอกสาร
     const templateData = {
       ...formData,
       totalBudgetFormatted: formData.totalBudget 
@@ -102,7 +109,6 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
         year: 'numeric', month: 'long', day: 'numeric' 
       }),
       
-      // 🟢 ส่งค่าเป็น Base64 string เข้าไปแทน
       systemImage: systemImageBase64,
       systemImageDesc: formData.systemDiagramFile?.description || "-",
       
@@ -110,7 +116,7 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
       networkImageDesc: formData.networkDiagramFile?.description || "-",
     };
 
-    // 🟢 ถ้ายังมี Error ตรงนี้ แสดงว่าโครงสร้าง Template มีปัญหา หรือ Module โหลดไม่สมบูรณ์
+    // 6. เรนเดอร์และดาวน์โหลดไฟล์
     doc.render(templateData);
 
     const output = doc.getZip().generate({
