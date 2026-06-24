@@ -176,7 +176,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:w-auto rounded-full bg-[#00734b] hover:bg-[#005838] text-white font-bold"
+              className="w-full sm:w-auto rounded-full bg-primary hover:bg-primary-dark text-white font-bold"
             >
               {isSubmitting ? (
                 <>
