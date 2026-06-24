@@ -9,7 +9,6 @@ interface ProjectTableProps {
   activeTab: TabType;
 }
 
-// 🌟 ย้ายมาไว้ข้างใน Component นี้เลย (หรือแยกไฟล์ utils ต่างหากก็ได้)
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Pending Review": return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-orange-100 text-orange-700 flex items-center gap-1 w-fit"><Clock className="w-3 h-3"/> รอตรวจสอบ</span>;
@@ -40,7 +39,7 @@ export function ProjectTable({ data, activeTab }: ProjectTableProps) {
             <th className="px-6 sm:px-10 py-4 w-full">ชื่อโครงการ</th>
             {activeTab === "all" && <th className="px-6 sm:px-10 py-4">หน่วยงาน</th>}
             {(activeTab === "team" || activeTab === "all") && <th className="px-6 sm:px-10 py-4">ผู้รับผิดชอบ</th>}
-            <th className="px-6 sm:px-10 py-4 min-w-[200px]">{activeTab === "drafts" ? "ความคืบหน้า" : "สถานะ"}</th>
+            <th className="px-6 sm:px-10 py-4 min-w-50">{activeTab === "drafts" ? "ความคืบหน้า" : "สถานะ"}</th>
             <th className="px-6 sm:px-10 py-4">อัปเดตล่าสุด</th>
             <th className="px-6 sm:px-10 py-4 text-right">จัดการ</th>
           </tr>

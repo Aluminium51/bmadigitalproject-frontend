@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowRight, X } from "lucide-react"; // 📍 เพิ่ม X icon
+import { Loader2, ArrowRight, X } from "lucide-react";
 import { z } from "zod";
 
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,11 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader, // 📍 นำกลับมาใช้เพื่อ Accessibility
+  DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose // 📍 นำเข้า DialogClose ควบคุมการปิด
+  DialogClose
 } from "@/components/ui/dialog";
 
 const createProjectSchema = z.object({
@@ -84,17 +84,17 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
   };
 
   return (
-    // 📍 ใช้ hideCloseButton ปกปิดปุ่ม X ดั้งเดิม (ถ้าใช้ shadcn เวอร์ชั่นที่มี)
+    // ใช้ hideCloseButton ปกปิดปุ่ม X ดั้งเดิม (ถ้าใช้ shadcn เวอร์ชั่นที่มี)
     // หรือเราจะครอบปุ่ม X ของเราเองแทนการแสดงผลอัตโนมัติ
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* ซ่อนปุ่ม X ดั้งเดิมด้วย [&>button]:hidden */}
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-white border-[#D1CDC7] rounded-3xl [&>button]:hidden">
+      <DialogContent className="sm:max-w-125 p-0 overflow-hidden bg-white border-[#D1CDC7] rounded-3xl [&>button]:hidden">
         
         {/* --- Header --- */}
-        {/* 📍 ใช้ DialogHeader ตามมาตรฐาน เพื่อให้ SR (Screen Reader) อ่านได้ถูกต้อง */}
+        {/* ใช้ DialogHeader เพื่อให้ SR (Screen Reader) อ่านได้ถูกต้อง */}
         <DialogHeader className="bg-[#f9f9ff] px-8 py-6 border-b border-[#ededf4] flex flex-row items-start justify-between text-left m-0">
           <div>
-             {/* 📍 2. ลบ Icon FolderPlus ออก */}
+             {/* 2. ลบ Icon FolderPlus ออก */}
             <DialogTitle className="text-2xl font-bold text-[#191c20]">
               สร้างโครงการใหม่
             </DialogTitle>
@@ -103,7 +103,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
             </DialogDescription>
           </div>
           
-          {/* 📍 3. ปุ่ม X แบบ Custom ชัดเจนและใหญ่กว่าเดิม */}
+          {/* 3. ปุ่ม X แบบ Custom ชัดเจนและใหญ่กว่าเดิม */}
           <DialogClose asChild>
             <button 
               disabled={isSubmitting}

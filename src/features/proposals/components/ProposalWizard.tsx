@@ -98,7 +98,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
   };
 
   return (
-    <div className="mx-auto w-full rounded-[40px] border border-[#D1CDC7] bg-white p-6 sm:p-10 shadow-sm overflow-hidden">
+    <div className="mx-auto w-full rounded-container border border-[#D1CDC7] bg-white p-6 sm:p-10 shadow-sm overflow-hidden">
       
       <StepperIndicator validateCurrentStep={validateCurrentStep} />
 
@@ -107,7 +107,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
           
-          <div className="min-h-[400px]"> {/* กันการกระตุกเวลาเปลี่ยนหน้า */}
+          <div className="min-h-100"> {/* กันการกระตุกเวลาเปลี่ยนหน้า */}
             {currentStep === 1 && <ProposalStep1 />}
             {currentStep === 2 && <ProposalStep2 />}
             {currentStep === 3 && <ProposalStep3 />}
@@ -127,7 +127,6 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
                   type="button" 
                   onClick={handlePrev}
                   variant="outline" 
-                  // 📍 ปรับปุ่ม ย้อนกลับ เป็นทรง Capsule
                   className="px-6 h-12 w-full sm:w-auto font-bold rounded-full border-[1.5px] border-[#D1CDC7] text-[#3f4942] hover:bg-surface-variant hover:text-[#191c20]"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" /> ย้อนกลับ
@@ -139,7 +138,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
                   key="next-btn"
                   type="button" 
                   onClick={handleNext} 
-                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-[#00734b] hover:bg-[#005838] text-white shadow-sm transition-transform active:scale-[0.99]"
+                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-[#00734b] hover:bg-primary-dark text-white shadow-sm transition-transform active:scale-[0.99]"
                 >
                   ถัดไป <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

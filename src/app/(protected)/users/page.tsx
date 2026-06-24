@@ -32,7 +32,7 @@ export default function UsersManagementPage() {
       <UserSummaryCards stats={stats} />
 
       {/* 3. Main Content (Table + Tools) */}
-      <div className="bg-white rounded-[40px] border border-[#D1CDC7] shadow-sm flex-1 flex flex-col overflow-hidden">
+      <div className="bg-white rounded-container border border-[#D1CDC7] shadow-sm flex-1 flex flex-col overflow-hidden">
         
         {/* Toolbar: Search & Filters */}
         <UserToolbar 

@@ -95,7 +95,7 @@ export const ProposalStep5 = () => {
           </div>
           
           <div className="overflow-x-auto border border-border rounded-md">
-            <table className="w-full text-left min-w-[600px] text-sm">
+            <table className="w-full text-left min-w-150 text-sm">
               <thead className="bg-surface-container-low text-slate-gray">
                 <tr>
                   <th className="p-3 w-16 text-center">ลำดับ</th>
@@ -132,7 +132,7 @@ export const ProposalStep5 = () => {
           <Textarea 
             {...register("otherReadiness")} 
             placeholder="อธิบายประเด็นความพร้อมด้านอื่นๆ..." 
-            className="min-h-[150px] bg-surface resize-y" 
+            className="min-h-37.5 bg-surface resize-y" 
           />
         </div>
       </div>
@@ -143,7 +143,7 @@ export const ProposalStep5 = () => {
         <Textarea 
           {...register("expectedBenefits")} 
           placeholder="อธิบายประโยชน์ที่คาดว่าจะได้รับจากโครงการนี้อย่างชัดเจน..." 
-          className={`min-h-[200px] bg-surface resize-y ${errors.expectedBenefits ? 'border-status-orange' : ''}`} 
+          className={`min-h-50 bg-surface resize-y ${errors.expectedBenefits ? 'border-status-orange' : ''}`} 
         />
         {errors.expectedBenefits && <p className="text-status-orange text-sm mt-2">{errors.expectedBenefits.message}</p>}
       </div>
@@ -168,7 +168,7 @@ export const ProposalStep5 = () => {
         {errors.isInRoadmap && <p className="text-status-orange text-sm mt-3">{errors.isInRoadmap.message}</p>}
       </div>
 
-      {/* 🟢 --- ส่วนเพิ่มปุ่ม Generate Document --- */}
+      {/* --- ส่วนเพิ่มปุ่ม Generate Document --- */}
       <div className="flex justify-end mt-4 pt-6 border-t border-border">
         <Button 
           type="button" 
