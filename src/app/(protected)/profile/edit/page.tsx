@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm, FormProvider, useFormContext, Resolver } from "react-hook-form";
+import { useForm, FormProvider, useFormContext, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { 
@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 
-// 1. Schema สำหรับ Validation
+// 1. โครงสร้าง Schema สำหรับตรวจสอบความถูกต้องของข้อมูล
 const editProfileSchema = z.object({
   user_inf_nm: z.string().min(2, "กรุณากรอกชื่ออย่างน้อย 2 ตัวอักษร"),
   user_inf_srnm: z.string().min(2, "กรุณากรอกนามสกุลอย่างน้อย 2 ตัวอักษร"),
@@ -40,7 +40,7 @@ const editProfileSchema = z.object({
 
 type EditProfileValues = z.infer<typeof editProfileSchema>;
 
-// 2. ข้อมูลตั้งต้นจำลอง
+// 2. ข้อมูลผู้ใช้งานตั้งต้นระบบจำลอง
 const initialUserData = {
   id: 1001,
   username: "somchai.p",
@@ -58,23 +58,23 @@ const initialUserData = {
   user_inf_mobile_no: "081-999-8888",
 };
 
-// ==========================================
-// ✅ นำ Component ย่อยออกมาไว้ข้างนอก เพื่อแก้ปัญหา Focus หลุดเวลาพิมพ์
-// ==========================================
+interface FormInputRowProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  name: keyof EditProfileValues;
+  type?: string;
+  placeholder?: string;
+}
+
+// ส่วนประกอบฟอร์มอินพุตย่อยแยกภายนอกลดการเรนเดอร์ซ้ำ
 const FormInputRow = ({ 
   icon: Icon, 
   label, 
   name, 
   type = "text",
   placeholder = ""
-}: { 
-  icon: any, 
-  label: string, 
-  name: keyof EditProfileValues, 
-  type?: string,
-  placeholder?: string
-}) => {
-  // ดึง register และ errors มาจาก FormProvider ของตัวแม่ผ่าน useFormContext
+}: FormInputRowProps) => {
+  // ดึงข้อมูลฟอร์มจากคลาสแม่ผ่าน Context
   const { register, formState: { errors } } = useFormContext<EditProfileValues>();
   
   return (
@@ -100,7 +100,14 @@ const FormInputRow = ({
   );
 };
 
-const ReadOnlyRow = ({ icon: Icon, label, value }: { icon: any, label: string, value: string }) => (
+interface ReadOnlyRowProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+}
+
+// ส่วนประกอบแสดงข้อมูลแบบอ่านอย่างเดียว
+const ReadOnlyRow = ({ icon: Icon, label, value }: ReadOnlyRowProps) => (
   <div className="flex items-start gap-4 p-2 rounded-lg bg-surface-container-low/40 opacity-75">
     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-gray/10 text-slate-gray mt-1">
       <Icon className="h-5 w-5" />
@@ -111,11 +118,10 @@ const ReadOnlyRow = ({ icon: Icon, label, value }: { icon: any, label: string, v
     </div>
   </div>
 );
-// ==========================================
 
 export default function EditUserProfile() {
   const methods = useForm<EditProfileValues>({
-    resolver: zodResolver(editProfileSchema as unknown as any) as unknown as Resolver<EditProfileValues>,
+    resolver: zodResolver(editProfileSchema),
     defaultValues: {
       user_inf_nm: initialUserData.user_inf_nm,
       user_inf_srnm: initialUserData.user_inf_srnm,
@@ -130,22 +136,22 @@ export default function EditUserProfile() {
     mode: "onChange",
   });
 
-  const { handleSubmit, watch, formState: { isDirty } } = methods;
+  const { handleSubmit, control, formState: { isDirty } } = methods;
 
-  // ใช้ watch เพื่อแสดงผลบนหน้าจอฝั่งซ้ายแบบ Real-time
-  const watchedName = watch("user_inf_nm");
-  const watchedSurname = watch("user_inf_srnm");
-  const watchedPosition = watch("user_inf_pst_nm");
+  // ติดตามค่าฟอร์มด้วย useWatch เพื่อรองรับมาตรฐานของ React Compiler
+  const watchedName = useWatch({ control, name: "user_inf_nm" });
+  const watchedSurname = useWatch({ control, name: "user_inf_srnm" });
+  const watchedPosition = useWatch({ control, name: "user_inf_pst_nm" });
 
+  // ส่งคำขอไปยังเซิร์ฟเวอร์เพื่อบันทึกข้อมูล
   const onSubmit = async (data: EditProfileValues) => {
     console.log("🚀 ส่งข้อมูลการแก้ไขไปที่ API:", data);
-    // TODO: ทำการเรียก API เพื่อบันทึกข้อมูลที่แก้ไข
   };
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* Title Header */}
+      {/* ส่วนหัวแสดงชื่อหน้าจอ */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">แก้ไขข้อมูลส่วนตัว</h1>
         <p className="text-slate-gray mt-1">ปรับปรุงรายละเอียดประวัติ ข้อมูลการทำงาน และช่องทางการติดต่อของคุณให้เป็นปัจจุบัน</p>
@@ -154,7 +160,7 @@ export default function EditUserProfile() {
       <FormProvider {...methods}>
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          {/* --- Left Column: Profile Avatar Display & Core Actions --- */}
+          {/* คอลัมน์ซ้าย: แสดงข้อมูลโปรไฟล์และปุ่มจัดการ */}
           <div className="lg:col-span-4 flex flex-col gap-6">
             <div className="flex flex-col items-center p-8 rounded-4xl bg-card border border-border shadow-level-1 text-center sticky top-6">
               <div className="relative group mb-6">
@@ -208,7 +214,7 @@ export default function EditUserProfile() {
             </div>
           </div>
 
-          {/* --- Right Column: Editable Bento Cards --- */}
+          {/* คอลัมน์ขวา: ฟอร์มแก้ไขข้อมูลหลัก */}
           <div className="lg:col-span-8 flex flex-col gap-6">
             
             <div className="p-8 rounded-4xl bg-card border border-border shadow-level-1">
@@ -218,7 +224,6 @@ export default function EditUserProfile() {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                {/* ใช้งาน FormInputRow ที่ถูกแยกออกไปข้างนอกแล้ว */}
                 <FormInputRow icon={User} label="ชื่อ (First Name)" name="user_inf_nm" />
                 <FormInputRow icon={User} label="นามสกุล (Last Name)" name="user_inf_srnm" />
                 <FormInputRow icon={Briefcase} label="ตำแหน่งงาน (Position)" name="user_inf_pst_nm" />

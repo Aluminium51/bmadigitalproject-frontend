@@ -1,5 +1,6 @@
 "use client";
-import { useRef } from "react";
+
+import { useMemo } from "react";
 import Image from "next/image";
 import Autoplay from "embla-carousel-autoplay";
 import {
@@ -30,16 +31,16 @@ const carouselData = [
 ];
 
 export function HeroCarousel() {
-
-  const plugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: false }));
+  // ใช้ useMemo เก็บ Instance แทน useRef เพื่อแก้ปัญหาเรื่องสิทธิ์การเข้าถึงขณะเรนเดอร์
+  const autoplay = useMemo(() => Autoplay({ delay: 4000, stopOnInteraction: false }), []);
 
   return (
     <div className="w-full h-full min-h-100 sm:min-h-125 rounded-4xl sm:rounded-container overflow-hidden shadow-level-2 relative border-4 border-surface group">
       <Carousel
-        plugins={[plugin.current]}
+        plugins={[autoplay]}
         className="w-full h-full"
-        onMouseEnter={() => plugin.current.stop()} // เอาเมาส์ชี้แล้วหยุดเลื่อน
-        onMouseLeave={() => plugin.current.reset()} // เอาเมาส์ออกแล้วเลื่อนต่อ
+        onMouseEnter={() => autoplay.stop()} // หยุดเล่นชั่วคราวเมื่อเมาส์ชี้
+        onMouseLeave={() => autoplay.reset()} // เล่นต่อเมื่อเอาเมาส์ออก
       >
         <CarouselContent className="h-full ml-0">
           {carouselData.map((slide) => (
@@ -55,17 +56,14 @@ export function HeroCarousel() {
                   fill
                   sizes="(max-width: 640px) 100vw, 100vw"
                   className="object-cover"
-                  priority={slide.id === 1} // โหลดรูปแรกก่อนเสมอ
+                  priority={slide.id === 1} // โหลดรูปแรกแบบด่วนที่สุด
                 />
 
-                {/* 2. Gradient Overlay (ทำให้ตัวหนังสืออ่านง่ายขึ้น) */}
+                {/* 2. Layer ไล่เฉดสีเพื่อให้ตัวอักษรอ่านง่ายขึ้น */}
                 <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
 
-                {/* 3. ข้อความ */}
+                {/* 3. ส่วนแสดงข้อความรายละเอียด */}
                 <div className="absolute bottom-0 left-0 w-full p-8 sm:p-10 transform transition-transform duration-500">
-                  {/* <span className="inline-block px-3 py-1 mb-3 text-xs font-bold tracking-wider text-primary-foreground bg-primary rounded-full shadow-sm">
-                    IMPACT
-                  </span> */}
                   <h2 className="text-2xl sm:text-3xl font-bold text-surface mb-2 leading-tight">
                     {slide.title}
                   </h2>

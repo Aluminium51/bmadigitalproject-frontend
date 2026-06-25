@@ -1,4 +1,3 @@
-// src/app/verify/page.tsx
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
@@ -11,36 +10,31 @@ function VerifyContent() {
   const router = useRouter();
   const token = searchParams.get("token");
   
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [message, setMessage] = useState("กำลังตรวจสอบข้อมูลและเปิดใช้งานบัญชี...");
+  // กำหนดสถานะเริ่มต้นจากตัวแปร token ทันทีเพื่อเลี่ยงการใช้ setState ใน effect
+  const [status, setStatus] = useState<"loading" | "success" | "error">(() => token ? "loading" : "error");
+  
+  // กำหนดข้อความเริ่มต้นตามเงื่อนไขการมีอยู่ของ token 
+  const [message, setMessage] = useState(() => token ? "กำลังตรวจสอบข้อมูลและเปิดใช้งานบัญชี..." : "ลิงก์ไม่ถูกต้อง หรือไม่มีรหัสยืนยันตัวตนส่งมา");
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("ลิงก์ไม่ถูกต้อง หรือไม่มีรหัสยืนยันตัวตนส่งมา");
-      return;
-    }
+    if (!token) return;
 
     const verifyToken = async () => {
       try {
-        // ดึง URL ตัวหลักมาเช็ค
         const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081/api/v1";
-        console.log(`📡 Frontend is fetching to: ${baseUrl}/auth/verify?token=${token}`);
-
+        
         const res = await fetch(`${baseUrl}/auth/verify?token=${token}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" }
         });
         
         const data = await res.json();
-        console.log("📥 Backend response data:", data);
 
         if (res.ok) {
           setStatus("success");
           setMessage(data.message || "ยืนยันอีเมลสำเร็จ! บัญชีของคุณพร้อมใช้งานแล้ว");
         } else {
           setStatus("error");
-          // 🟢 เอาข้อความ Error จริงๆ จากหลังบ้านมาแสดงโชว์ตรงๆ
           setMessage(data.error || "ไม่สามารถยืนยันตัวตนได้ กรุณาลองใหม่อีกครั้ง");
         }
       } catch (error) {
