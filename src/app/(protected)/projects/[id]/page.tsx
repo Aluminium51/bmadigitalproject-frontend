@@ -4,7 +4,6 @@
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Folder,
   Building2,
   CalendarDays,
   FileSpreadsheet,
@@ -15,24 +14,28 @@ import {
   FileImage,
   Presentation,
   Trash2,
-  CheckCircle2,
-  Edit2,
+  Plus,
+  Paperclip,
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type DocumentFile = {
   id: string;
   name: string;
-  type: "pdf" | "ppt" | "image";
+  type: "pdf" | "ppt" | "image" | "other";
   size?: string;
   url?: string;
 };
@@ -52,26 +55,7 @@ export default function ProjectWorkspacePage() {
     hasProposal: false,
   });
 
-  // --- State สำหรับ Diagrams 4 ช่อง ---
-  const [systemDiagram, setSystemDiagram] = useState<DocumentFile | null>(null);
-  const [networkDiagram, setNetworkDiagram] = useState<DocumentFile | null>(
-    null,
-  );
-  const [useCaseDiagram, setUseCaseDiagram] = useState<DocumentFile | null>(
-    null,
-  );
-  const [securityDiagram, setSecurityDiagram] = useState<DocumentFile | null>(
-    null,
-  );
-
-  // คำนวณจำนวนไฟล์ที่อัปโหลดไปแล้ว (สำหรับแสดงบน Header)
-  const uploadedDiagramsCount = [
-    systemDiagram,
-    networkDiagram,
-    useCaseDiagram,
-    securityDiagram,
-  ].filter(Boolean).length;
-
+  // --- State: Mandatory Docs ---
   const [presentation, setPresentation] = useState<DocumentFile | null>(null);
   const [quotation, setQuotation] = useState<DocumentFile | null>({
     id: "q1",
@@ -82,10 +66,21 @@ export default function ProjectWorkspacePage() {
   const [onePage, setOnePage] = useState<DocumentFile | null>(null);
   const [approvalDoc, setApprovalDoc] = useState<DocumentFile | null>(null);
 
-  const removeFile = (
-    setter: React.Dispatch<React.SetStateAction<any>>,
-    id?: string,
-  ) => {
+  const mandatoryUploadedCount = [presentation, quotation, onePage, approvalDoc].filter(Boolean).length;
+
+  // --- State: Diagrams ---
+  const [systemDiagram, setSystemDiagram] = useState<DocumentFile | null>(null);
+  const [networkDiagram, setNetworkDiagram] = useState<DocumentFile | null>(null);
+  const [useCaseDiagram, setUseCaseDiagram] = useState<DocumentFile | null>(null);
+  const [securityDiagram, setSecurityDiagram] = useState<DocumentFile | null>(null);
+
+  const diagramsUploadedCount = [systemDiagram, networkDiagram, useCaseDiagram, securityDiagram].filter(Boolean).length;
+
+  // --- State: Additional Docs (ใหม่) ---
+  const [additionalDocs, setAdditionalDocs] = useState<DocumentFile[]>([]);
+
+  // --- Helper Functions ---
+  const removeFile = (setter: React.Dispatch<React.SetStateAction<any>>, id?: string) => {
     if (id) {
       setter((prev: DocumentFile[]) => prev.filter((f) => f.id !== id));
     } else {
@@ -93,55 +88,98 @@ export default function ProjectWorkspacePage() {
     }
   };
 
-  // --- UI Helper 1: กล่องไฟล์และปุ่มอัปโหลด สำหรับแบบ List View (เล็กและคลีน) ---
-  const MandatoryDocRow = ({
+  const handleAddAdditionalDoc = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const newDoc: DocumentFile = {
+        id: Math.random().toString(),
+        name: file.name,
+        type: file.type.includes("pdf") ? "pdf" : file.type.includes("presentation") ? "ppt" : file.type.includes("image") ? "image" : "other",
+        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+      };
+      setAdditionalDocs([...additionalDocs, newDoc]);
+    }
+  };
+
+  // Helper Component: Info Icon with Tooltip
+const InfoIconWithTooltip = ({ content }: { content: React.ReactNode }) => (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="text-slate-400 hover:text-[#00734b] transition-colors focus:outline-none"
+          >
+            <Info className="w-4 h-4" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="bg-[#00734b] text-white p-3 rounded-md shadow-lg z-50 border-none [&_svg]:fill-[#00734b] [&_svg]:bg-[#00734b]"
+        >
+          {content} 
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
+  // --- UI Components ---
+
+  // 1. Mandatory & Additional List Row
+  const DocListRow = ({
     title,
     accept,
     file,
     onRemove,
+    isRequired = false,
   }: {
     title: string;
-    accept: string;
+    accept?: string;
     file: DocumentFile | null;
     onRemove: () => void;
+    isRequired?: boolean;
   }) => {
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 hover:bg-slate-50/50 transition-colors gap-4">
-        <div>
-          <p className="text-[15px] font-bold text-[#191c20]">{title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            รองรับไฟล์ {accept.replace(/\./g, " ").toUpperCase()}
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 hover:bg-slate-50/80 transition-colors gap-4 group">
+        <div className="flex gap-4 items-start">
+          <div className={`mt-1 size-10 rounded-full flex items-center justify-center shrink-0 ${file ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+            {file ? <CheckCircle className="w-5 h-5" /> : <Paperclip className="w-5 h-5" />}
+          </div>
+          <div>
+            <p className="text-[15px] font-bold text-[#191c20] flex items-center gap-2">
+              {title} 
+              {isRequired && <span className="text-status-orange text-xs">*</span>}
+            </p>
+            {accept && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                รองรับไฟล์ {accept.replace(/\./g, " ").toUpperCase()}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="sm:w-1/2 flex justify-end">
           {file ? (
-            // แสดง Chip ไฟล์เมื่ออัปโหลดแล้ว
-            <div className="flex items-center justify-between pl-2 pr-3 py-2 bg-white rounded-full border border-[#D1CDC7] group hover:border-[#00734b]/40 transition-all shadow-sm w-full max-w-75">
+            <div className="flex items-center justify-between pl-3 pr-2 py-2 bg-white rounded-full border border-slate-200 hover:border-red-200 transition-all shadow-sm w-full max-w-sm">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div
-                  className={`p-2 rounded-full shrink-0 ${file.type === "pdf" ? "text-red-500 bg-red-50" : "text-orange-500 bg-orange-50"}`}
-                >
-                  {file.type === "pdf" ? (
-                    <FileText className="w-4 h-4" />
-                  ) : (
-                    <Presentation className="w-4 h-4" />
-                  )}
+                <div className={`p-1.5 rounded-md shrink-0 ${file.type === "pdf" ? "text-red-500 bg-red-50" : file.type === "ppt" ? "text-orange-500 bg-orange-50" : "text-blue-500 bg-blue-50"}`}>
+                  {file.type === "pdf" ? <FileText className="w-4 h-4" /> : file.type === "ppt" ? <Presentation className="w-4 h-4" /> : <FileImage className="w-4 h-4" />}
                 </div>
-                <span className="text-sm font-bold text-[#191c20] truncate">
-                  {file.name}
-                </span>
+                <div className="flex flex-col truncate">
+                  <span className="text-sm font-bold text-[#191c20] truncate">{file.name}</span>
+                  {file.size && <span className="text-[10px] text-slate-400 leading-none">{file.size}</span>}
+                </div>
               </div>
               <button
                 onClick={onRemove}
-                className="p-1.5 ml-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all shrink-0"
+                title="ลบไฟล์"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            // แสดงปุ่มอัปโหลด (Pill Button)
-            <label className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white border border-[#D1CDC7] rounded-full text-sm font-bold text-[#3f4942] hover:bg-surface-variant hover:text-[#191c20] transition-colors cursor-pointer w-full sm:w-auto shadow-sm">
+            <label className="flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-[#D1CDC7] rounded-full text-sm font-bold text-[#3f4942] hover:bg-surface-variant hover:text-[#191c20] hover:border-[#00734b] transition-all cursor-pointer w-full sm:w-auto shadow-sm">
               <UploadCloud className="w-4 h-4" />
               อัปโหลดไฟล์
               <input type="file" accept={accept} className="hidden" />
@@ -152,173 +190,127 @@ export default function ProjectWorkspacePage() {
     );
   };
 
-  // --- UI Helper 2: กล่องอัปโหลดใหญ่ สำหรับ Diagrams (แบบ Grid) ---
-  const DiagramPreviewCard = ({
-    file,
-    onRemove,
-  }: {
-    file: DocumentFile;
-    onRemove: () => void;
-  }) => (
-    <div className="flex items-center justify-between p-4 bg-surface rounded-[20px] border border-[#D1CDC7] group hover:border-[#00734b]/40 transition-all shadow-sm">
-      <div className="flex items-center gap-3 overflow-hidden">
-        <div className="p-2.5 rounded-full shrink-0 text-blue-500 bg-blue-50">
-          <FileImage className="w-5 h-5" />
+  // 2. Diagram Grid Card
+  const DiagramPreviewCard = ({ file, onRemove }: { file: DocumentFile; onRemove: () => void }) => (
+    <div className="flex items-center justify-between p-4 bg-blue-50/50 rounded-[16px] border border-blue-100 group hover:border-blue-300 hover:shadow-sm transition-all h-full min-h-[120px]">
+      <div className="flex items-center gap-4 overflow-hidden min-w-0"> {/* 🌟 เพิ่ม min-w-0 ป้องกัน Overflow */}
+        <div className="p-3 rounded-xl shrink-0 text-blue-600 bg-blue-100/50 shadow-inner">
+          <FileImage className="w-6 h-6" />
         </div>
-        <div className="flex flex-col truncate">
-          <span className="text-sm font-bold text-[#191c20] truncate">
-            {file.name}
-          </span>
-          {file.size && (
-            <span className="text-[11px] text-muted-foreground mt-0.5">
-              {file.size}
-            </span>
-          )}
+        <div className="flex flex-col min-w-0"> {/* 🌟 เพิ่ม min-w-0 ตรงนี้ด้วย */}
+          <span className="text-sm font-bold text-[#191c20] truncate block w-full">{file.name}</span>
+          {file.size && <span className="text-[11px] font-medium text-slate-500 mt-0.5">{file.size}</span>}
         </div>
       </div>
       <button
         onClick={onRemove}
-        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all shrink-0"
+        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all shrink-0 ml-2"
+        title="ลบไฟล์รูปภาพ"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-5 h-5" />
       </button>
     </div>
   );
 
   const DiagramUploadPlaceholder = ({ title }: { title: string }) => (
-    <label className="border-2 border-dashed border-[#D1CDC7] rounded-[20px] p-6 flex flex-col items-center justify-center text-center bg-white hover:bg-slate-50 hover:border-[#00734b]/50 transition-colors cursor-pointer group h-full min-h-[140px]">
-      <div className="w-10 h-10 bg-slate-100 group-hover:bg-[#00734b]/10 rounded-full flex items-center justify-center mb-3 transition-colors">
+    <label className="border-2 border-dashed border-slate-300 rounded-[16px] p-6 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-white hover:border-[#00734b]/50 hover:shadow-sm transition-all cursor-pointer group h-full min-h-[120px]">
+      <div className="w-12 h-12 bg-white shadow-sm border border-slate-100 group-hover:bg-[#00734b]/10 group-hover:border-[#00734b]/20 rounded-full flex items-center justify-center mb-3 transition-colors">
         <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-[#00734b]" />
       </div>
-      <span className="text-sm font-bold text-[#3f4942] group-hover:text-[#191c20] transition-colors">
+      <span className="text-sm font-bold text-slate-600 group-hover:text-[#191c20] transition-colors line-clamp-2 px-2">
         {title}
       </span>
-      <span className="text-xs text-muted-foreground mt-1">
-        รองรับไฟล์ PNG, JPG หรือ webP
+      <span className="text-[11px] font-medium text-slate-400 mt-1.5 bg-slate-100 px-2 py-0.5 rounded-md">
+        PNG, JPG, WebP
       </span>
-      <input type="file" accept=".png,.jpg,.jpeg,.pdf" className="hidden" />
+      <input type="file" accept=".png,.jpg,.jpeg,.webp" className="hidden" />
     </label>
   );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-8 max-w-7xl mx-auto w-full animate-in fade-in duration-500">
-      {/* ย้อนกลับ */}
+    <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-8 mx-auto w-full animate-in fade-in duration-500">
+      
+      {/* --- Breadcrumb --- */}
       <button
         onClick={() => router.push("/projects")}
-        className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#191c20] w-fit transition-colors px-2"
+        className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#00734b] w-fit transition-colors px-1"
       >
         <ArrowLeftIcon className="w-4 h-4" /> กลับไปหน้ารวมโครงการ
       </button>
 
-      {/* 1. Project Info Header */}
-      <div className="bg-white p-6 md:p-10 rounded-container border border-[#D1CDC7] shadow-sm flex flex-col gap-6 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#00734b]/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex justify-between items-start gap-4 z-10">
-          <div className="flex items-start gap-5">
-            <div className="size-16 bg-[#00734b]/10 text-[#00734b] rounded-full shrink-0 flex items-center justify-center border border-[#00734b]/20">
-              <Folder className="w-7 h-7" />
-            </div>
-            <div className="mt-1">
-              <div className="flex items-center gap-2 flex-wrap mb-2">
-                <span className="font-mono text-xs text-slate-500 bg-surface px-2.5 py-1 rounded-full border border-[#D1CDC7]">
-                  {projectDetail.id}
-                </span>
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
-                  กล่องโครงการใหม่
-                </span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-[#191c20] tracking-tight">
-                {projectDetail.name}
-              </h1>
-            </div>
+      {/* --- 1. Project Info Header --- */}
+      <Card className="rounded-[24px] border-[#D1CDC7] shadow-sm overflow-hidden relative bg-white">
+        {/* Decorative Background */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-[#00734b]/5 via-[#00734b]/[0.02] to-transparent rounded-full blur-3xl pointer-events-none" />
+        
+        <CardContent className="p-6 sm:p-8 md:p-10 relative z-10 flex flex-col">
+          
+          {/* Section 1: Tags (Status & ID) */}
+          <div className="flex items-center gap-2 flex-wrap mb-4">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-status-orange border border-orange-200 shadow-sm">
+              แบบร่าง (Draft)
+            </span>
+            <span className="font-mono text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+              {projectDetail.id}
+            </span>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditingInfo(!isEditingInfo)}
-            className="rounded-full border-[1.5px] font-bold shrink-0 mt-1"
-          >
-            {isEditingInfo ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 mr-2" /> บันทึก
-              </>
-            ) : (
-              <>
-                <Edit2 className="w-4 h-4 mr-2" /> แก้ไข
-              </>
-            )}
-          </Button>
-        </div>
+          {/* Section 2: Project Title (Responsive & Long Text Support) */}
+          <div className="w-full max-w-4xl">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191c20] tracking-tight leading-snug break-words">
+              {projectDetail.name}
+            </h1>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 z-10 p-5 bg-surface/50 rounded-[24px]">
-          <div className="space-y-2">
-            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
-              หน่วยงานที่รับผิดชอบ
-            </Label>
-            {isEditingInfo ? (
-              <Input
-                value={projectDetail.agency}
-                onChange={(e) =>
-                  setProjectDetail({ ...projectDetail, agency: e.target.value })
-                }
-                className="h-12 rounded-full border-[#D1CDC7] bg-white px-4"
-              />
-            ) : (
-              <div className="flex items-center gap-2.5 font-semibold text-[#191c20] px-1">
-                <Building2 className="w-5 h-5 text-[#00734b]" />{" "}
+          {/* Section 3: Project Meta Details */}
+          <div className="flex flex-col sm:flex-row flex-wrap gap-6 sm:gap-10 mt-8 pt-6 border-t border-slate-100">
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                หน่วยงานที่รับผิดชอบ
+              </p>
+              <div className="flex items-center gap-2.5 font-medium text-[#191c20] text-sm sm:text-base">
+                <div className="p-1.5 bg-[#00734b]/10 rounded-md">
+                  <Building2 className="w-4 h-4 text-[#00734b]" />
+                </div>
                 {projectDetail.agency}
               </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">
-              ปีงบประมาณ
-            </Label>
-            {isEditingInfo ? (
-              <Input
-                type="number"
-                value={projectDetail.fiscalYear}
-                onChange={(e) =>
-                  setProjectDetail({
-                    ...projectDetail,
-                    fiscalYear: parseInt(e.target.value),
-                  })
-                }
-                className="h-12 rounded-full border-[#D1CDC7] bg-white px-4 w-40"
-              />
-            ) : (
-              <div className="flex items-center gap-2.5 font-semibold text-[#191c20] px-1">
-                <CalendarDays className="w-5 h-5 text-[#00734b]" /> พ.ศ.{" "}
-                {projectDetail.fiscalYear}
+            </div>
+            
+            <div className="space-y-1.5">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                ปีงบประมาณ
+              </p>
+              <div className="flex items-center gap-2.5 font-medium text-[#191c20] text-sm sm:text-base">
+                <div className="p-1.5 bg-[#00734b]/10 rounded-md">
+                  <CalendarDays className="w-4 h-4 text-[#00734b]" />
+                </div>
+                พ.ศ. {projectDetail.fiscalYear}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </div>
+          
+        </CardContent>
+      </Card>
 
-      {/* 2. Call to Action (Proposal Form) */}
+      {/* --- 2. Call to Action (Proposal Form) --- */}
       {!projectDetail.hasProposal && (
-        <div className="bg-orange-50/80 border border-status-orange/30 p-8 rounded-container flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50/30 border border-orange-200 p-6 md:p-8 rounded-[24px] flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
           <div className="flex items-center gap-5">
-            <div className="size-14 bg-status-orange/10 text-status-orange rounded-full shrink-0 flex items-center justify-center">
+            <div className="size-14 bg-white text-status-orange rounded-full shrink-0 flex items-center justify-center shadow-sm border border-orange-100">
               <Clock className="w-7 h-7" />
             </div>
             <div>
               <h3 className="font-extrabold text-[#191c20] text-lg">
-                ขั้นตอนถัดไป: จัดทำข้อเสนอโครงการ
+                ขั้นตอนถัดไป: จัดทำข้อเสนอโครงการ (Proposal)
               </h3>
-              <p className="text-[15px] text-slate-600 mt-1">
-                กรุณากรอกแบบฟอร์ม 5 หมวดหลักให้ครบถ้วน เพื่อยื่นพิจารณา
+              <p className="text-sm text-slate-600 mt-1">
+                กรุณากรอกรายละเอียดโครงการทั้ง 5 หมวดหลัก เพื่อใช้ในการพิจารณาอนุมัติ
               </p>
             </div>
           </div>
           <Button
-            onClick={() =>
-              router.push(`/projects/${projectId}/proposal/create`)
-            }
-            className="font-bold gap-2 bg-status-orange hover:bg-[#d65f00] text-white rounded-full px-8 h-14 shadow-sm shrink-0 w-full md:w-auto text-base"
+            onClick={() => router.push(`/projects/${projectId}/proposal/create`)}
+            className="font-bold gap-2 bg-status-orange hover:bg-[#d65f00] text-white rounded-full px-8 h-12 shadow-md shrink-0 w-full md:w-auto transition-transform active:scale-95"
           >
             <FileSpreadsheet className="w-5 h-5" />
             เริ่มเขียนแบบฟอร์ม
@@ -327,163 +319,239 @@ export default function ProjectWorkspacePage() {
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* 3. เอกสารประกอบโครงการ (Mandatory - List View) */}
-      {/* ========================================================= */}
-      <div className="space-y-6 mt-4">
-        <div className="px-2">
-          <h2 className="text-xl font-extrabold text-[#191c20] flex items-center gap-2">
-            เอกสารประกอบโครงการ{" "}
-            <span className="text-status-orange text-lg">*</span>
-          </h2>
-          <span className="text-sm text-slate-500 mt-1 flex flex-row space-x-1">
-            <p>กรุณาอัปโหลดเอกสารสำคัญเหล่านี้ให้ครบถ้วนก่อนส่งโครงการ</p>
-            <p className="text-status-orange">(บังคับ)</p>
+      {/* --- 3. Mandatory Documents --- */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
+          <div>
+            <h2 className="text-xl font-extrabold text-[#191c20] flex items-center gap-2">
+              เอกสารประกอบโครงการ (บังคับ)
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              กรุณาอัปโหลดเอกสารสำคัญเหล่านี้ให้ครบถ้วนก่อนส่งโครงการ
+            </p>
+          </div>
+          <span className="bg-white text-slate-600 px-4 py-1.5 rounded-full border border-slate-200 text-xs font-bold shadow-sm whitespace-nowrap">
+            อัปโหลดแล้ว {mandatoryUploadedCount} / 4
           </span>
- 
         </div>
 
-        <Card className="rounded-container border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
-          <CardContent className="p-0">
-            <div className="flex flex-col divide-y divide-[#ededf4]">
-              <MandatoryDocRow
-                title="Presentation (PowerPoint)"
-                accept=".ppt,.pptx"
-                file={presentation}
-                onRemove={() => removeFile(setPresentation)}
-              />
-              <MandatoryDocRow
-                title="ใบเสนอราคา (PDF)"
-                accept=".pdf"
-                file={quotation}
-                onRemove={() => removeFile(setQuotation)}
-              />
-              <MandatoryDocRow
-                title="สรุปโครงการ One Page (PDF)"
-                accept=".pdf"
-                file={onePage}
-                onRemove={() => removeFile(setOnePage)}
-              />
-              <MandatoryDocRow
-                title="หนังสือรับรองจาก รผว. (PDF)"
-                accept=".pdf"
-                file={approvalDoc}
-                onRemove={() => removeFile(setApprovalDoc)}
-              />
-            </div>
+        <Card className="rounded-[20px] border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
+          <CardContent className="p-0 flex flex-col divide-y divide-slate-100">
+            <DocListRow
+              title="Presentation สรุปโครงการ"
+              accept=".ppt,.pptx"
+              file={presentation}
+              onRemove={() => removeFile(setPresentation)}
+              isRequired
+            />
+            <DocListRow
+              title="ใบเสนอราคา (Quotation)"
+              accept=".pdf"
+              file={quotation}
+              onRemove={() => removeFile(setQuotation)}
+              isRequired
+            />
+            <DocListRow
+              title="สรุปโครงการ (One Page Summary)"
+              accept=".pdf"
+              file={onePage}
+              onRemove={() => removeFile(setOnePage)}
+              isRequired
+            />
+            <DocListRow
+              title="หนังสือรับรอง/เห็นชอบจากผู้บริหาร"
+              accept=".pdf"
+              file={approvalDoc}
+              onRemove={() => removeFile(setApprovalDoc)}
+              isRequired
+            />
           </CardContent>
         </Card>
-      </div>
-      {/* ========================================================= */}
-      {/* 4. Diagrams (Optional - Fixed 4 Slots) */}
-      {/* ========================================================= */}
-      <div className="space-y-6 mt-4">
-        <div className="px-2 flex items-center justify-between">
+      </section>
+
+      {/* --- 4. Architecture Diagrams --- */}
+      {/* --- 4. Architecture Diagrams --- */}
+      <section className="space-y-4">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
           <div>
             <h2 className="text-xl font-extrabold text-[#191c20]">
               สถาปัตยกรรมและรูปภาพระบบ
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              อัปโหลดภาพประกอบระบบเพิ่มเติม{" "}
-              <span className="font-semibold text-slate-400">(ถ้ามี)</span>
+              แผนผังประกอบเพื่อความชัดเจนในการประเมินระบบ <span className="font-semibold text-slate-400">(ถ้ามี)</span>
             </p>
           </div>
+          <span className="bg-white text-slate-600 px-4 py-1.5 rounded-full border border-slate-200 text-xs font-bold shadow-sm whitespace-nowrap">
+            อัปโหลดแล้ว <span className="text-[#00734b] text-[13px]">{diagramsUploadedCount}</span> / 4
+          </span>
         </div>
 
-        <Card className="rounded-container border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
-          <CardHeader className="border-b border-[#ededf4] px-8 py-4 flex flex-row items-center justify-between rounded-none bg-surface/30">
-            <CardTitle className="text-lg font-bold text-[#191c20]">
-              ไฟล์รูปภาพประกอบ 4 หมวด
-            </CardTitle>
-            <span className="bg-white text-slate-600 px-4 py-1.5 rounded-full border border-[#D1CDC7] text-xs font-bold shadow-sm">
-              อัปโหลดแล้ว {uploadedDiagramsCount} / 4
-            </span>
-          </CardHeader>
-          <CardContent className="p-8">
-            {/* ปรับเป็น Grid 2x2 เพื่อให้มีพื้นที่แสดงชื่อที่ยาวๆ ได้อย่างสวยงาม */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
-              {/* ช่องที่ 1 */}
-              <div className="space-y-3 my-1">
-                <Label className="text-sm font-semibold text-[#191c20]">
-                  1. แผนผังการเชื่อมโยงระบบ (System Diagram)
-                </Label>
-                {systemDiagram ? (
-                  <DiagramPreviewCard
-                    file={systemDiagram}
-                    onRemove={() => removeFile(setSystemDiagram)}
+        {/* Content Section */}
+        <Card className="rounded-[20px] border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
+          <CardContent className="px-6 py-4 md:px-8 md:py-6"> {/* ปรับ Padding นิดหน่อยให้สมดุล */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
+              
+              {/* Slot 1: System Diagram */}
+              <div className="flex flex-col gap-2.5 h-full">
+                <div className="flex items-center justify-between ml-1">
+                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">1</span>
+                    System Diagram
+                  </Label>
+                  <InfoIconWithTooltip 
+                    content={
+                      <div className="space-y-1">
+                        <p className="font-medium text-sm">แผนผังการเชื่อมโยงระบบ</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          แสดงองค์ประกอบหลักของระบบ (เช่น Server, Database, Client) และการไหลของข้อมูลเบื้องต้น
+                        </p>
+                      </div>
+                    } 
                   />
-                ) : (
-                  <DiagramUploadPlaceholder title="อัปโหลดรูป System Diagram" />
-                )}
+                </div>
+                <div className="flex-1">
+                  {systemDiagram 
+                    ? <DiagramPreviewCard file={systemDiagram} onRemove={() => removeFile(setSystemDiagram)} /> 
+                    : <DiagramUploadPlaceholder title="อัปโหลด System Diagram" />}
+                </div>
               </div>
 
-              {/* ช่องที่ 2 */}
-              <div className="space-y-2 my-1">
-                <Label className="text-sm font-semibold text-[#191c20]">
-                  2. แผนผังการเชื่อมโยงเครือข่าย (Network Diagram)
-                </Label>
-                {networkDiagram ? (
-                  <DiagramPreviewCard
-                    file={networkDiagram}
-                    onRemove={() => removeFile(setNetworkDiagram)}
+              {/* Slot 2: Network Diagram */}
+              <div className="flex flex-col gap-2.5 h-full">
+                <div className="flex items-center justify-between ml-1">
+                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">2</span>
+                    Network Diagram
+                  </Label>
+                  <InfoIconWithTooltip 
+                    content={
+                      <div className="space-y-1">
+                        <p className="font-medium text-sm">แผนผังการเชื่อมโยงเครือข่าย</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          แสดงการจัดวางอุปกรณ์ Network (Router, Switch, Firewall) วง LAN/WAN และการเชื่อมต่ออินเทอร์เน็ต
+                        </p>
+                      </div>
+                    } 
                   />
-                ) : (
-                  <DiagramUploadPlaceholder title="อัปโหลดรูป Network Diagram" />
-                )}
+                </div>
+                <div className="flex-1">
+                  {networkDiagram 
+                    ? <DiagramPreviewCard file={networkDiagram} onRemove={() => removeFile(setNetworkDiagram)} /> 
+                    : <DiagramUploadPlaceholder title="อัปโหลด Network Diagram" />}
+                </div>
               </div>
 
-              {/* ช่องที่ 3 */}
-              <div className="space-y-3 my-1">
-                <Label className="text-sm font-semibold text-[#191c20]">
-                  3. แผนภาพแสดงปฏิสัมพันธ์ระหว่างระบบงาน (Use Case)
-                </Label>
-                {useCaseDiagram ? (
-                  <DiagramPreviewCard
-                    file={useCaseDiagram}
-                    onRemove={() => removeFile(setUseCaseDiagram)}
+              {/* Slot 3: Use Case Diagram */}
+              <div className="flex flex-col gap-2.5 h-full">
+                <div className="flex items-center justify-between ml-1">
+                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">3</span>
+                    Use Case Diagram
+                  </Label>
+                  <InfoIconWithTooltip 
+                    content={
+                      <div className="space-y-1">
+                        <p className="font-medium text-sm">แผนภาพแสดงปฎิสัมพันธ์ระหว่างระบบงาน</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          แสดงกลุ่มผู้ใช้งานระบบ (Actor) และสิทธิ์การเข้าถึงฟังก์ชันต่างๆ ของระบบอย่างชัดเจน
+                        </p>
+                      </div>
+                    } 
                   />
-                ) : (
-                  <DiagramUploadPlaceholder title="อัปโหลดรูป Use Case Diagram" />
-                )}
+                </div>
+                <div className="flex-1">
+                  {useCaseDiagram 
+                    ? <DiagramPreviewCard file={useCaseDiagram} onRemove={() => removeFile(setUseCaseDiagram)} /> 
+                    : <DiagramUploadPlaceholder title="อัปโหลด Use Case Diagram" />}
+                </div>
               </div>
 
-              {/* ช่องที่ 4 */}
-              <div className="space-y-3 my-1">
-                <Label className="text-sm font-semibold text-[#191c20]">
-                  4. การรักษาความมั่นคงปลอดภัยสารสนเทศ (Network, System, and Information Security)
-                </Label>
-                {securityDiagram ? (
-                  <DiagramPreviewCard
-                    file={securityDiagram}
-                    onRemove={() => removeFile(setSecurityDiagram)}
+              {/* Slot 4: Security Diagram */}
+              <div className="flex flex-col gap-2.5 h-full">
+                <div className="flex items-center justify-between ml-1">
+                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">4</span>
+                    Security Diagram
+                  </Label>
+                  <InfoIconWithTooltip 
+                    content={
+                      <div className="space-y-1">
+                        <p className="font-medium text-sm">การรักษาความมั่นคงปลอดภัยสารสนเทศ (Network, System, and Information Security)</p>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          แสดงจุดติดตั้งระบบรักษาความปลอดภัย เช่น WAF, ระบบ Authentication, และการเข้ารหัสข้อมูล (Encryption)
+                        </p>
+                      </div>
+                    } 
                   />
-                ) : (
-                  <DiagramUploadPlaceholder title="อัปโหลดรูป Security Diagram" />
-                )}
+                </div>
+                <div className="flex-1">
+                  {securityDiagram 
+                    ? <DiagramPreviewCard file={securityDiagram} onRemove={() => removeFile(setSecurityDiagram)} /> 
+                    : <DiagramUploadPlaceholder title="อัปโหลด Security Diagram" />}
+                </div>
               </div>
+
             </div>
           </CardContent>
         </Card>
-      </div>
+      </section>
+
+      {/* --- 5. Additional Documents (NEW) --- */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
+          <div>
+            <h2 className="text-xl font-extrabold text-[#191c20]">
+              เอกสารอ้างอิงเพิ่มเติม
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              เอกสารอื่นๆ ที่เกี่ยวข้องกับโครงการ (TOR, รายละเอียดคุณลักษณะ ฯลฯ)
+            </p>
+          </div>
+          <label className="flex items-center justify-center gap-2 px-5 py-2 bg-[#00734b]/10 text-[#00734b] border border-[#00734b]/20 rounded-full text-sm font-bold hover:bg-[#00734b] hover:text-white transition-all cursor-pointer shadow-sm whitespace-nowrap">
+            <Plus className="w-4 h-4" />
+            เพิ่มเอกสาร
+            <input type="file" multiple onChange={handleAddAdditionalDoc} className="hidden" />
+          </label>
+        </div>
+
+        <Card className="rounded-[20px] border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
+          <CardContent className="p-0">
+            {additionalDocs.length > 0 ? (
+              <div className="flex flex-col divide-y divide-slate-100">
+                {additionalDocs.map((doc) => (
+                  <DocListRow
+                    key={doc.id}
+                    title={doc.name.split('.')[0]} // แสดงชื่อโดยตัดนามสกุลออกชั่วคราว
+                    file={doc}
+                    onRemove={() => removeFile(setAdditionalDocs, doc.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                  <Paperclip className="w-8 h-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-700">ยังไม่มีเอกสารเพิ่มเติม</h3>
+                <p className="text-sm text-slate-500 mt-1 max-w-sm">
+                  คุณสามารถอัปโหลดไฟล์เอกสารอ้างอิงอื่นๆ ที่จะเป็นประโยชน์ต่อการพิจารณาโครงการได้ที่นี่
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
     </div>
   );
 }
 
+// Simple Arrow SVG
 function ArrowLeftIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="2.5"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-      />
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
     </svg>
   );
 }
