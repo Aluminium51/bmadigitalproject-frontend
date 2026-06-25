@@ -8,63 +8,97 @@ import { Label } from "@/components/ui/label";
 import { EAStrategySection } from "./EAStrategySection";
 import { CloudUpload, FileImage, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import imageCompression from "browser-image-compression";
 
 // --- Component สำหรับอัปโหลด 1 ไฟล์รูปภาพ + คำอธิบาย ---
 const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: any) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // 🟢 ดึงค่ามาเป็น Object เดี่ยวๆ (ถ้าไม่มีให้เป็น null)
+  // ดึงค่ามาเป็น Object เดี่ยวๆ (ถ้าไม่มีให้เป็น null)
   const currentFile = watch(name);
   const isFull = !!currentFile; // มีไฟล์อยู่แล้วหรือยัง
 
-  // Effect: คอยสร้างและทำลาย Preview URL เมื่อไฟล์เปลี่ยน
+  // Effect: คอยสร้างและทำลาย Preview URL หรือดักจับตอน Refresh
   useEffect(() => {
-    // 1. เช็คว่ามีข้อมูลไฟล์หรือไม่
-    // 2. สำคัญ: เช็คด้วยว่าต้องเป็น instance ของ File หรือ Blob ของแท้เท่านั้น (ดักจับ Ghost Object ตอน Reload)
-    if (
-      !currentFile || 
-      !currentFile.file || 
-      !(currentFile.file instanceof File || currentFile.file instanceof Blob)
-    ) {
+    // 1. ถ้าไม่มีค่าอะไรเลย (กรณีปกติที่ยังไม่ได้อัปโหลด)
+    if (!currentFile) {
       setPreviewUrl(null);
       return;
     }
+
+    // 2. ดักจับ Ghost Object! 
+    // เช็คว่ามี currentFile แต่ข้างในไม่ใช่ File หรือ Blob ของแท้ (เกิดจากการ Refresh)
+    if (!currentFile.file || !(currentFile.file instanceof File || currentFile.file instanceof Blob)) {
+      console.warn(`[Auto-Clean] ตรวจพบไฟล์ที่ไม่สมบูรณ์ในฟิลด์ ${name} (เกิดจากการ Refresh) ระบบทำการล้างค่า...`);
+      
+      setPreviewUrl(null);
+      
+      // สั่งเคลียร์ค่าใน React Hook Form ทิ้งทันที บังคับให้ User อัปโหลดใหม่
+      setValue(name, null, { shouldValidate: true }); 
+      return;
+    }
     
+    // 3. กรณีเป็นไฟล์ของแท้ (อัปโหลดใหม่)
     try {
-      // สร้าง Local URL จาก File Object
       const objectUrl = URL.createObjectURL(currentFile.file);
       setPreviewUrl(objectUrl);
 
-      // ทำลาย URL ทิ้งเมื่อ Component ถูก Unmount หรือไฟล์เปลี่ยน
       return () => URL.revokeObjectURL(objectUrl);
     } catch (error) {
       console.error("ไม่สามารถสร้าง Preview ภาพได้:", error);
       setPreviewUrl(null);
     }
-  }, [currentFile]);
+  }, [currentFile, name, setValue]);
 
-  const handleFilesAdded = (files: FileList | File[]) => {
+  const handleFilesAdded = async (files: FileList | File[]) => {
     if (isFull || files.length === 0) return;
 
-    const file = Array.from(files)[0];
+    const originalFile = Array.from(files)[0];
 
-    // ตรวจสอบว่าเป็นไฟล์รูปภาพเท่านั้น (เผื่อกรณีลากไฟล์จากนอกเบราว์เซอร์มาวาง)
-    if (!file.type.startsWith("image/")) {
+    if (!originalFile.type.startsWith("image/")) {
       alert("รองรับเฉพาะไฟล์รูปภาพเท่านั้น (เช่น PNG, JPG)");
       return;
     }
 
-    const mappedFile = {
-      id: Math.random().toString(36).substring(7),
-      file: file,
-      description: "",
-    };
+    setIsCompressing(true); // เริ่มแสดง Loading
 
-    // เซ็ตค่าเป็น Object ไม่ใช่ Array แล้ว
-    setValue(name, mappedFile, { shouldValidate: true });
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    try {
+      // ตั้งค่า Options สำหรับการบีบอัด (เน้นเพื่อนำไปใส่ Word)
+      const options = {
+        maxSizeMB: 2, // บีบไม่ให้เกิน 2MB (ไฟล์ Word จะได้ไม่หนัก)
+        maxWidthOrHeight: 1920, // ย่อขนาดความกว้าง/ยาวสูงสุด
+        useWebWorker: true,
+        // บังคับให้เป็น JPEG เสมอ (ยกเว้นต้นฉบับเป็น PNG ให้คงไว้) เพื่อให้ Word เปิดได้ชัวร์ๆ
+        fileType: originalFile.type === "image/png" ? "image/png" : "image/jpeg",
+      };
+
+      // ทำการบีบอัด
+      const compressedBlob = await imageCompression(originalFile, options);
+      
+      // แปลง Blob กลับเป็น File Object เพื่อให้ React Hook Form และ Document Generator ทำงานต่อได้ปกติ
+      const compressedFile = new File([compressedBlob], originalFile.name, {
+        type: compressedBlob.type,
+        lastModified: Date.now(),
+      });
+
+      const mappedFile = {
+        id: Math.random().toString(36).substring(7),
+        file: compressedFile, // ใช้ไฟล์ที่บีบอัดแล้ว
+        description: "",
+      };
+
+      setValue(name, mappedFile, { shouldValidate: true });
+
+    } catch (error) {
+      console.error("Image compression error:", error);
+      alert("เกิดข้อผิดพลาดในการบีบอัดรูปภาพ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setIsCompressing(false); // ปิด Loading
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -219,6 +253,20 @@ export const ProposalStep3 = () => {
           <SingleFileUploadWithDescBox 
             title="Network Diagram" 
             name="networkDiagramFile"
+            watch={watch} 
+            setValue={setValue}
+            errors={errors}
+          />
+          <SingleFileUploadWithDescBox 
+            title="Use Case Diagram" 
+            name="useCaseDiagramFile"
+            watch={watch} 
+            setValue={setValue}
+            errors={errors}
+          />
+          <SingleFileUploadWithDescBox 
+            title="Security Diagram" 
+            name="securityDiagramFile"
             watch={watch} 
             setValue={setValue}
             errors={errors}

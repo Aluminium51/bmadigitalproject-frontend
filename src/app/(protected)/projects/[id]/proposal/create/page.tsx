@@ -2,9 +2,10 @@
 import React from "react";
 import { CreateProposalWizard } from "@/features/proposals/components/ProposalWizard";
 
-export default function CreateProposalPage({ params }: { params: { id: string } }) {
+export default async function CreateProposalPage({ params }: { params: Promise<{ id: string }> }) {
   // ดึง Project ID จาก URL (เช่น PRJ-ABCD123)
-  const projectId = params.id;
+  const { id } = await params;
+  const projectId = id;
 
   return (
     <div className="min-h-screen bg-[#f9f9ff] py-8">

@@ -103,6 +103,8 @@ export const proposalStep3Schema = z.object({
   dataExchangePlan: z.string().min(5, "กรุณาอธิบายแนวทางการแลกเปลี่ยนข้อมูล"),
   systemDiagramFile: imageWithDescriptionSchema.optional().nullable(),
   networkDiagramFile: imageWithDescriptionSchema.optional().nullable(),
+  useCaseDiagramFile: imageWithDescriptionSchema.optional().nullable(),
+  securityDiagramFile: imageWithDescriptionSchema.optional().nullable(),
 }).superRefine((data, ctx) => {
   // ตรวจสอบว่าต้องเลือกอย่างน้อย 1 ข้อ
   if (!data.isBmaPlan && !data.isAgencyPlan && !data.isGovernorPolicy) {

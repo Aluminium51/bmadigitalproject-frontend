@@ -3,11 +3,11 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 import { ProposalDraftValues } from "@/features/proposals/types";
+import { prepareTemplateData } from "@/features/proposals/utils/template-adapter";
 
 // @ts-expect-error - ImageModule ไม่มี Type definition ของ TypeScript อย่างเป็นทางการ
 import ImageModule from "docxtemplater-image-module-free";
 
-// แปลงไฟล์ (File) เป็น Base64 String
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -17,34 +17,24 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-
-// ดึงค่า Base64 ของรูปภาพโปร่งใสขนาด 1x1 px (ใช้สำหรับ Placeholder)
+// ใช้ Base64 ของภาพขนาด 1x1 แบบเรียบง่ายที่สุด (สีขาวโปร่งใส) เพื่อป้องกัน Header ของ Base64 เสียหาย
 const getBlankImageBase64 = (): string => {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 };
 
-
-// ตรวจสอบว่าเป็นรูปภาพ Placeholder หรือไม่
-const isBlankImage = (base64String: string): boolean => {
-  return base64String === getBlankImageBase64();
-};
-
-
-// ฟังก์ชันหลักในการสร้างเอกสาร Word (.docx)
 export const generateProposalDocx = async (formData: ProposalDraftValues) => {
   try {
-    // 1. โหลดไฟล์ Template (.docx)
     const response = await fetch("/templates/project-proposal.docx");
     
     if (!response.ok) {
-      throw new Error(`ดาวน์โหลด Template ไม่สำเร็จ (Status: ${response.status}) - กรุณาเช็คว่ามีไฟล์ public/templates/project-proposal.docx อยู่จริง`);
+      throw new Error(`ดาวน์โหลด Template ไม่สำเร็จ (Status: ${response.status})`);
     }
     
     const arrayBuffer = await response.arrayBuffer();
     const zip = new PizZip(arrayBuffer);
     const blankImageBase64 = getBlankImageBase64();
 
-    // 2. จัดเตรียมและแปลงไฟล์รูปภาพเป็น Base64
+    // จัดการเตรียมภาพ
     let systemImageBase64 = blankImageBase64;
     if (formData.systemDiagramFile?.file) {
       systemImageBase64 = await fileToBase64(formData.systemDiagramFile.file);
@@ -55,49 +45,68 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
       networkImageBase64 = await fileToBase64(formData.networkDiagramFile.file);
     }
 
-    // 3. กำหนดค่าออปชันสำหรับ Image Module
+    let useCaseImageBase64 = blankImageBase64;
+    if (formData.useCaseDiagramFile?.file) {
+      useCaseImageBase64 = await fileToBase64(formData.useCaseDiagramFile.file);
+    }
+
+    let securityImageBase64 = blankImageBase64;
+    if (formData.securityDiagramFile?.file) {
+      securityImageBase64 = await fileToBase64(formData.securityDiagramFile.file);
+    }
+
     const imageOptions = {
       centered: true,
       getImage: function (tagValue: string): ArrayBuffer {
-        // แปลง Base64 String กลับเป็น ArrayBuffer เพื่อส่งให้ docxtemplater
-        const base64Data = tagValue.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
-        const binaryString = window.atob(base64Data);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
+        try {
+          // ดักไว้เผื่อเป็นค่าว่าง
+          if (!tagValue || typeof tagValue !== 'string') {
+             tagValue = blankImageBase64;
+          }
+          
+          const base64Data = tagValue.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
+          const binaryString = window.atob(base64Data);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          return bytes.buffer;
+        } catch (err) {
+           console.error("Error converting image:", err);
+           // ส่งกลับ buffer ว่างถ้ามีปัญหา (สำคัญมาก เพื่อไม่ให้แอป crash)
+           return new ArrayBuffer(0); 
         }
-        return bytes.buffer;
       },
       getSize: function (img: ArrayBuffer, tagValue: string, tagName: string): [number, number] {
-        // ถ้ารูปเป็น Placeholder ให้ย่อขนาดเหลือ 1x1 px (ซ่อนรูป)
-        if (isBlankImage(tagValue)) {
-          return [1, 1];
-        }
+        // หาก buffer ว่าง หรือเป็นภาพโปร่งใส ให้ปรับลดเหลือ 1x1
+        if (img.byteLength === 0 || tagValue === blankImageBase64) return [1, 1];
         
-        // กำหนดขนาดภาพตามชื่อ Tag ใน Template
+        // กำหนดขนาดให้ครอบคลุมชื่อ Tag ที่เพิ่มมาใหม่
         if (tagName === "systemImage") return [500, 350];
         if (tagName === "networkImage") return [500, 350];
-        return [400, 300];
+        if (tagName === "useCaseImage") return [500, 350];
+        if (tagName === "securityImage") return [500, 350];
+        
+        return [400, 300]; // ค่าดีฟอลต์
       },
     };
     
     const imageModule = new ImageModule(imageOptions);
 
-    // 4. ตั้งค่าและสร้าง Docxtemplater Instance
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
       modules: [imageModule],
       nullGetter: function () {
-        return ""; // ถ้าเจอข้อมูลที่เป็น null/undefined ให้ใส่เป็นค่าว่างแทน
+        return ""; 
       },
     });
 
-    // 5. จัดเตรียม Data Mapping สำหรับ Mapping เข้าเอกสาร
-    const templateData = {
-      ...formData,
+    const baseTemplateData = prepareTemplateData(formData);
+
+    const finalTemplateData = {
+      ...baseTemplateData,
       totalBudgetFormatted: formData.totalBudget 
         ? new Intl.NumberFormat('th-TH').format(formData.totalBudget)
         : "0.00",
@@ -114,10 +123,15 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
       
       networkImage: networkImageBase64,
       networkImageDesc: formData.networkDiagramFile?.description || "-",
+      
+      useCaseImage: useCaseImageBase64,
+      useCaseImageDesc: formData.useCaseDiagramFile?.description || "-",
+
+      securityImage: securityImageBase64,
+      securityImageDesc: formData.securityDiagramFile?.description || "-",
     };
 
-    // 6. เรนเดอร์และดาวน์โหลดไฟล์
-    doc.render(templateData);
+    doc.render(finalTemplateData);
 
     const output = doc.getZip().generate({
       type: "blob",
