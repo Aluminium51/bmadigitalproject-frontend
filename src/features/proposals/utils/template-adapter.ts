@@ -2,7 +2,7 @@
 import { ProposalDraftValues } from "../types";
 import { toCheckbox, withPlaceholder, hasItems } from "./docx-formatters";
 
-// 🌟 กำหนดหน้าตาข้อมูล (Type) ให้ตรงกับคีย์แท็กดั้งเดิมในไฟล์ Word (.docx) ของคุณ
+// กำหนดหน้าตาข้อมูล (Type) ให้ตรงกับคีย์แท็กดั้งเดิมในไฟล์ Word (.docx) ของคุณ
 export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
   chkNew: string;
   chkReplace: string;
@@ -25,7 +25,7 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
 }
 
 /**
- * 🟢 ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word ตามที่คุณกำหนด
+ *  ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word ตามที่คุณกำหนด
  */
 const mapCostItemsForWord = (items: any[]) => {
   if (!items || items.length === 0) return [];

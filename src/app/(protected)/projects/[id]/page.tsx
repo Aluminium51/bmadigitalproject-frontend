@@ -193,7 +193,7 @@ const InfoIconWithTooltip = ({ content }: { content: React.ReactNode }) => (
   // 2. Diagram Grid Card
   const DiagramPreviewCard = ({ file, onRemove }: { file: DocumentFile; onRemove: () => void }) => (
     <div className="flex items-center justify-between p-4 bg-blue-50/50 rounded-[16px] border border-blue-100 group hover:border-blue-300 hover:shadow-sm transition-all h-full min-h-[120px]">
-      <div className="flex items-center gap-4 overflow-hidden min-w-0"> {/* 🌟 เพิ่ม min-w-0 ป้องกัน Overflow */}
+      <div className="flex items-center gap-4 overflow-hidden min-w-0">
         <div className="p-3 rounded-xl shrink-0 text-blue-600 bg-blue-100/50 shadow-inner">
           <FileImage className="w-6 h-6" />
         </div>

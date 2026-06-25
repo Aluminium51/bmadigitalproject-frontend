@@ -95,7 +95,7 @@ export default function ClientImageCompressor() {
     }
   };
 
-  // --- 🌟 ตั้งค่า React Dropzone ---
+  // --- ตั้งค่า React Dropzone ---
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
@@ -124,7 +124,7 @@ export default function ClientImageCompressor() {
     if (currentFileRef.current) compressImage(currentFileRef.current, quality, newWidth);
   };
 
-  // 🌟 ฟังก์ชันดาวน์โหลด
+  // ฟังก์ชันดาวน์โหลด
   const handleDownload = () => {
     if (!compressed) return;
     const link = document.createElement('a');
@@ -150,7 +150,7 @@ export default function ClientImageCompressor() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         
-        {/* 🌟 กล่อง Dropzone แทนที่ input file ธรรมดา */}
+        {/*s กล่อง Dropzone แทนที่ input file ธรรมดา */}
         <div 
           {...getRootProps()} 
           className={`bg-white p-6 rounded-xl shadow-sm border-2 border-dashed flex flex-col justify-center items-center text-center cursor-pointer transition-all duration-200 
@@ -256,7 +256,7 @@ export default function ClientImageCompressor() {
                   {compressed ? formatBytes(compressed.size) : ""}
                 </span>
                 
-                {/* 🌟 ปุ่ม Download ของใหม่ */}
+                {/* ปุ่ม Download ของใหม่ */}
                 {compressed && (
                   <button 
                     onClick={handleDownload}

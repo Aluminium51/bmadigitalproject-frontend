@@ -178,7 +178,7 @@ const SingleFileUploadWithDescBox = ({ title, name, watch, setValue, errors }: a
                 onChange={(e) => updateDescription(e.target.value)}
                 className={`bg-surface text-sm h-9 ${fieldError?.description ? 'border-status-orange focus-visible:ring-status-orange' : ''}`}
               />
-              {/* 🟢 จัดการ Error ของคำอธิบายให้ถูกต้อง */}
+              {/* จัดการ Error ของคำอธิบายให้ถูกต้อง */}
               {fieldError?.description && (
                 <p className="text-xs text-status-orange mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> {fieldError.description.message}

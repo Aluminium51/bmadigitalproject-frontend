@@ -5,7 +5,6 @@ export const toCheckbox = (condition: boolean | undefined | null): string => {
   return condition ? "☑" : "☐";
 };
 
-
 // จัดการค่าว่าง ถ้าไม่มีข้อมูลให้ใส่จุดไข่ปลา
 export const withPlaceholder = (
   value: string | number | undefined | null,
