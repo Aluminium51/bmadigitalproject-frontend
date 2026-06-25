@@ -78,8 +78,9 @@ const navGroups: NavGroup[] = [
         title: "ตรวจสอบและประเมิน",
         icon: ClipboardCheck,
         subItems: [
-          { title: "มอบหมาย", url: "/tasks/screening" },
-          { title: "วิเคราะห์", url: "/tasks/analysis" },
+          { title: "รับหนังสือขอส่งโครงการ (เลขาฯ)", url: "/tasks/screening" }, // ดูว่าตรงเกณฑ์หรือไม่
+          { title: "ระบุผู้วิเคราะห์โครงการ (admin)", url: "/tasks/screening" },
+          { title: "ตรวจสอบเอกสาร (ผู้วิเคราะห์)", url: "/tasks/analysis" },
         ]
       }
     ]
