@@ -17,11 +17,25 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
   agencyKpi?: string;
   governorPolicyCode?: string;
   governorPolicyName?: string;
+
   hasRelatedProjects: boolean;
   hasHardwareCosts: boolean;
   hasSoftwareCosts: boolean;
-  hardwareCosts: any[]; // คีย์ตามที่ระบุในแบบเดิม
-  softwareCosts: any[]; // คีย์ตามที่ระบุในแบบเดิม
+  hasPersonnelCoreCosts: boolean;
+  hasPersonnelAsstCosts: boolean;
+  hasPersonnelSuppCosts: boolean;
+  hasPersonnelResponsibilities: boolean;
+  hasTrainingCourses: boolean; 
+  hasOtherCosts: boolean;
+
+  hardwareCosts: any[]; 
+  softwareCosts: any[];
+  personnelCoreCosts: any[];
+  personnelAsstCosts: any[];
+  personnelSuppCosts: any[];
+  personnelResponsibilities: any[];
+  trainingCourses: any[];
+  otherCosts: any[];
 }
 
 /**
@@ -56,6 +70,131 @@ const mapCostItemsForWord = (items: any[]) => {
       // คำนวณราคารวมของแถวนั้นๆ ให้ Word นำไปแสดงผลได้ทันที
       rowTotal: (quantity * unitPrice).toLocaleString('th-TH'),
       unitPriceStr: unitPrice.toLocaleString('th-TH'),
+    };
+  });
+};
+
+const mapStandardCosts = (items: any[]) => {
+  if (!items || items.length === 0) return [];
+  return items.map((item, index) => {
+    const quantity = Number(item.quantity) || 0;
+    const unitPrice = Number(item.unitPrice) || 0;
+    return {
+      ...item,
+      index: index + 1,
+      chkMdes: item.referenceType === "MDES" ? "☑" : "☐",
+      chkMarket: item.referenceType === "MARKET" ? "☑" : "☐",
+      chkPrev: item.referenceType === "PREVIOUS" ? "☑" : "☐",
+      chkOther: item.referenceType === "OTHER" ? "☑" : "☐",
+      mdesMonth: item.mdesMonth || "..........",
+      mdesYear: item.mdesYear || "........",
+      mdesItemNo: item.mdesItemNo || "........",
+      marketCount: item.marketCount || "........",
+      marketCompany: item.marketCompany || "................................",
+      prevProject: item.prevProject || "................................",
+      prevYear: item.prevYear || "........",
+      otherDetail: item.otherDetail || "................................",
+      rowTotal: (quantity * unitPrice).toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+      unitPriceStr: unitPrice.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+    };
+  });
+};
+
+const mapPersonnelCoreAndAsst = (items: any[]) => {
+  if (!items || items.length === 0) return [];
+  return items.map((item, index) => {
+    const baseSalary = Number(item.baseSalary) || 0;
+    const multiplier = Number(item.multiplier) || 1;
+    const calculatedSalary = baseSalary * multiplier;
+    const personCount = Number(item.personCount) || 0;
+    const durationMonths = Number(item.durationMonths) || 0;
+    const total = baseSalary * multiplier * personCount * durationMonths;
+
+    return {
+      ...item,
+      index: index + 1,
+      baseSalaryStr: baseSalary.toLocaleString('th-TH'),
+      multiplierStr: multiplier.toFixed(2),
+      calculatedSalaryStr: calculatedSalary.toLocaleString('th-TH'),
+      rowTotal: total.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+    };
+  });
+};
+
+const mapPersonnelSupport = (items: any[]) => {
+  if (!items || items.length === 0) return [];
+  return items.map((item, index) => {
+    const baseSalary = Number(item.baseSalary) || 0;
+    const personCount = Number(item.personCount) || 0;
+    const durationMonths = Number(item.durationMonths) || 0;
+    const total = baseSalary * personCount * durationMonths;
+
+    return {
+      ...item,
+      index: index + 1,
+      baseSalaryStr: baseSalary.toLocaleString('th-TH'),
+      rowTotal: total.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+    };
+  });
+};
+
+const mapTrainingCourses = (items: any[]) => {
+  if (!items || items.length === 0) return [];
+  return items.map((item, index) => {
+    // 4.1 คำนวณตารางวิทยากรย่อยในแต่ละคอร์ส (ชั่วโมง * อัตรา * วัน)
+    let courseSpeakerTotal = 0;
+    const formattedSpeakerCosts = (item.speakerCosts || []).map((sp: any, spIndex: number) => {
+      const spTotal = (Number(sp.hours) || 0) * (Number(sp.ratePerHour) || 0) * (Number(sp.days) || 0);
+      courseSpeakerTotal += spTotal;
+      return {
+        ...sp,
+        index: spIndex + 1,
+        ratePerHourStr: (Number(sp.ratePerHour) || 0).toLocaleString('th-TH'),
+        rowTotal: spTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })
+      };
+    });
+
+    // 4.2 คำนวณตารางค่าอาหารย่อยในแต่ละคอร์ส (มื้อ * อัตรา * คน * วัน)
+    let courseFoodTotal = 0;
+    const formattedFoodCosts = (item.foodCosts || []).map((fd: any, fdIndex: number) => {
+      const fdTotal = (Number(fd.mealsCount) || 0) * (Number(fd.ratePerMeal) || 0) * (Number(fd.traineesCount) || 0) * (Number(fd.days) || 0);
+      courseFoodTotal += fdTotal;
+      return {
+        ...fd,
+        index: fdIndex + 1,
+        ratePerMealStr: (Number(fd.ratePerMeal) || 0).toLocaleString('th-TH'),
+        rowTotal: fdTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })
+      };
+    });
+
+    const grandCourseTotal = courseSpeakerTotal + courseFoodTotal;
+
+    return {
+      ...item,
+      index: index + 1,
+      chkHasSpeaker: item.hasSpeakerCost ? "☑" : "☐",
+      speakerReason: item.speakerReason || "................................",
+      speakerCosts: formattedSpeakerCosts,
+      foodCosts: formattedFoodCosts,
+      // ราคารวมสรุปของคอร์สการอบรมนี้
+      courseTotalStr: grandCourseTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })
+    };
+  });
+};
+
+const mapOtherCosts = (items: any[]) => {
+  if (!items || items.length === 0) return [];
+  return items.map((item, index) => {
+    const quantity = Number(item.quantity) || 0;
+    const unitPrice = Number(item.unitPrice) || 0;
+    return {
+      ...item,
+      index: index + 1,
+      chkIt: item.costType === "IT" ? "☑" : "☐",
+      chkNonIt: item.costType === "NON_IT" ? "☑" : "☐",
+      unitPriceStr: unitPrice.toLocaleString('th-TH'),
+      rowTotal: (quantity * unitPrice).toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+      remark: item.remark || "-"
     };
   });
 };
@@ -95,11 +234,28 @@ export const prepareTemplateData = (
     hasRelatedProjects: hasItems(rawData.relatedProjects),
 
     // --- Step 4 : Boolean Flag เพื่อซ่อน/แสดงตารางราคา ---
+// ตั้งค่า Boolean Flags คุมการแสดงตารางใน Word
     hasHardwareCosts: hasItems(rawData.hardwareCosts),
     hasSoftwareCosts: hasItems(rawData.softwareCosts),
+    hasPersonnelCoreCosts: hasItems(rawData.personnelCoreCosts),
+    hasPersonnelAsstCosts: hasItems(rawData.personnelAsstCosts),
+    hasPersonnelSuppCosts: hasItems(rawData.personnelSuppCosts),
+    hasPersonnelResponsibilities: hasItems(rawData.personnelResponsibilities),
+    hasTrainingCourses: hasItems(rawData.trainingCourses),
+    hasOtherCosts: hasItems(rawData.otherCosts),
+
+    // รันกระบวนการจัดฟอร์แมตข้อมูลส่งออกไปยังคีย์ดั้งเดิมของเทมเพลต
+    hardwareCosts: mapStandardCosts(rawData.hardwareCosts || []),
+    softwareCosts: mapStandardCosts(rawData.softwareCosts || []),
+    personnelCoreCosts: mapPersonnelCoreAndAsst(rawData.personnelCoreCosts || []),
+    personnelAsstCosts: mapPersonnelCoreAndAsst(rawData.personnelAsstCosts || []),
+    personnelSuppCosts: mapPersonnelSupport(rawData.personnelSuppCosts || []),
     
-    // แปลงก้อนตารางราคาโดยใช้ฟังก์ชัน mapCostItemsForWord ด้านบน
-    hardwareCosts: mapCostItemsForWord(rawData.hardwareCosts || []),
-    softwareCosts: mapCostItemsForWord(rawData.softwareCosts || []),
+    personnelResponsibilities: (rawData.personnelResponsibilities || []).map((item, i) => ({
+      ...item, index: i + 1
+    })),
+    
+    trainingCourses: mapTrainingCourses(rawData.trainingCourses || []),
+    otherCosts: mapOtherCosts(rawData.otherCosts || []),
   };
 };

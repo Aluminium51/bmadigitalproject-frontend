@@ -92,8 +92,8 @@ const PersonnelTable = ({
                 <th className="p-2 text-left font-medium w-32">วุฒิ</th>
                 {!isSupport && <th className="p-2 text-left font-medium w-32 bg-blue-50/30 text-blue-700">สาขา</th>}
                 
-                <th className="p-2 text-center font-medium w-16 leading-tight border-l border-slate-200">ปสก.<br/>(ปี)</th>
-                <th className="p-2 text-right font-medium w-32 bg-emerald-50/50 text-emerald-800">เงินเดือนฐาน</th>
+                <th className="p-2 text-center font-medium w-16 leading-tight border-l border-slate-200">ประสบการณ์ ไ่ม่น้อยกว่า<br/>(ปี)</th>
+                <th className="p-2 text-right font-medium w-32 bg-emerald-50/50 text-emerald-800">อัตราเงินเดือนพื้นฐาน(บาท)</th>
                 {!isSupport && <th className="p-2 text-center font-medium w-16 bg-blue-50/30 text-blue-700">ตัวคูณ</th>}
                 <th className="p-2 text-center font-medium w-16">คน</th>
                 <th className="p-2 text-center font-medium w-16">เดือน</th>
