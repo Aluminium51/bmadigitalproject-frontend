@@ -143,7 +143,7 @@ export default function UserProfile() {
               <Button variant="default" className="w-full rounded-full h-11 text-base">
                 แก้ไขข้อมูลส่วนตัว
               </Button>
-              <Button variant="outline" className="w-full rounded-full h-11 text-base"> {/* 🟢 สมมติว่าไม่มี variant="soft" ขออนุญาตเปลี่ยนเป็น outline ชั่วคราวนะครับ */}
+              <Button variant="outline" className="w-full rounded-full h-11 text-base"> {/* สมมติว่าไม่มี variant="soft" ขออนุญาตเปลี่ยนเป็น outline ชั่วคราวนะครับ */}
                 เปลี่ยนรหัสผ่าน
               </Button>
             </div>

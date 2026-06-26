@@ -170,7 +170,7 @@ export function RegisterForm() {
         router.push("/login");
       }, 2000);
     } else {
-      // 🟢 2. เช็คว่ามี field ระบุมาไหมว่าช่องไหนผิด
+      // 2. เช็คว่ามี field ระบุมาไหมว่าช่องไหนผิด
       if (response.field) {
         // โยน Error กลับไปที่ Input ช่องนั้นๆ
         setError(response.field as keyof RegisterValues, {

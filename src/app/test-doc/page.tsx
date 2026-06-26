@@ -99,7 +99,7 @@ const mockProjectData = {
 };
 
 // Custom logic สำหรับแปลงข้อมูลก่อนหยอดลงใน Word
-// 🟢 เพิ่มจุดที่ 1: ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word
+// เพิ่มจุดที่ 1: ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word
 const mapCostItemsForWord = (items: any[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => ({

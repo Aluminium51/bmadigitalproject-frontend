@@ -1,5 +1,5 @@
 // src/components/custom/custom-sidebar-trigger.tsx
-"use client"; // 🟢 ต้องมีเพราะมีการใช้ onClick และ Hook
+"use client"; // ต้องมีเพราะมีการใช้ onClick และ Hook
 
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
