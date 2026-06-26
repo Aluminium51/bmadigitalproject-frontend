@@ -40,7 +40,7 @@ export function ProjectTabs({ activeTab, onTabChange, draftsCount, activeCount }
         onClick={() => onTabChange("team")}
         className={`flex items-center gap-2.5 py-5 px-4 text-sm font-bold border-b-[3px] transition-all whitespace-nowrap ${activeTab === "team" ? "border-[#00734b] text-[#00734b]" : "border-transparent text-[#3f4942] hover:text-[#191c20]"}`}
       >
-        <Users className="w-4 h-4" /> ภาพรวมหน่วยงาน
+        <Users className="w-4 h-4" /> ส่งแล้ว (หน่วยงานเดียวกัน)
       </button>
 
       <button 

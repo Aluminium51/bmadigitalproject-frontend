@@ -102,7 +102,7 @@ const navGroups: NavGroup[] = [
     title: "ตั้งค่าระบบ",
     items: [
       { title: "จัดการผู้ใช้งาน", url: "/users", icon: Users },
-      { title: "โปรไฟล์ส่วนตัว", url: "/profile", icon: Settings },
+      { title: "ข้อมูลส่วนตัว", url: "/profile", icon: Settings },
     ]
   }
 ];

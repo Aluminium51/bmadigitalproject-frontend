@@ -110,7 +110,7 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
       </div>
 
       <div>
-        <Label className="font-bold text-md text-foreground block mb-3">ตารางค่าอาหาร อาหารว่างและเครื่องดื่ม</Label>
+        <Label className="font-bold text-md text-foreground block mb-3">ตารางค่าอาหาร อาหารว่างและเครื่องดื่ม<span className="text-muted-foreground font-normal"> (ถ้าไม่มีค่าใช้จ่าย ให้ใส่ 0)</span></Label>
         <div className="overflow-x-auto border border-border rounded-md">
           <table className="w-full text-left min-w-200 text-xs">
             <thead className="bg-surface-container-low text-slate-gray text-center">

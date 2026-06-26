@@ -30,7 +30,7 @@ const Breadcrumbs = () => {
       agendas: "วาระการประชุม",
       resolutions: "บันทึกมติที่ประชุม",
       users: "จัดการผู้ใช้งาน",
-      profile: "โปรไฟล์ส่วนตัว",
+      profile: "ข้อมูลส่วนตัว",
     };
     // ถ้าเจอชื่อใน Map ให้ใช้ภาษาไทย ถ้าไม่เจอใช้ตัวพิมพ์ใหญ่ตัวแรก
     return names[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);

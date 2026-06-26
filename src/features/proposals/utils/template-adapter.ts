@@ -172,8 +172,9 @@ const mapTrainingCourses = (items: any[]) => {
     return {
       ...item,
       index: index + 1,
-      chkHasSpeaker: item.hasSpeakerCost ? "☑" : "☐",
+      chkHasSpeaker: item.hasSpeakerCost ? "จำเป็น" : "ไม่จำเป็น",
       speakerReason: item.speakerReason || "................................",
+      locationStr: item.locationType=== "สถานที่ราชการ" ? "☑ สถานที่ราชการ 	☐ สถานที่เอกชน" : "☐ สถานที่ราชการ 	☑ สถานที่เอกชน",
       speakerCosts: formattedSpeakerCosts,
       foodCosts: formattedFoodCosts,
       // ราคารวมสรุปของคอร์สการอบรมนี้
