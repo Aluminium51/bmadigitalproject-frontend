@@ -228,6 +228,7 @@ export const softwareCostSchema = z.object({
   }
 });
 
+// ค่าใช้จ่ายบุคลากรที่ใช้ในการพัฒนาระบบ 
 // 1. Schema สำหรับ บุคลากรหลัก และ บุคลากรผู้ช่วย (บังคับสาขาและตัวคูณ)
 const personnelCoreAndAsstSchema = z.object({
   position: z.string().min(1, "ระบุตำแหน่ง"),

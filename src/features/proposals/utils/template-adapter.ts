@@ -36,11 +36,33 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
   personnelResponsibilities: any[];
   trainingCourses: any[];
   otherCosts: any[];
+
+  // summaty variables for Word template
+  totalHwCostStr: string;
+  totalSwCostStr: string;
+  totalCoreCostStr: string; // หัวข้อย่อย
+  totalAsstCostStr: string; // หัวข้อย่อย
+  totalSuppCostStr: string; // หัวข้อย่อย
+  totalPersonnelCostStr: string;
+  totalTrainingCostStr: string;
+  totalOtherCostStr: string;
+  totalOtherITStr: string;
+  totalOtherNonITStr: string;
+  grandTotalITOnlyStr: string;
+  grandTotalStr: string;
+
+  // Step 5 
+  hasIctPersonnel: boolean;
+  ictPersonnel: any[];
+  chkInRoadmap: string;
+  chkNotInRoadmap: string;
+  
+  // ปรับเป็นประเภทสติงเพื่อรองรับจุดไข่ปลาหากกรณีไม่มีข้อมูล
+  otherReadiness?: string;
 }
 
-/**
- *  ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word ตามที่คุณกำหนด
- */
+
+// ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word ตามที่คุณกำหนด
 const mapCostItemsForWord = (items: any[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => {
@@ -191,8 +213,8 @@ const mapOtherCosts = (items: any[]) => {
     return {
       ...item,
       index: index + 1,
-      chkIt: item.costType === "IT" ? "☑" : "☐",
-      chkNonIt: item.costType === "NON_IT" ? "☑" : "☐",
+      chkIt: item.costType === "IT" ? "IT" : "",
+      chkNonIt: item.costType === "NON_IT" ? "NON-IT" : "",
       unitPriceStr: unitPrice.toLocaleString('th-TH'),
       rowTotal: (quantity * unitPrice).toLocaleString('th-TH', { minimumFractionDigits: 2 }),
       remark: item.remark || "-"
@@ -200,13 +222,49 @@ const mapOtherCosts = (items: any[]) => {
   });
 };
 
-/**
- * Adapter หลักสำหรับจัดเตรียมข้อมูลเข้าสู่ Word Template
- */
+// Adapter หลักสำหรับจัดเตรียมข้อมูลเข้าสู่ Word Template
 export const prepareTemplateData = (
   rawData: ProposalDraftValues
 ): ProposalTemplateData => {
   const currentType = rawData.projectType || "";
+
+  // Logic การคำนวณยอดรวมจากหน้า UI
+  const hw = rawData.hardwareCosts || [];
+  const sw = rawData.softwareCosts || [];
+  const core = rawData.personnelCoreCosts || [];
+  const asst = rawData.personnelAsstCosts || [];
+  const supp = rawData.personnelSuppCosts || [];
+  const courses = rawData.trainingCourses || [];
+  const other = rawData.otherCosts || [];
+
+  // คำนวณหมวด 1 และ 2
+  const totalHw = hw.reduce((acc, row) => acc + ((Number(row.quantity) || 0) * (Number(row.unitPrice) || 0)), 0);
+  const totalSw = sw.reduce((acc, row) => acc + ((Number(row.quantity) || 0) * (Number(row.unitPrice) || 0)), 0);
+
+  // คำนวณหมวด 3 (บุคลากร)
+  const totalCore = core.reduce((acc, row) => acc + (((Number(row.baseSalary) || 0) * (Number(row.multiplier) || 1)) * (Number(row.personCount) || 0) * (Number(row.durationMonths) || 0)), 0);
+  const totalAsst = asst.reduce((acc, row) => acc + (((Number(row.baseSalary) || 0) * (Number(row.multiplier) || 1)) * (Number(row.personCount) || 0) * (Number(row.durationMonths) || 0)), 0);
+  const totalSupp = supp.reduce((acc, row) => acc + ((Number(row.baseSalary) || 0) * (Number(row.personCount) || 0) * (Number(row.durationMonths) || 0)), 0);
+  const totalPersonnel = totalCore + totalAsst + totalSupp;
+
+  // คำนวณหมวด 4 (ฝึกอบรม)
+  const totalTraining = courses.reduce((acc: number, course: any) => {
+    const spkCost = (course.speakerCosts || []).reduce((sum: number, r: any) => sum + ((Number(r.hours) || 0) * (Number(r.ratePerHour) || 0) * (Number(r.days) || 0)), 0);
+    const foodCost = (course.foodCosts || []).reduce((sum: number, r: any) => sum + ((Number(r.mealsCount) || 0) * (Number(r.ratePerMeal) || 0) * (Number(r.traineesCount) || 0) * (Number(r.days) || 0)), 0);
+    return acc + spkCost + foodCost;
+  }, 0);
+
+  // คำนวณหมวด 5 (อื่นๆ)
+  const totalOtherIT = other.filter(row => row.costType === "IT").reduce((acc, row) => acc + ((Number(row.quantity) || 0) * (Number(row.unitPrice) || 0)), 0);
+  const totalOtherNonIT = other.filter(row => row.costType === "NON_IT").reduce((acc, row) => acc + ((Number(row.quantity) || 0) * (Number(row.unitPrice) || 0)), 0);
+  const totalOther = totalOtherIT + totalOtherNonIT;
+
+  // คำนวณยอด Grand Total
+  const grandTotal = totalHw + totalSw + totalPersonnel + totalTraining + totalOther;
+  const grandTotalITOnly = grandTotal - totalOtherNonIT;
+
+  // ฟังก์ชันช่วย Format ตัวเลข
+  const formatMoney = (amount: number) => amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return {
     ...rawData, // โยนข้อมูลพื้นฐานไปก่อน
@@ -235,7 +293,7 @@ export const prepareTemplateData = (
     hasRelatedProjects: hasItems(rawData.relatedProjects),
 
     // --- Step 4 : Boolean Flag เพื่อซ่อน/แสดงตารางราคา ---
-// ตั้งค่า Boolean Flags คุมการแสดงตารางใน Word
+    // ตั้งค่า Boolean Flags คุมการแสดงตารางใน Word
     hasHardwareCosts: hasItems(rawData.hardwareCosts),
     hasSoftwareCosts: hasItems(rawData.softwareCosts),
     hasPersonnelCoreCosts: hasItems(rawData.personnelCoreCosts),
@@ -258,5 +316,28 @@ export const prepareTemplateData = (
     
     trainingCourses: mapTrainingCourses(rawData.trainingCourses || []),
     otherCosts: mapOtherCosts(rawData.otherCosts || []),
+    // Summary variables for Word template
+    totalHwCostStr: formatMoney(totalHw),
+    totalSwCostStr: formatMoney(totalSw),
+    totalCoreCostStr: formatMoney(totalCore), // หัวข้อย่อย
+    totalAsstCostStr: formatMoney(totalAsst), // หัวข้อย่อย
+    totalSuppCostStr: formatMoney(totalSupp), // หัวข้อย่อย
+    totalPersonnelCostStr: formatMoney(totalPersonnel),
+    totalTrainingCostStr: formatMoney(totalTraining),
+    totalOtherCostStr: formatMoney(totalOther),
+    totalOtherITStr: formatMoney(totalOtherIT),
+    totalOtherNonITStr: formatMoney(totalOtherNonIT),
+    grandTotalITOnlyStr: formatMoney(grandTotalITOnly),
+    grandTotalStr: formatMoney(grandTotal),
+
+    // Step 5
+    hasIctPersonnel: hasItems(rawData.ictPersonnel),
+    ictPersonnel: (rawData.ictPersonnel || []).map((item, index) => ({
+      ...item,
+      index: index + 1
+    })),
+    otherReadiness: withPlaceholder(rawData.otherReadiness, "-ไม่มี-"),
+    chkInRoadmap: rawData.isInRoadmap === true ? "☑" : "☐",
+    chkNotInRoadmap: rawData.isInRoadmap === false ? "☑" : "☐",
   };
 };
