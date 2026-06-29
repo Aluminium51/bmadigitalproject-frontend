@@ -92,7 +92,7 @@ export const UserTable = ({
   };
 
   return (
-    <div className="border border-border rounded-xl bg-white overflow-hidden shadow-sm">
+    <div className="border border-border rounded-md bg-white overflow-hidden shadow-sm">
       <Table>
         <TableHeader className="bg-slate-50/70">
           <TableRow>
@@ -146,7 +146,7 @@ export const UserTable = ({
                 className="hover:bg-slate-50/40 transition-colors"
               >
                 {/* 1. ชื่อ-นามสกุล (เอา Avatar ออก) */}
-                <TableCell className="py-3 pl-6">
+                <TableCell className="py-4 pl-6">
                   <div className="flex flex-col min-w-0">
                     <span className="font-semibold text-slate-900 truncate">
                       {user.first_name} {user.last_name}
