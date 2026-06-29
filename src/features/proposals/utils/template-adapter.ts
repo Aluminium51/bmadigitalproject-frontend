@@ -40,9 +40,9 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
   // summaty variables for Word template
   totalHwCostStr: string;
   totalSwCostStr: string;
-  totalCoreCostStr: string; // หัวข้อย่อย
-  totalAsstCostStr: string; // หัวข้อย่อย
-  totalSuppCostStr: string; // หัวข้อย่อย
+  totalCoreCostStr: string; // sub topic
+  totalAsstCostStr: string; // sub topic
+  totalSuppCostStr: string; // sub topic
   totalPersonnelCostStr: string;
   totalTrainingCostStr: string;
   totalOtherCostStr: string;
@@ -319,9 +319,9 @@ export const prepareTemplateData = (
     // Summary variables for Word template
     totalHwCostStr: formatMoney(totalHw),
     totalSwCostStr: formatMoney(totalSw),
-    totalCoreCostStr: formatMoney(totalCore), // หัวข้อย่อย
-    totalAsstCostStr: formatMoney(totalAsst), // หัวข้อย่อย
-    totalSuppCostStr: formatMoney(totalSupp), // หัวข้อย่อย
+    totalCoreCostStr: formatMoney(totalCore), // sub topic
+    totalAsstCostStr: formatMoney(totalAsst), // sub topic
+    totalSuppCostStr: formatMoney(totalSupp), // sub topic
     totalPersonnelCostStr: formatMoney(totalPersonnel),
     totalTrainingCostStr: formatMoney(totalTraining),
     totalOtherCostStr: formatMoney(totalOther),
