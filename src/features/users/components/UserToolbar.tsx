@@ -27,7 +27,7 @@ export const UserToolbar = ({
           <Input placeholder="ค้นหาชื่อ, นามสกุล หรืออีเมลผู้ใช้..." className="pl-9 bg-slate-50/50" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={deptFilter} onValueChange={setDeptFilter}>
-          <SelectTrigger className="w-full sm:w-[220px] bg-slate-50/50">
+          <SelectTrigger className="w-full sm:w-55 bg-slate-50/50">
             <Building2 className="w-4 h-4 text-slate-400 mr-2" />
             <SelectValue placeholder="กรองตามหน่วยงาน" />
           </SelectTrigger>
@@ -38,7 +38,7 @@ export const UserToolbar = ({
           </SelectContent>
         </Select>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-full sm:w-[160px] bg-slate-50/50">
+          <SelectTrigger className="w-full sm:w-40 bg-slate-50/50">
             <Shield className="w-4 h-4 text-slate-400 mr-2" />
             <SelectValue placeholder="กรองตามสิทธิ์" />
           </SelectTrigger>

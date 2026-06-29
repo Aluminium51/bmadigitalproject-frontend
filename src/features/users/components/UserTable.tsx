@@ -151,7 +151,7 @@ export const UserTable = ({
                     <span className="font-semibold text-slate-900 truncate">
                       {user.first_name} {user.last_name}
                     </span>
-                    <span className="text-xs text-slate-500 truncate max-w-[240px]">
+                    <span className="text-xs text-slate-500 truncate max-w-60">
                       {user.position || "-"}
                     </span>
                   </div>
@@ -171,7 +171,7 @@ export const UserTable = ({
 
                 {/* สังกัดสำนัก/ฝ่าย */}
                 <TableCell>
-                  <div className="flex flex-col text-xs max-w-[260px]">
+                  <div className="flex flex-col text-xs max-w-60">
                     <span className="font-medium text-slate-800 truncate">
                       {user.department_name}
                     </span>
@@ -200,7 +200,7 @@ export const UserTable = ({
                       className="data-[state=checked]:bg-emerald-500"
                     />
                     <span
-                      className={`text-xs font-bold min-w-[55px] text-left ${user.is_active ? "text-emerald-600" : "text-rose-500"}`}
+                      className={`text-xs font-bold min-w-13.75 text-left ${user.is_active ? "text-emerald-600" : "text-rose-500"}`}
                     >
                       {user.is_active ? "Active" : "Suspended"}
                     </span>
@@ -219,7 +219,7 @@ export const UserTable = ({
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[180px]">
+                    <DropdownMenuContent align="end" className="w-45">
                       <DropdownMenuLabel>การจัดการบัญชี</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
