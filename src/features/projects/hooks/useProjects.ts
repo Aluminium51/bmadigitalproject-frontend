@@ -1,6 +1,7 @@
 // src/features/projects/hooks/useProjects.ts
 import { useState } from "react";
-import { myDraftProjects, myActiveProjects, teamProjects, otherDepartmentProjects } from "../data/mock-projects";
+// หมายเหตุ: ตรวจสอบชื่อไฟล์ mock-projects ให้ตรงกับที่คุณเซฟไว้จริง (เช่น mockProjects หรือ mock-projects)
+import { teamDraftProjects, myActiveProjects, teamProjects, otherDepartmentProjects } from "../data/mock-projects";
 
 export type TabType = "drafts" | "active" | "team" | "all";
 
@@ -19,8 +20,12 @@ export function useProjects() {
   const getActiveData = () => {
     let dataset: any[] = []; 
 
-    if (activeTab === "drafts") dataset = myDraftProjects;
-    else if (activeTab === "team") dataset = teamProjects;
+    if (activeTab === "drafts") {
+      dataset = teamDraftProjects;
+    } 
+    else if (activeTab === "team") {
+      dataset = teamProjects;
+    } 
     else if (activeTab === "active") {
       dataset = [...myActiveProjects].sort((a, b) => {
         if (a.status === "Need Revision" && b.status !== "Need Revision") return -1;
@@ -29,16 +34,18 @@ export function useProjects() {
       });
     }
     else if (activeTab === "all") {
-      const mySubmitted = myActiveProjects.map(p => ({ ...p, agency: "สำนักยุทธศาสตร์และประเมินผล" }));
-      const teamSubmitted = teamProjects.filter(p => p.status !== "Draft").map(p => ({ ...p, agency: "สำนักยุทธศาสตร์และประเมินผล" }));
-      dataset = [...mySubmitted, ...teamSubmitted, ...otherDepartmentProjects];
+      // ✨ จุดแก้ไข: ยุบโค้ดให้กระชับขึ้น เพราะใน Mock Data ใหม่มีฟิลด์ agency ครบถ้วนแล้ว
+      dataset = [...myActiveProjects, ...teamProjects, ...otherDepartmentProjects];
     }
 
+    // 🔍 ปรับปรุงระบบค้นหา
     if (searchQuery.trim() !== "") {
       const lowerQuery = searchQuery.toLowerCase();
       dataset = dataset.filter(p => 
         (p.name && p.name.toLowerCase().includes(lowerQuery)) || 
-        (p.id && p.id.toLowerCase().includes(lowerQuery))
+        (p.id && p.id.toLowerCase().includes(lowerQuery)) ||
+        // ✨ จุดเพิ่มเติม: ให้ค้นหาจากชื่อผู้รับผิดชอบ (Owner) ได้ด้วย
+        (p.owner && p.owner.toLowerCase().includes(lowerQuery))
       );
     }
 
@@ -54,7 +61,7 @@ export function useProjects() {
     searchQuery, setSearchQuery,
     currentPage, setCurrentPage, totalPages,
     paginatedData,
-    draftsCount: myDraftProjects.length,
+    draftsCount: teamDraftProjects.length,
     activeCount: myActiveProjects.length
   };
 }

@@ -1,30 +1,160 @@
-// src/features/users/data/mock-users.ts
+import { User } from "../types";
 
-export type UserRole = "Admin" | "User" | "Manager";
-export type UserStatus = "Active" | "Inactive";
-
-export interface UserItem {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  position: string;
-  division: string;
-  role: UserRole;
-  status: UserStatus;
-  lastLogin: string;
-}
-
-export const mockUsers: UserItem[] = [
-  { id: "USR-001", username: "thanatorn.a", firstName: "ธนาธร", lastName: "เก่งงาน", email: "thanatorn@bma.go.th", position: "นักวิเคราะห์นโยบายและแผน", division: "สำนักยุทธศาสตร์และประเมินผล", role: "Admin", status: "Active", lastLogin: "10 นาทีที่แล้ว" },
-  { id: "USR-002", username: "somchai.j", firstName: "สมชาย", lastName: "ใจดี", email: "somchai.j@bma.go.th", position: "นักวิชาการคอมพิวเตอร์", division: "สำนักยุทธศาสตร์และประเมินผล", role: "User", status: "Active", lastLogin: "1 ชม. ที่แล้ว" },
-  { id: "USR-003", username: "wichai.m", firstName: "วิชัย", lastName: "มั่นคง", email: "wichai.m@bma.go.th", position: "ผู้อำนวยการกอง", division: "สำนักการคลัง", role: "Manager", status: "Active", lastLogin: "เมื่อวาน" },
-  { id: "USR-004", username: "napa.c", firstName: "นภา", lastName: "เจริญดี", email: "napa.c@bma.go.th", position: "นักวิชาการคลัง", division: "สำนักการคลัง", role: "User", status: "Active", lastLogin: "2 วันที่แล้ว" },
-  { id: "USR-005", username: "somsak.r", firstName: "สมศักดิ์", lastName: "รักเมือง", email: "somsak.r@bma.go.th", position: "วิศวกรโยธา", division: "สำนักการระบายน้ำ", role: "User", status: "Active", lastLogin: "สัปดาห์ที่แล้ว" },
-  { id: "USR-006", username: "kanya.p", firstName: "กัญญา", lastName: "พูนสุข", email: "kanya.p@bma.go.th", position: "เจ้าพนักงานธุรการ", division: "สำนักการแพทย์", role: "User", status: "Active", lastLogin: "1 เดือนที่แล้ว" },
-  { id: "USR-007", username: "anon.t", firstName: "อานนท์", lastName: "ทดสอบ", email: "anon.t@bma.go.th", position: "อดีตพนักงาน", division: "สำนักยุทธศาสตร์และประเมินผล", role: "User", status: "Inactive", lastLogin: "3 เดือนที่แล้ว" },
+export const MOCK_USERS: User[] = [
+  {
+    user_id: 1,
+    username: "thanathorn",
+    email: "thanathorn.b@bma.go.th",
+    first_name: "ธนาธร",
+    last_name: "บำรุงเมือง",
+    position: "นักวิเคราะห์นโยบายและแผนชำนาญการพิเศษ",
+    department_name: "สำนักยุทธศาสตร์และประเมินผล",
+    division_name: "กองสารสนเทศภูมิศาสตร์",
+    roles: ["ADMIN", "ANALYST", "USER"],
+    is_active: true,
+    last_login: "29 มิ.ย. 2569 14:20",
+  },
+  {
+    user_id: 2,
+    username: "somchai.k",
+    email: "somchai.k@bma.go.th",
+    first_name: "สมชาย",
+    last_name: "กิจอนันต์",
+    position: "นักวิชาการคอมพิวเตอร์ปฏิบัติการ",
+    department_name: "สำนักยุทธศาสตร์และประเมินผล",
+    division_name: "ศูนย์ข้อมูลกลาง",
+    roles: ["ANALYST"],
+    is_active: true,
+    last_login: "28 มิ.ย. 2569 09:15",
+  },
+  {
+    user_id: 3,
+    username: "wipawan.s",
+    email: "wipawan.s@bma.go.th",
+    first_name: "วิภาวรรณ",
+    last_name: "ศรีสุข",
+    position: "เจ้าพนักงานธุรการชำนาญงาน",
+    department_name: "สำนักงานกลาง",
+    division_name: "ฝ่ายบริหารงานทั่วไป",
+    roles: ["USER"],
+    is_active: false,
+    last_login: "15 พ.ค. 2569 11:30",
+  },
+  {
+    user_id: 4,
+    username: "nattapong.w",
+    email: "nattapong.w@bma.go.th",
+    first_name: "ณัฐพงศ์",
+    last_name: "วงศ์สว่าง",
+    position: "วิศวกรโยธาชำนาญการ",
+    department_name: "สำนักการโยธา",
+    division_name: "กองแผนงานและประสานสาธารณูปโภค",
+    roles: ["USER"],
+    is_active: true,
+    last_login: "29 มิ.ย. 2569 10:05",
+  },
+  {
+    user_id: 5,
+    username: "siriporn.j",
+    email: "siriporn.j@bma.go.th",
+    first_name: "ศิริพร",
+    last_name: "ใจดี",
+    position: "นักวิชาการสาธารณสุขปฏิบัติการ",
+    department_name: "สำนักอนามัย",
+    division_name: "กองวิชาการ",
+    roles: ["ANALYST"],
+    is_active: true,
+    last_login: "27 มิ.ย. 2569 16:45",
+  },
+  {
+    user_id: 6,
+    username: "kiattisak.p",
+    email: "kiattisak.p@bma.go.th",
+    first_name: "เกียรติศักดิ์",
+    last_name: "พูนทรัพย์",
+    position: "หัวหน้าฝ่ายพัฒนาระบบ",
+    department_name: "สำนักปลัดกรุงเทพมหานคร",
+    division_name: "ศูนย์เทคโนโลยีสารสนเทศ",
+    roles: ["ADMIN"],
+    is_active: true,
+    last_login: "29 มิ.ย. 2569 15:30",
+  },
+  {
+    user_id: 7,
+    username: "patchara.m",
+    email: "patchara.m@bma.go.th",
+    first_name: "พัชรา",
+    last_name: "มีสุข",
+    position: "นักวิเคราะห์นโยบายและแผนปฏิบัติการ",
+    department_name: "สำนักการจราจรและขนส่ง",
+    division_name: "กองระบบเทคโนโลยีจราจร",
+    roles: ["ANALYST"],
+    is_active: false,
+    last_login: "01 มี.ค. 2569 08:20",
+  },
+  {
+    user_id: 8,
+    username: "sunisa.t",
+    email: "sunisa.t@bma.go.th",
+    first_name: "สุนิสา",
+    last_name: "ทองประเสริฐ",
+    position: "นักวิชาการศึกษาชำนาญการ",
+    department_name: "สำนักการศึกษา",
+    division_name: "กองนวัตกรรมและเทคโนโลยีเพื่อการศึกษา",
+    roles: ["USER"],
+    is_active: true,
+    last_login: "29 มิ.ย. 2569 11:15",
+  },
+  {
+    user_id: 9,
+    username: "ekkarat.v",
+    email: "ekkarat.v@bma.go.th", 
+    first_name: "เอกราช",
+    last_name: "วิเศษพงศ์",
+    position: "นักวิเคราะห์ระบบงานคอมพิวเตอร์",
+    department_name: "สำนักยุทธศาสตร์และประเมินผล",
+    division_name: "กองพัฒนาระบบดิจิทัล",
+    roles: ["ANALYST"],
+    is_active: true,
+    last_login: "29 มิ.ย. 2569 13:40",
+  },
+  {
+    user_id: 10,
+    username: "chalida.r",
+    email: "chalida.r@bma.go.th",
+    first_name: "ชลิดา",
+    last_name: "รุ่งเรือง",
+    position: "เจ้าพนักงานการเงินและบัญชี",
+    department_name: "สำนักการคลัง",
+    division_name: "กองระบบการคลัง",
+    roles: ["USER"],
+    is_active: true,
+    last_login: "28 มิ.ย. 2569 14:00",
+  },
+  {
+    user_id: 11,
+    username: "pongsakorn.d",
+    email: "pongsakorn.d@bma.go.th",
+    first_name: "พงศกร",
+    last_name: "ดีเสมอ",
+    position: "นักทรัพยากรบุคคลชำนาญการ",
+    department_name: "สำนักงาน ก.ก.",
+    division_name: "กองสารสนเทศบุคคล",
+    roles: ["USER"],
+    is_active: false,
+    last_login: "10 ม.ค. 2569 09:30",
+  },
+  {
+    user_id: 12,
+    username: "kanokwan.s",
+    email: "kanokwan.s@bma.go.th",
+    first_name: "กนกวรรณ",
+    last_name: "แสงทอง",
+    position: "ผู้อำนวยการส่วนยุทธศาสตร์",
+    department_name: "สำนักสิ่งแวดล้อม",
+    division_name: "กองนโยบายและแผนงาน",
+    roles: ["ANALYST"],
+    is_active: true,
+    last_login: "29 มิ.ย. 2569 08:45",
+  }
 ];
-
-// ดึงรายชื่อหน่วยงานทั้งหมดออกมาทำ Dropdown แบบไม่ซ้ำกัน (Unique)
-export const uniqueDivisions = Array.from(new Set(mockUsers.map(u => u.division)));

@@ -1,84 +1,265 @@
 // src/features/users/components/UserTable.tsx
-import { MoreVertical, ShieldAlert, User, Shield } from "lucide-react";
-import { UserItem, UserRole, UserStatus } from "../data/mock-users";
+import {
+  MoreVertical,
+  Shield,
+  Key,
+  UserX,
+  UserCheck,
+  ArrowDown,
+  ArrowUpDown,
+  ArrowUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { User } from "../types";
+import { SortField } from "../hooks/useUserManagement";
 
-export function UserTable({ data }: { data: UserItem[] }) {
-  
-  // Helper functions สร้าง Badge เล็กๆ ไว้ในไฟล์นี้เลย
-  const getRoleBadge = (role: UserRole) => {
+interface UserTableProps {
+  users: User[];
+  onToggleActive: (id: number) => void;
+  onOpenRoleModal: (user: User) => void;
+  onOpenPasswordModal: (user: User) => void;
+  sortField: string;
+  sortDirection: "asc" | "desc";
+  onSort: (field: SortField) => void;
+}
+
+export const UserTable = ({
+  users,
+  onToggleActive,
+  onOpenRoleModal,
+  onOpenPasswordModal,
+  sortField,
+  sortDirection,
+  onSort,
+}: UserTableProps) => {
+  // ฟังก์ชันสร้าง Badge รองรับการเรียกซ้ำ
+  const getRoleBadge = (role: string) => {
     switch (role) {
-      case "Admin": return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-700 flex items-center gap-1 w-fit"><ShieldAlert className="w-3 h-3"/> แอดมิน</span>;
-      case "Manager": return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 flex items-center gap-1 w-fit"><Shield className="w-3 h-3"/> ผู้บริหาร</span>;
-      default: return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 flex items-center gap-1 w-fit"><User className="w-3 h-3"/> ผู้ใช้ทั่วไป</span>;
+      case "ADMIN":
+        return (
+          <Badge
+            key={role}
+            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-50 shadow-none"
+          >
+            Admin
+          </Badge>
+        );
+      case "ANALYST":
+        return (
+          <Badge
+            key={role}
+            className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50 shadow-none"
+          >
+            Analyst
+          </Badge>
+        );
+      default:
+        return (
+          <Badge
+            key={role}
+            className="bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-100 shadow-none"
+          >
+            General User
+          </Badge>
+        );
     }
   };
 
-  const getStatusBadge = (status: UserStatus) => {
-    if (status === "Active") return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold text-[#00734b] bg-[#00734b]/10">ใช้งานปกติ</span>;
-    return <span className="px-2.5 py-1 rounded-full text-[11px] font-bold text-red-600 bg-red-50">ระงับการใช้งาน</span>;
+  // ฟังก์ชันสร้างไอคอนเรียงลำดับ
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-2 w-4 h-4 text-slate-300" />;
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="ml-2 w-4 h-4 text-primary" /> 
+      : <ArrowDown className="ml-2 w-4 h-4 text-primary" />;
   };
 
-  if (data.length === 0) {
-    return <div className="p-16 text-center text-muted-foreground font-medium">ไม่พบรายชื่อผู้ใช้งานที่ค้นหา</div>;
-  }
-
   return (
-    <div className="flex-1 overflow-auto">
-      <table className="w-full text-left text-sm whitespace-nowrap">
-        <thead className="bg-white sticky top-0 text-slate-400 font-bold z-10 border-b border-[#ededf4] text-[13px] uppercase tracking-wide">
-          <tr>
-            <th className="px-6 sm:px-10 py-4 w-[30%]">ชื่อ - นามสกุล</th>
-            <th className="px-6 sm:px-10 py-4">ข้อมูลติดต่อ</th>
-            <th className="px-6 sm:px-10 py-4">หน่วยงานสังกัด</th>
-            <th className="px-6 sm:px-10 py-4">สิทธิ์ / สถานะ</th>
-            <th className="px-6 sm:px-10 py-4 text-right">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[#ededf4]">
-          {data.map((user) => (
-            <tr key={user.id} className="hover:bg-surface-variant/40 transition-colors group">
-              {/* ชื่อและตำแหน่ง */}
-              <td className="px-6 sm:px-10 py-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 font-bold flex items-center justify-center shrink-0">
-                    {user.firstName[0]}{user.lastName[0]}
+    <div className="border border-border rounded-xl bg-white overflow-hidden shadow-sm">
+      <Table>
+        <TableHeader className="bg-slate-50/70">
+          <TableRow>
+            <TableHead
+              className="font-bold text-slate-700 py-3.5 pl-6 cursor-pointer hover:bg-slate-100 transition-colors"
+              onClick={() => onSort("first_name")}
+            >
+              <div className="flex items-center">
+                ชื่อ-นามสกุล / ตำแหน่ง <SortIcon field="first_name" />
+              </div>
+            </TableHead>
+            <TableHead className="font-bold text-slate-700">
+              บัญชีผู้ใช้ (Username / Email)
+            </TableHead>
+            <TableHead
+              className="font-bold text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
+              onClick={() => onSort("department_name")}
+            >
+              <div className="flex items-center">
+                สังกัดหน่วยงาน <SortIcon field="department_name" />
+              </div>
+            </TableHead>
+            <TableHead className="font-bold text-slate-700">
+              บทบาทสิทธิ์
+            </TableHead>
+            <TableHead className="font-bold text-slate-700 text-center">
+              เข้าใช้งานล่าสุด
+            </TableHead>
+            <TableHead className="font-bold text-slate-700 text-center">
+              สถานะ
+            </TableHead>
+            <TableHead className="font-bold text-slate-700 text-right pr-6">
+              จัดการ
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody className="divide-y divide-slate-100">
+          {users.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={7}
+                className="text-center py-10 text-slate-400"
+              >
+                ไม่พบข้อมูลผู้ใช้งาน
+              </TableCell>
+            </TableRow>
+          ) : (
+            users.map((user) => (
+              <TableRow
+                key={user.user_id}
+                className="hover:bg-slate-50/40 transition-colors"
+              >
+                {/* 1. ชื่อ-นามสกุล (เอา Avatar ออก) */}
+                <TableCell className="py-3 pl-6">
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-slate-900 truncate">
+                      {user.first_name} {user.last_name}
+                    </span>
+                    <span className="text-xs text-slate-500 truncate max-w-[240px]">
+                      {user.position || "-"}
+                    </span>
                   </div>
-                  <div>
-                    <p className="font-bold text-[#191c20]">{user.firstName} {user.lastName}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{user.position}</p>
+                </TableCell>
+
+                {/* 2. Username และ Email แยกกันชัดเจน */}
+                <TableCell>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-slate-800 font-semibold text-sm truncate">
+                      {user.username}
+                    </span>
+                    <span className="text-slate-500 text-xs truncate">
+                      {user.email}
+                    </span>
                   </div>
-                </div>
-              </td>
-              
-              {/* ข้อมูลติดต่อ */}
-              <td className="px-6 sm:px-10 py-5">
-                <p className="font-medium text-[#191c20]">{user.username}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{user.email}</p>
-              </td>
+                </TableCell>
 
-              {/* หน่วยงาน */}
-              <td className="px-6 sm:px-10 py-5 text-[#3f4942] font-semibold">
-                {user.division}
-              </td>
+                {/* สังกัดสำนัก/ฝ่าย */}
+                <TableCell>
+                  <div className="flex flex-col text-xs max-w-[260px]">
+                    <span className="font-medium text-slate-800 truncate">
+                      {user.department_name}
+                    </span>
+                    <span className="text-slate-500 truncate">
+                      {user.division_name}
+                    </span>
+                  </div>
+                </TableCell>
 
-              {/* สิทธิ์และสถานะ */}
-              <td className="px-6 sm:px-10 py-5">
-                <div className="flex items-center gap-2">
-                  {getRoleBadge(user.role)}
-                  {getStatusBadge(user.status)}
-                </div>
-              </td>
+                {/* 3. บทบาทสิทธิ์ (เรียง Badge เป็น Array) */}
+                <TableCell>
+                  <div className="flex flex-wrap gap-1.5">
+                    {user.roles.map((role) => getRoleBadge(role))}
+                  </div>
+                </TableCell>
 
-              {/* ปุ่มจัดการ */}
-              <td className="px-6 sm:px-10 py-5 text-right">
-                <button className="p-2 rounded-full text-slate-400 hover:text-[#191c20] hover:bg-slate-200 transition-all">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                <TableCell className="text-center text-xs text-slate-600 font-medium">
+                  {user.last_login || "-"}
+                </TableCell>
+
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Switch
+                      checked={user.is_active}
+                      onCheckedChange={() => onToggleActive(user.user_id)}
+                      className="data-[state=checked]:bg-emerald-500"
+                    />
+                    <span
+                      className={`text-xs font-bold min-w-[55px] text-left ${user.is_active ? "text-emerald-600" : "text-rose-500"}`}
+                    >
+                      {user.is_active ? "Active" : "Suspended"}
+                    </span>
+                  </div>
+                </TableCell>
+
+                {/* เมนูจัดการ */}
+                <TableCell className="text-right pr-6">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-500"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[180px]">
+                      <DropdownMenuLabel>การจัดการบัญชี</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => onOpenRoleModal(user)}
+                      >
+                        <Shield className="w-4 h-4 text-blue-500 mr-2" />{" "}
+                        เปลี่ยนบทบาทสิทธิ์
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => onOpenPasswordModal(user)}
+                      >
+                        <Key className="w-4 h-4 text-amber-500 mr-2" />{" "}
+                        จัดการรหัสผ่าน
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-rose-600 font-medium cursor-pointer"
+                        onClick={() => onToggleActive(user.user_id)}
+                      >
+                        {user.is_active ? (
+                          <>
+                            <UserX className="w-4 h-4 mr-2" /> ระงับการใช้งาน
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="w-4 h-4 text-emerald-600 mr-2" />{" "}
+                            เปิดใช้งาน
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
-}
+};

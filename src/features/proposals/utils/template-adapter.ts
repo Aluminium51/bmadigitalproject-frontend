@@ -51,6 +51,13 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
   grandTotalITOnlyStr: string;
   grandTotalStr: string;
 
+  // Percentage calculations for Word template
+  hwPercentStr: string;
+  swPercentStr: string;
+  personnelPercentStr: string;
+  trainingPercentStr: string;
+  otherITPercentStr: string;
+
   // Step 5 
   hasIctPersonnel: boolean;
   ictPersonnel: any[];
@@ -199,7 +206,10 @@ const mapTrainingCourses = (items: any[]) => {
       locationStr: item.locationType=== "สถานที่ราชการ" ? "☑ สถานที่ราชการ 	☐ สถานที่เอกชน" : "☐ สถานที่ราชการ 	☑ สถานที่เอกชน",
       speakerCosts: formattedSpeakerCosts,
       foodCosts: formattedFoodCosts,
-      // ราคารวมสรุปของคอร์สการอบรมนี้
+      // ยอดรวมย่อยแยกของแต่ละตารางในหลักสูตร
+      speakerTotalStr: courseSpeakerTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+      foodTotalStr: courseFoodTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
+      // ราคารวมสรุปของคอร์สการอบรมนี้ (วิทยากร + ค่าอาหาร)
       courseTotalStr: grandCourseTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })
     };
   });
@@ -266,6 +276,15 @@ export const prepareTemplateData = (
   // ฟังก์ชันช่วย Format ตัวเลข
   const formatMoney = (amount: number) => amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+  // ฟังก์ชันช่วยคำนวณเปอร์เซ็นต์ของแต่ละหมวดเทียบกับ Grand Total
+  const calculatePercent = (amount: number, total: number) => {
+    // ป้องกัน Error (Division by zero) ในกรณีที่ยังไม่ได้กรอกงบประมาณเลย
+    if (total === 0) return "0.00"; 
+    // สูตร: (ส่วนย่อย / ส่วนรวม) * 100
+    const percent = (amount / total) * 100;
+    return percent.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   return {
     ...rawData, // โยนข้อมูลพื้นฐานไปก่อน
 
@@ -329,6 +348,14 @@ export const prepareTemplateData = (
     totalOtherNonITStr: formatMoney(totalOtherNonIT),
     grandTotalITOnlyStr: formatMoney(grandTotalITOnly),
     grandTotalStr: formatMoney(grandTotal),
+
+    // Percentage calculations for Word template
+    hwPercentStr: calculatePercent(totalHw, grandTotalITOnly),
+    swPercentStr: calculatePercent(totalSw, grandTotalITOnly),
+    personnelPercentStr: calculatePercent(totalPersonnel, grandTotalITOnly),
+    trainingPercentStr: calculatePercent(totalTraining, grandTotalITOnly),
+    otherITPercentStr: calculatePercent(totalOtherIT, grandTotalITOnly),
+    
 
     // Step 5
     hasIctPersonnel: hasItems(rawData.ictPersonnel),

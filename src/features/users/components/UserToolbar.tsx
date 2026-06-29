@@ -1,62 +1,61 @@
-// src/features/users/components/UserToolbar.tsx
-import { Search, Filter } from "lucide-react";
+import { Search, Shield, Building2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface UserToolbarProps {
-  searchQuery: string;
-  onSearchChange: (val: string) => void;
+  search: string;
+  setSearch: (v: string) => void;
+  deptFilter: string;
+  setDeptFilter: (v: string) => void;
   roleFilter: string;
-  onRoleChange: (val: string) => void;
-  divisionFilter: string;
-  onDivisionChange: (val: string) => void;
-  uniqueDivisions: string[];
+  setRoleFilter: (v: string) => void;
+  activeOnly: boolean;
+  setActiveOnly: (v: boolean) => void;
 }
 
-export function UserToolbar({
-  searchQuery, onSearchChange,
-  roleFilter, onRoleChange,
-  divisionFilter, onDivisionChange,
-  uniqueDivisions
-}: UserToolbarProps) {
+export const UserToolbar = ({ 
+  search, setSearch, deptFilter, setDeptFilter, 
+  roleFilter, setRoleFilter, activeOnly, setActiveOnly 
+}: UserToolbarProps) => {
   return (
-    <div className="p-6 border-b border-[#ededf4] flex flex-col sm:flex-row gap-4 bg-white shrink-0">
-      
-      {/* Search Input */}
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input 
-          type="text" 
-          placeholder="ค้นหาชื่อ, นามสกุล, Username..." 
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 h-11 text-sm border border-[#D1CDC7] rounded-full bg-surface focus:outline-none focus:ring-2 focus:ring-[#00734b]/20 focus:border-[#00734b] transition-all"
-        />
+    <div className="bg-white p-4 rounded-xl border border-border shadow-sm flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-3 flex-1">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Input placeholder="ค้นหาชื่อ, นามสกุล หรืออีเมลผู้ใช้..." className="pl-9 bg-slate-50/50" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <Select value={deptFilter} onValueChange={setDeptFilter}>
+          <SelectTrigger className="w-full sm:w-[220px] bg-slate-50/50">
+            <Building2 className="w-4 h-4 text-slate-400 mr-2" />
+            <SelectValue placeholder="กรองตามหน่วยงาน" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">ทุกหน่วยงาน</SelectItem>
+            <SelectItem value="สำนักยุทธศาสตร์และประเมินผล">สำนักยุทธศาสตร์และประเมินผล</SelectItem>
+            <SelectItem value="สำนักงานกลาง">สำนักงานกลาง</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-[160px] bg-slate-50/50">
+            <Shield className="w-4 h-4 text-slate-400 mr-2" />
+            <SelectValue placeholder="กรองตามสิทธิ์" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">ทุกบทบาทสิทธิ์</SelectItem>
+            <SelectItem value="ADMIN">Admin</SelectItem>
+            <SelectItem value="ANALYST">Analyst</SelectItem>
+            <SelectItem value="GENERAL_USER">User</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <select 
-          value={divisionFilter}
-          onChange={(e) => onDivisionChange(e.target.value)}
-          className="h-11 px-4 text-sm font-semibold border border-[#D1CDC7] rounded-full bg-white text-[#3f4942] focus:outline-none focus:border-[#00734b] cursor-pointer"
-        >
-          <option value="all">ทุกหน่วยงาน</option>
-          {uniqueDivisions.map(div => (
-            <option key={div} value={div}>{div}</option>
-          ))}
-        </select>
-
-        <select 
-          value={roleFilter}
-          onChange={(e) => onRoleChange(e.target.value)}
-          className="h-11 px-4 text-sm font-semibold border border-[#D1CDC7] rounded-full bg-white text-[#3f4942] focus:outline-none focus:border-[#00734b] cursor-pointer"
-        >
-          <option value="all">ทุกสิทธิ์การใช้งาน</option>
-          <option value="Admin">แอดมิน (Admin)</option>
-          <option value="Manager">ผู้บริหาร (Manager)</option>
-          <option value="User">ผู้ใช้งาน (User)</option>
-        </select>
+      <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 border-dashed border-border shrink-0">
+        <Switch id="active-filter" checked={activeOnly} onCheckedChange={setActiveOnly} />
+        <Label htmlFor="active-filter" className="text-sm font-medium text-slate-600 cursor-pointer select-none">
+          แสดงเฉพาะผู้ใช้งานที่ Active
+        </Label>
       </div>
-
     </div>
   );
-}
+};

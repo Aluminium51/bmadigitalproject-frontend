@@ -38,7 +38,12 @@ export function ProjectTable({ data, activeTab }: ProjectTableProps) {
             <th className="px-6 sm:px-10 py-4">รหัสโครงการ</th>
             <th className="px-6 sm:px-10 py-4 w-full">ชื่อโครงการ</th>
             {activeTab === "all" && <th className="px-6 sm:px-10 py-4">หน่วยงาน</th>}
-            {(activeTab === "team" || activeTab === "all") && <th className="px-6 sm:px-10 py-4">ผู้รับผิดชอบ</th>}
+            
+            {/* 1. แก้ไขเงื่อนไขตรงนี้เพิ่ม || activeTab === "drafts" */}
+            {(activeTab === "team" || activeTab === "all" || activeTab === "drafts") && (
+              <th className="px-6 sm:px-10 py-4">ผู้รับผิดชอบ</th>
+            )}
+            
             <th className="px-6 sm:px-10 py-4 min-w-50">{activeTab === "drafts" ? "ความคืบหน้า" : "สถานะ"}</th>
             <th className="px-6 sm:px-10 py-4">อัปเดตล่าสุด</th>
             <th className="px-6 sm:px-10 py-4 text-right">จัดการ</th>
@@ -63,7 +68,8 @@ export function ProjectTable({ data, activeTab }: ProjectTableProps) {
                 
                 {activeTab === "all" && <td className="px-6 sm:px-10 py-5 text-[#3f4942] font-semibold">{project.agency}</td>}
                 
-                {(activeTab === "team" || activeTab === "all") && (
+                {/* 2. แก้ไขเงื่อนไขตรงนี้เพิ่ม || activeTab === "drafts" */}
+                {(activeTab === "team" || activeTab === "all" || activeTab === "drafts") && (
                   <td className="px-6 sm:px-10 py-5 text-[#3f4942]">
                     <div className="flex items-center gap-3">
                       <div className="size-8 rounded-full bg-[#00734b]/10 text-[#00734b] flex items-center justify-center text-xs font-bold border border-[#00734b]/20">
