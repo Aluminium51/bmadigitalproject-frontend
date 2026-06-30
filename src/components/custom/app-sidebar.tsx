@@ -78,7 +78,7 @@ const navGroups: NavGroup[] = [
         title: "ตรวจสอบและประเมิน",
         icon: ClipboardCheck,
         subItems: [
-          { title: "รับหนังสือขอส่งโครงการ (เลขาฯ)", url: "/tasks/screening" }, // ดูว่าตรงเกณฑ์หรือไม่
+          { title: "รับหนังสือขอส่งโครงการ (เลขาฯ)", url: "/tasks/screening" },
           { title: "ระบุผู้วิเคราะห์โครงการ (admin)", url: "/tasks/screening" },
           { title: "ตรวจสอบเอกสาร (ผู้วิเคราะห์)", url: "/tasks/analysis" },
         ]
@@ -88,14 +88,7 @@ const navGroups: NavGroup[] = [
   {
     title: "การประชุม (Meetings)",
     items: [
-      {
-        title: "จัดการการประชุม",
-        icon: CalendarDays,
-        subItems: [
-          { title: "วาระการประชุม", url: "/meetings/agendas" },
-          { title: "บันทึกมติที่ประชุม", url: "/meetings/resolutions" },
-        ]
-      }
+      { title: "จัดการการประชุม", url: "/meetings", icon: CalendarDays }
     ]
   },
   {
@@ -207,7 +200,10 @@ export function AppSidebar() {
                   }
 
                   // -- แบบที่ 2.2: เมนูเดี่ยว --
-                  const isSingleActive = pathname === item.url
+                 const isSingleActive = item.url 
+                    ? pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url + "/"))
+                    : false;
+
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton 

@@ -32,8 +32,14 @@ const Breadcrumbs = () => {
       users: "จัดการผู้ใช้งาน",
       profile: "ข้อมูลส่วนตัว",
     };
-    // ถ้าเจอชื่อใน Map ให้ใช้ภาษาไทย ถ้าไม่เจอใช้ตัวพิมพ์ใหญ่ตัวแรก
-    return names[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+    if (names[segment]) return names[segment];
+    
+    // ดักจับถ้า segment เป็นตัวเลข ID ให้จัดฟอร์แมตให้อ่านง่ายในระบบราชการ
+    if (/^\d+$/.test(segment)) {
+      return `การประชุม ID: #${segment}`;
+    }
+
+    return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
 
   return (
