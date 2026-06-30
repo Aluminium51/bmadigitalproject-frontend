@@ -1,4 +1,5 @@
 // src/app/(protected)/projects/[id]/page.tsx
+// project detail page
 "use client";
 
 import React, { useState } from "react";

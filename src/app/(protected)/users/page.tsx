@@ -1,6 +1,4 @@
 // src/app/(protected)/users/page.tsx
-"use client";
-
 import { UserManagementView } from "@/features/users/components/UserManagementView";
 
 export default function UsersManagementPage() {

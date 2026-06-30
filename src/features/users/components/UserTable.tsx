@@ -84,7 +84,7 @@ export const UserTable = ({
   };
 
   // ฟังก์ชันสร้างไอคอนเรียงลำดับ
-  const SortIcon = ({ field }: { field: string }) => {
+  const getSortIcon = (field: string) => {
     if (sortField !== field) return <ArrowUpDown className="ml-2 w-4 h-4 text-slate-300" />;
     return sortDirection === 'asc' 
       ? <ArrowUp className="ml-2 w-4 h-4 text-primary" /> 
@@ -101,7 +101,7 @@ export const UserTable = ({
               onClick={() => onSort("first_name")}
             >
               <div className="flex items-center">
-                ชื่อ-นามสกุล / ตำแหน่ง <SortIcon field="first_name" />
+                ชื่อ-นามสกุล / ตำแหน่ง {getSortIcon("first_name")}
               </div>
             </TableHead>
             <TableHead className="font-bold text-slate-700">
@@ -112,7 +112,7 @@ export const UserTable = ({
               onClick={() => onSort("department_name")}
             >
               <div className="flex items-center">
-                สังกัดหน่วยงาน <SortIcon field="department_name" />
+                สังกัดหน่วยงาน {getSortIcon("department_name")}
               </div>
             </TableHead>
             <TableHead className="font-bold text-slate-700">

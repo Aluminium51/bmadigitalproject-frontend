@@ -26,8 +26,14 @@ export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
 
   // เมื่อเปิด Modal ให้ดึงค่า roles ดั้งเดิมมาใส่ใน State
   useEffect(() => {
-    if (user) setSelectedRoles(user.roles);
-  }, [user]);
+    if (isOpen && user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedRoles([...user.roles]); 
+    } else if (!isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedRoles([]); 
+    }
+  }, [isOpen, user]);
 
   // ฟังก์ชันสลับเลือก/ยกเลิกสิทธิ์
   const handleRoleToggle = (role: string, isChecked: boolean) => {
