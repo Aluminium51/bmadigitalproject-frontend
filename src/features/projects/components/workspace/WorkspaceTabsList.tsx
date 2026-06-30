@@ -17,7 +17,7 @@ export function WorkspaceTabsList() {
         "
       >
         <ClipboardList className="w-4 h-4 transition-transform duration-300 group-data-[state=active]:scale-110" />
-        ข้อเสนอโครงการ
+        เอกสารเสนอโครงการ
       </TabsTrigger>
 
       <TabsTrigger
@@ -33,7 +33,7 @@ export function WorkspaceTabsList() {
         "
       >
         <FolderOpen className="w-4 h-4 transition-transform duration-300 group-data-[state=active]:scale-110" />
-        เอกสารแนบ
+        ไฟล์แนบ
       </TabsTrigger>
 
       <TabsTrigger
