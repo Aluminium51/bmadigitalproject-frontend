@@ -2,6 +2,30 @@
 
 An enterprise-level digital project management and approval system designed for robust performance, scalability, and maintainability. This repository houses the frontend application built with a modern React ecosystem and a Feature-Driven Architecture.
 
+## Project Background
+
+Historically, government IT project proposals and budget approvals involved excessive paperwork, manual tracking, and complex hierarchical reviews. The **BMA Digital Project** was initiated to digitize and centralize this entire pipeline for the Bangkok Metropolitan Administration (BMA). 
+
+The system ensures that all proposed IT projects align with the organization's Enterprise Architecture (EA) and strategic policies. It streamlines the lifecycle from the initial drafting of a proposal to the final executive board approval, providing transparency, reducing redundancy, and enabling efficient budget allocation.
+
+## ✨ Core Features
+
+*   📝 **Multi-Step Proposal Wizard:** A comprehensive, interactive form handling general information, strategic alignment (Enterprise Architecture), and detailed budget breakdowns (Hardware, Software, Personnel, and Training).
+*   🔄 **Multi-Tier Approval Workflow:** A strict, state-driven routing system that moves projects through various screening phases (Secretary ➡️ Analyst ➡️ Screening Committee ➡️ Policy Board) with built-in revision loops (Revise/Fix).
+*   🔐 **Role-Based Access Control (RBAC):** Secure, domain-specific access ensuring users only see and interact with data relevant to their specific role and department.
+*   📊 **Real-Time Status Tracking:** Intuitive dashboards for users to monitor their project's status (Draft, Submitted, Passed, Need Revision, Rejected) at a glance.
+*   📄 **Document Management:** Integrated file handling with automated PDF compression for supporting project documents and architectural diagrams.
+
+## Target Audience (User Roles)
+
+The system is designed to serve multiple stakeholders across the organization:
+
+1.  **Project Creators (Agency Staff):** Personnel from various departments (เขต/สำนัก) who initiate, draft, and submit IT project proposals.
+2.  **Secretaries (Initial Screeners):** Coordinators who perform the first round of checks for document completeness and compliance.
+3.  **IT Analysts:** Technical experts who evaluate the project's technical feasibility, architecture alignment, and budget correctness.
+4.  **Committee & Board Members (Executives):** Decision-makers in both the Screening Committee (Small Board) and Policy Board (Big Board) who grant final approvals.
+5.  **System Administrators:** Super users responsible for managing master data, organizational lookups, and user permissions.
+
 ## Tech Stack
 
 This project utilizes a modern and type-safe tech stack:
