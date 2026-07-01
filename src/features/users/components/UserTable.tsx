@@ -77,7 +77,7 @@ export const UserTable = ({
             key={role}
             className="bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-100 shadow-none"
           >
-            General User
+            User
           </Badge>
         );
     }
