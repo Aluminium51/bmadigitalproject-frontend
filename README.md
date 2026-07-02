@@ -30,13 +30,16 @@ The system is designed to serve multiple stakeholders across the organization:
 
 This project utilizes a modern and type-safe tech stack:
 
-*   **Framework:** Next.js (App Router)
+*   **Core:** Next.js (App Router), TypeScript, pnpm
 *   **Language:** TypeScript
 *   **Styling:** Tailwind CSS + PostCSS
 *   **UI Library:** Custom components & Shadcn UI (located in `src/components/ui`)
 *   **Package Manager:** pnpm (Workspace enabled)
 *   **Validation:** Zod
-
+*   **RBAC & Authorization:** NextAuth.js + CASL
+*   **Context:** React Context + Zustand
+*   **Forms:** React Hook Form
+*   **Data Fetching:** React Query + Next.js Server Actions
 ---
 
 ## Getting Started
@@ -123,3 +126,11 @@ Imports: Prefer absolute imports ```(@/...)``` over relative paths ```(../../...
 Global vs. Local: Do not import feature-specific files into global components. Dependencies should point inward (App -> Features -> Global Components).
 
 State Management: When dealing with complex forms (e.g., the proposal wizard), utilize the designated store inside src/features/[feature]/stores/ (e.g., useProposalFormStore.ts) to prevent excessive prop drilling[cite: 1].
+
+Data Fetching: This project implements a Hybrid Data Fetching architecture, leveraging the strengths of both Next.js server-side capabilities and client-side libraries to ensure security, performance, and a seamless UX. 
+- Server Actions & Native fetch: Handles core data fetching and sensitive business logic strictly on the server. 
+    - Best for: Initial page loads (Server Components) and secure mutations (e.g., submitting forms, updating project statuses).
+    - Benefits: Highly secure (hides API keys/tokens), leverages revalidatePath for instant UI updates, and minimizes client-side JavaScript overhead.
+- React Query: Manages client-side state, caching, and background data synchronization. 
+    - Best for: Non-sensitive data fetching, real-time updates, and optimistic UI patterns.
+    - Benefits: Reduces server load, improves perceived performance, and provides a robust caching mechanism.
