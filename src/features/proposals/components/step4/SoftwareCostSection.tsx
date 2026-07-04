@@ -58,7 +58,7 @@ export function SoftwareCostSection() {
         <div className="divide-y">
           {fields.length === 0 && (
             <div className="p-8 text-center text-sm text-muted-foreground">
-              ยังไม่มีรายการซอฟต์แวร์ กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น
+              ยังไม่มีรายการซอฟต์แวร์ กดปุ่ม &quot;เพิ่มรายการ&quot; เพื่อเริ่มต้น
             </div>
           )}
 

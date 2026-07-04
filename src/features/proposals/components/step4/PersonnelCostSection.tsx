@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 // ----------------------------------------------------------------------
-// 1. Types & Interfaces (แก้ปัญหา TypeScript Error อย่างเด็ดขาด)
+// 1. Types & Interfaces
 // ----------------------------------------------------------------------
 
 // โครงสร้างข้อมูลสำหรับ 1 แถว ในตารางบุคลากร
@@ -43,7 +43,7 @@ const PersonnelTable = ({
   
   // ดึงค่าปัจจุบันที่พิมพ์อยู่ (Real-time) เพื่อเอามาคำนวณเงินรวมรายแถว
   const watchedRows = useWatch({ control, name: nameArray }) as PersonnelCostItem[] || [];
-  const tableErrors = (errors[nameArray] as any) || [];
+  const tableErrors = (errors[nameArray] as unknown as Record<string, { message?: string }>[]) || [];
 
   return (
     <div className="space-y-3 mt-3">

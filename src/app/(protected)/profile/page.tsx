@@ -9,7 +9,10 @@ import {
   CalendarDays,
   Smartphone,
   PhoneCall,
-  Fingerprint
+  Fingerprint,
+  CheckCircle2,
+  Clock,
+  History
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,80 +21,66 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 // ==========================================
-// 1. Type Definitions
+// 1. Type Definitions (ตาม Drizzle Schema)
 // ==========================================
 
 interface UserProfileData {
-  id: number;
+  userId: string;
   username: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  permission: string;
-  status: number;
-  created_at: string;
-  user_inf_nm: string;
-  user_inf_srnm: string;
-  user_inf_pst_nm: string;
-  user_inf_dep_cod: string;
-  user_inf_div_cod: string;
-  user_inf_ofc_tel_no: string;
-  user_inf_ofc_tel_int_no: string;
-  user_inf_mobile_no: string;
-}
-
-// กำหนด Type ของ Icon เป็น React.ElementType
-interface InfoRowProps {
-  icon: React.ElementType; 
-  label: string;
-  value: string;
+  position: string;
+  divisionName: string; // มาจากการ Join กับตาราง divisions
+  mobilePhone: string;
+  officePhone: string;
+  internalExtension: string;
+  isActive: boolean;
+  isVerified: boolean;
+  lastLogin: string | null;
+  createdAt: string;
+  updatedAt: string;
+  roles: string[]; // มาจาก Many-to-Many roles
 }
 
 // ==========================================
-// 2. Mock Data
+// 2. Mock Data (จำลองข้อมูลที่ผ่านการ Join แล้ว)
 // ==========================================
 
 const mockUserData: UserProfileData = {
-  id: 1001,
+  userId: "018f-72e30011-9914-41a4-ab7f",
   username: "somchai.p",
+  firstName: "สมชาย",
+  lastName: "พัฒนาเมือง",
   email: "somchai.p@bangkok.go.th",
-  permission: "AD", 
-  status: 10, 
-  created_at: "2024-01-15T08:30:00Z",
-  user_inf_nm: "สมชาย",
-  user_inf_srnm: "พัฒนาเมือง",
-  user_inf_pst_nm: "ผู้ดูแลระบบ",
-  user_inf_dep_cod: "26000000",
-  user_inf_div_cod: "26020000",
-  user_inf_ofc_tel_no: "02-222-3333",
-  user_inf_ofc_tel_int_no: "4567",
-  user_inf_mobile_no: "081-999-8888",
+  position: "นักวิชาการคอมพิวเตอร์ชำนาญการพิเศษ",
+  divisionName: "กองยุทธศาสตร์ดิจิทัล (สำนักดิจิทัล)",
+  mobilePhone: "081-999-8888",
+  officePhone: "02-222-3333",
+  internalExtension: "4567",
+  isActive: true,
+  isVerified: true,
+  lastLogin: "2024-07-03T10:15:00Z",
+  createdAt: "2024-01-15T08:30:00Z",
+  updatedAt: "2024-07-01T14:20:00Z",
+  roles: ["ADMIN", "ANALYST"],
 };
 
 // ==========================================
-// 3. Sub-Components (ย้ายออกมานอก Component หลัก)
+// 3. Sub-Components
 // ==========================================
 
-
-// คอมโพเนนต์สำหรับแสดงป้ายสถานะ (Badge)
-const StatusBadge = ({ status }: { status: number }) => {
-  if (status === 10) {
-    return <Badge className="bg-primary/10 text-primary border-none px-3 py-1 text-sm font-medium">Active User</Badge>;
-  }
-  if (status === 0) {
-    return <Badge variant="destructive" className="px-3 py-1 text-sm">Inactive</Badge>;
-  }
-  return <Badge variant="secondary" className="px-3 py-1 text-sm">Unknown</Badge>;
-};
-
-
-// คอมโพเนนต์สำหรับแสดงข้อมูลแต่ละบรรทัด (Clean Style)
-const InfoRow = ({ icon: Icon, label, value }: InfoRowProps) => (
-  <div className="flex items-start gap-4 p-2 transition-colors rounded-lg hover:bg-surface-container-low/50">
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/5 text-primary">
+const InfoRow = ({ icon: Icon, label, value, isVerified = false }: any) => (
+  <div className="flex items-start gap-4 p-3 transition-all rounded-2xl hover:bg-muted/50">
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
       <Icon className="h-5 w-5" />
     </div>
     <div className="flex flex-col">
-      <span className="text-sm font-medium text-slate-gray">{label}</span>
-      <span className="text-base font-semibold text-foreground mt-0.5">{value || "-"}</span>
+      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+      <div className="flex items-center gap-2 mt-0.5">
+        <span className="text-base font-semibold text-foreground">{value || "-"}</span>
+        {isVerified && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+      </div>
     </div>
   </div>
 );
@@ -104,90 +93,111 @@ export default function UserProfile() {
   const data = mockUserData;
 
   return (
-    <div className="container mx-auto py-10 px-4 sm:px-6 max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="container mx-auto py-10 px-4 max-w-6xl">
       
-      {/* Header Section: ชื่อหน้า */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">โปรไฟล์ส่วนตัว</h1>
-        <p className="text-slate-gray mt-1">จัดการข้อมูลบัญชีและข้อมูลติดต่อของคุณ</p>
+      {/* Header */}
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">โปรไฟล์ส่วนตัว</h1>
+          <p className="text-muted-foreground mt-1">ข้อมูลบัญชีและการตั้งค่าความปลอดภัยของระบบ</p>
+        </div>
+        <div className="text-right hidden md:block">
+            <p className="text-xs text-muted-foreground flex items-center justify-end gap-1.5">
+                <History className="w-3.5 h-3.5" /> อัปเดตล่าสุด: {new Date(data.updatedAt).toLocaleString('th-TH')}
+            </p>
+        </div>
       </div>
 
-      {/* Bento Box Layout: แบ่งเป็น 3 คอลัมน์ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        {/* --- Left Column: Profile Card (ใช้พื้นที่ 4 ส่วน) --- */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="flex flex-col items-center p-8 rounded-4xl bg-card border border-border shadow-level-1 text-center">
-            <Avatar className="w-32 h-32 mb-6 border-4 border-surface shadow-sm">
-              <AvatarImage src="" alt={data.user_inf_nm} />
-              <AvatarFallback className="text-4xl font-bold bg-primary-container text-surface">
-                {data.user_inf_nm.charAt(0)}{data.user_inf_srnm.charAt(0)}
+        {/* --- Left Column: Identity Card --- */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="relative overflow-hidden rounded-3xl bg-card border shadow-xl p-8 text-center">
+            {/* Background Decor */}
+            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/20 to-transparent -z-10" />
+            
+            <Avatar className="w-32 h-32 mx-auto mb-6 border-4 border-background shadow-xl">
+              <AvatarImage src="" />
+              <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
+                {data.firstName.charAt(0)}{data.lastName.charAt(0)}
               </AvatarFallback>
             </Avatar>
             
-            <h2 className="text-2xl font-bold text-foreground mb-1">
-              {data.user_inf_nm} {data.user_inf_srnm}
-            </h2>
-            <p className="text-sm font-medium text-slate-gray mb-4 flex items-center justify-center gap-1.5">
-              <Briefcase className="w-4 h-4" />
-              {data.user_inf_pst_nm}
-            </p>
+            <h2 className="text-2xl font-bold">{data.firstName} {data.lastName}</h2>
+            <p className="text-sm text-muted-foreground font-medium mt-1 mb-4">{data.position}</p>
             
-            <div className="mb-8">
-              <StatusBadge status={data.status} />
+            {/* Badges Stack */}
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              <Badge variant={data.isActive ? "default" : "destructive"} className="rounded-md">
+                {data.isActive ? "Active" : "Inactive"}
+              </Badge>
+              {data.roles.map((role) => (
+                <Badge key={role} variant="secondary" className="rounded-md font-mono text-[10px]">
+                  {role}
+                </Badge>
+              ))}
             </div>
 
-            <Separator className="w-full mb-6 opacity-50" />
+            <Separator className="mb-6" />
 
-            <div className="w-full flex flex-col gap-3">
-              <Button variant="default" className="w-full rounded-full h-11 text-base">
-                แก้ไขข้อมูลส่วนตัว
-              </Button>
-              <Button variant="outline" className="w-full rounded-full h-11 text-base"> {/* สมมติว่าไม่มี variant="soft" ขออนุญาตเปลี่ยนเป็น outline ชั่วคราวนะครับ */}
-                เปลี่ยนรหัสผ่าน
-              </Button>
+            <div className="grid gap-3">
+              <Button className="w-full rounded-xl h-11">แก้ไขโปรไฟล์</Button>
+              <Button variant="outline" className="w-full rounded-xl h-11">เปลี่ยนรหัสผ่าน</Button>
+            </div>
+
+            {/* Security Log */}
+            <div className="mt-8 pt-6 border-t">
+               <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1.5 uppercase tracking-tighter">
+                  <Clock className="w-3 h-3" /> เข้าสู่ระบบล่าสุด: {data.lastLogin ? new Date(data.lastLogin).toLocaleString('th-TH') : 'ไม่พบข้อมูล'}
+               </p>
             </div>
           </div>
         </div>
 
-        {/* --- Right Column: Details (ใช้พื้นที่ 8 ส่วน) --- */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        {/* --- Right Column: Details Group --- */}
+        <div className="lg:col-span-8 space-y-6">
           
-          {/* Section 1: ข้อมูลหน่วยงานและการติดต่อ */}
-          <div className="p-8 rounded-4xl bg-card border border-border shadow-level-1">
-            <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-primary" />
-              ข้อมูลสังกัดและการติดต่อ
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <InfoRow icon={Building2} label="รหัสหน่วยงาน (Department)" value={data.user_inf_dep_cod} />
-              <InfoRow icon={Building2} label="รหัสส่วนราชการ (Division)" value={data.user_inf_div_cod} />
-              <InfoRow icon={Smartphone} label="โทรศัพท์มือถือ" value={data.user_inf_mobile_no} />
-              <InfoRow icon={Mail} label="อีเมล (e-Mail)" value={data.email} />
-              <InfoRow icon={Phone} label="โทรศัพท์สำนักงาน" value={data.user_inf_ofc_tel_no} />
-              <InfoRow icon={PhoneCall} label="เบอร์โทรภายใน" value={`ต่อ ${data.user_inf_ofc_tel_int_no}`} />
+          {/* Section: Contact & Organization */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 rounded-3xl bg-card border shadow-sm space-y-6">
+                <h3 className="flex items-center gap-2 font-bold text-primary">
+                    <Mail className="w-4 h-4" /> ข้อมูลการติดต่อ
+                </h3>
+                <div className="space-y-1">
+                    <InfoRow icon={Mail} label="อีเมลหน่วยงาน" value={data.email} isVerified={data.isVerified} />
+                    <InfoRow icon={Smartphone} label="เบอร์โทรศัพท์มือถือ" value={data.mobilePhone} />
+                    <InfoRow icon={Phone} label="โทรศัพท์สำนักงาน" value={data.officePhone} />
+                    <InfoRow icon={PhoneCall} label="เบอร์ภายใน" value={`${data.internalExtension}`} />
+                </div>
+            </div>
+
+            <div className="p-6 rounded-3xl bg-card border shadow-sm space-y-6">
+                <h3 className="flex items-center gap-2 font-bold text-primary">
+                    <Building2 className="w-4 h-4" /> ข้อมูลสังกัด
+                </h3>
+                <div className="space-y-1">
+                    <InfoRow icon={Building2} label="ฝ่าย/กอง (Division)" value={data.divisionName} />
+                    <InfoRow icon={Briefcase} label="ตำแหน่งงาน" value={data.position} />
+                </div>
             </div>
           </div>
 
-          {/* Section 2: ข้อมูลบัญชีผู้ใช้ระบบ */}
-          <div className="p-8 rounded-4xl bg-card border border-border shadow-level-1">
-            <h3 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" />
-              ข้อมูลบัญชีผู้ใช้ระบบ (Account)
+          {/* Section: Account Information */}
+          <div className="p-8 rounded-3xl bg-card border shadow-sm space-y-6">
+            <h3 className="flex items-center gap-2 font-bold text-primary">
+                <ShieldCheck className="w-4 h-4" /> ข้อมูลบัญชีผู้ใช้ระบบ
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <InfoRow icon={User} label="ชื่อผู้ใช้งาน (Username)" value={data.username} />
-              <InfoRow icon={Fingerprint} label="รหัสพนักงาน (ID)" value={`USR-${data.id}`} />
-              <InfoRow icon={ShieldCheck} label="ระดับสิทธิ์ในระบบ" value={data.permission === 'AD' ? 'ผู้ดูแลระบบ' : data.permission} />
-              <InfoRow 
-                icon={CalendarDays} 
-                label="วันที่สร้างบัญชี" 
-                value={new Date(data.created_at).toLocaleDateString('th-TH', {
-                  year: 'numeric', month: 'long', day: 'numeric'
-                })} 
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
+                <InfoRow icon={User} label="ชื่อผู้ใช้งาน (Username)" value={data.username} />
+                <InfoRow icon={Fingerprint} label="User UUID" value={data.userId} />
+                <InfoRow 
+                    icon={CalendarDays} 
+                    label="วันที่ลงทะเบียน" 
+                    value={new Date(data.createdAt).toLocaleDateString('th-TH', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    })} 
+                />
+                <InfoRow icon={ShieldCheck} label="ระดับการเข้าถึง" value={data.roles.join(", ")} />
             </div>
           </div>
 

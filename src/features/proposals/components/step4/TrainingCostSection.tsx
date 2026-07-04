@@ -1,6 +1,6 @@
 "use client";
 
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { Control, FieldErrors, useFieldArray, useFormContext, UseFormRegister, UseFormSetValue, UseFormWatch, useWatch } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
@@ -10,19 +10,41 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ProposalStep4Values } from "../../types";
 
-const TrainingCourseItem = ({ index, control, register, setValue, watch, remove, errors }: any) => {
-  const coursePath = `trainingCourses.${index}`;
+// กำหนด Type สำหรับแถวข้อมูลวิทยากรและอาหาร
+interface TrainingRowType {
+  itemName?: string;
+  hours?: number;
+  ratePerHour?: number;
+  days?: number;
+  mealsCount?: number;
+  ratePerMeal?: number;
+  traineesCount?: number;
+}
+
+// กำหนด Type สำหรับ Props ของ Component
+interface TrainingCourseItemProps {
+  index: number;
+  control: Control<ProposalStep4Values>;  
+  register: UseFormRegister<ProposalStep4Values>;
+  setValue: UseFormSetValue<ProposalStep4Values>;
+  watch: UseFormWatch<ProposalStep4Values>;
+  remove: (index?: number | number[]) => void;
+  errors: FieldErrors<ProposalStep4Values>;
+}
+
+const TrainingCourseItem = ({ index, control, register, setValue, watch, remove, errors }: TrainingCourseItemProps) => {
+  const coursePath = `trainingCourses.${index}` as const;
   const rowErrors = errors?.trainingCourses?.[index] || {};
   
-  const hasSpeaker = useWatch({ control, name: `${coursePath}.hasSpeakerCost` });
-  const watchedSpeakerCosts = useWatch({ control, name: `${coursePath}.speakerCosts` }) || [];
-  const watchedFoodCosts = useWatch({ control, name: `${coursePath}.foodCosts` }) || [];
+  const hasSpeaker = useWatch({ control, name: `${coursePath}.hasSpeakerCost` as any });
+  const watchedSpeakerCosts = useWatch({ control, name: `${coursePath}.speakerCosts` as any }) || [];
+  const watchedFoodCosts = useWatch({ control, name: `${coursePath}.foodCosts` as any }) || [];
 
-  const { fields: spkFields, append: appendSpk, remove: removeSpk } = useFieldArray({ control, name: `${coursePath}.speakerCosts` });
-  const { fields: foodFields } = useFieldArray({ control, name: `${coursePath}.foodCosts` });
+  const { fields: spkFields, append: appendSpk, remove: removeSpk } = useFieldArray({ control, name: `${coursePath}.speakerCosts` as any });
+  const { fields: foodFields } = useFieldArray({ control, name: `${coursePath}.foodCosts` as any });
 
-  const totalSpkCost = watchedSpeakerCosts.reduce((acc: number, row: any) => acc + ((row.hours || 0) * (row.ratePerHour || 0) * (row.days || 0)), 0);
-  const totalFoodCost = watchedFoodCosts.reduce((acc: number, row: any) => acc + ((row.mealsCount || 0) * (row.ratePerMeal || 0) * (row.traineesCount || 0) * (row.days || 0)), 0);
+  const totalSpkCost = watchedSpeakerCosts.reduce((acc: number, row: TrainingRowType) => acc + ((row.hours || 0) * (row.ratePerHour || 0) * (row.days || 0)), 0);
+  const totalFoodCost = watchedFoodCosts.reduce((acc: number, row: TrainingRowType) => acc + ((row.mealsCount || 0) * (row.ratePerMeal || 0) * (row.traineesCount || 0) * (row.days || 0)), 0);
 
   return (
     <div className="border border-border rounded-lg p-5 mb-6 bg-surface-container-lowest relative">
@@ -42,7 +64,11 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
         </div>
         <div>
           <Label className="mb-2 block">สถานที่ฝึกอบรม <span className="text-status-orange">*</span></Label>
-          <RadioGroup defaultValue={watch(`${coursePath}.locationType`)} onValueChange={(val) => setValue(`${coursePath}.locationType`, val)} className="flex flex-col sm:flex-row gap-4">
+          <RadioGroup 
+            defaultValue={watch(`${coursePath}.locationType`)} 
+            onValueChange={(val) => setValue(`${coursePath}.locationType`, val as "สถานที่ราชการ" | "สถานที่เอกชน")} 
+            className="flex flex-col sm:flex-row gap-4"
+          >
             <div className="flex items-center space-x-2"><RadioGroupItem value="สถานที่ราชการ" id={`loc-gov-${index}`} /><Label htmlFor={`loc-gov-${index}`}>สถานที่ราชการ</Label></div>
             <div className="flex items-center space-x-2"><RadioGroupItem value="สถานที่เอกชน" id={`loc-prv-${index}`} /><Label htmlFor={`loc-prv-${index}`}>สถานที่เอกชน</Label></div>
           </RadioGroup>
@@ -53,7 +79,13 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
 
       <div className="mb-6">
         <div className="flex items-center space-x-2 mb-4">
-          <Checkbox id={`has-spk-${index}`} checked={hasSpeaker} onCheckedChange={(checked) => setValue(`${coursePath}.hasSpeakerCost`, checked)} />
+          <Checkbox 
+            id={`has-spk-${index}`} 
+            // แปลงค่า hasSpeaker ให้ชัวร์ว่าเป็น boolean แน่ๆ
+            checked={!!hasSpeaker} 
+            // แก้ไขที่ 2: เช็คให้แน่ใจว่าค่าที่เข้า setValue คือ boolean แน่นอน (checked === true)
+            onCheckedChange={(checked) => setValue(`${coursePath}.hasSpeakerCost`, checked === true)} 
+          />
           <Label htmlFor={`has-spk-${index}`} className="font-bold text-md cursor-pointer text-foreground">ตารางค่าสมนาคุณวิทยากร (ถ้ามี) <span className="text-muted-foreground font-normal">(วิทยากรต้องไม่ใช่บุคลากรที่ใช้ในการพัฒนาระบบ)</span></Label>
         </div>
 

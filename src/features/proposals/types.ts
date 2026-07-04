@@ -101,6 +101,8 @@ export const proposalStep3Schema = z.object({
   appArchitecture: z.string().min(5, "กรุณาอธิบายด้านระบบสารสนเทศ"),
   dataOwner: z.string().min(2, "กรุณาระบุหน่วยงานเจ้าของข้อมูล"),
   dataExchangePlan: z.string().min(5, "กรุณาอธิบายแนวทางการแลกเปลี่ยนข้อมูล"),
+  
+  // for this 4 files, when user uploads a file, it will instantly be saved in the database (projetc_attachments table)
   systemDiagramFile: imageWithDescriptionSchema.optional().nullable(),
   networkDiagramFile: imageWithDescriptionSchema.optional().nullable(),
   useCaseDiagramFile: imageWithDescriptionSchema.optional().nullable(),
