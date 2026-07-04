@@ -327,6 +327,32 @@ export const proposalStep4Schema = z.object({
 // ---------------------------------------------------------------------------
 // Step 5: ความพร้อม
 // ---------------------------------------------------------------------------
+// Schema สำหรับข้อมูล VM 1 แถว
+const vmRequirementSchema = z.object({
+  id: z.string().optional(), // สำหรับแก้ไข
+  vmDescription: z.string().min(1, "ระบุรายละเอียด/หน้าที่ VM"),
+  osDatabase: z.string().min(1, "ระบุระบบปฏิบัติการ/ฐานข้อมูล"),
+  vcpu: z.coerce.number().min(0, "ห้ามติดลบ"),
+  ramGb: z.coerce.number().min(0, "ห้ามติดลบ"),
+  gpuGb: z.coerce.number().min(0, "ห้ามติดลบ"),
+  storageGb: z.coerce.number().min(0, "ห้ามติดลบ"),
+  price: z.coerce.number().min(0, "ห้ามติดลบ"),
+});
+
+// Schema สำหรับระบบงาน 1 ระบบ (ประกอบด้วยหลาย VM)
+const cloudRequestSchema = z.object({
+  id: z.string().optional(),
+  systemName: z.string().min(1, "ระบุชื่อโครงการ/ระบบงาน"),
+  requestedServiceDate: z.coerce.date({ 
+    message: "กรุณาระบุวันที่ต้องการขอใช้บริการ (รูปแบบวันที่ให้ถูกต้อง)" 
+  }), 
+  recordedRequestDate: z.coerce.date({ 
+    message: "กรุณาระบุวันที่บันทึกคำขอ (รูปแบบวันที่ให้ถูกต้อง)" 
+  }),
+  vms: z.array(vmRequirementSchema).default([]),
+});
+
+// Schema รวมของ Step 5 (ต่อจากของเดิมที่คุณมี)
 const ictPersonnelSchema = z.object({
   position: z.string().min(1, "ระบุตำแหน่ง"),
   level: z.string().min(1, "ระบุระดับ"),
@@ -334,15 +360,14 @@ const ictPersonnelSchema = z.object({
 });
 
 export const proposalStep5Schema = z.object({
-  durationDays: z.coerce
-    .number()
-    .min(1, "กรุณาระบุระยะเวลาดำเนินงาน"),
+  durationDays: z.coerce.number().min(1, "กรุณาระบุระยะเวลาดำเนินงาน"),
   ictPersonnel: z.array(ictPersonnelSchema).default([]),
+
+  cloudRequests: z.array(cloudRequestSchema).default([]),
+  
   otherReadiness: z.string().optional(),
   expectedBenefits: z.string().min(1, "กรุณาระบุประโยชน์ที่คาดว่าจะได้รับ"),
-  isInRoadmap: z.boolean({ 
-    message: "กรุณาเลือกสถานะ Roadmap" 
-  }),
+  isInRoadmap: z.boolean({ message: "กรุณาเลือกสถานะ Roadmap" }),
 });
 
 // ---------------------------------------------------------------------------
