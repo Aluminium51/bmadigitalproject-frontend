@@ -63,6 +63,14 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
   ictPersonnel: any[];
   chkInRoadmap: string;
   chkNotInRoadmap: string;
+  // --- Cloud / VM Requests ---
+  hasCloudRequests: boolean;
+  cloudRequests: any[];
+  grandTotalVcpu: number;
+  grandTotalRam: number;
+  grandTotalGpu: number;
+  grandTotalStorage: number;
+  grandTotalPriceFormatted: string;
   
   // ปรับเป็นประเภทสติงเพื่อรองรับจุดไข่ปลาหากกรณีไม่มีข้อมูล
   otherReadiness?: string;
@@ -232,6 +240,73 @@ const mapOtherCosts = (items: any[]) => {
   });
 };
 
+// ฟังก์ชันจัดการตาราง Cloud / VM พร้อมคำนวณผลรวมรายระบบงานและผลรวมทั้งหมด
+const mapCloudRequests = (items: any[]) => {
+  if (!items || items.length === 0) {
+    return { formattedRequests: [], grandTotals: { vcpu: 0, ram: 0, gpu: 0, storage: 0, price: 0 } };
+  }
+
+  let gVcpu = 0, gRam = 0, gGpu = 0, gStorage = 0, gPrice = 0;
+
+  // ฟังก์ชันช่วยแปลงวันที่ให้แสดงผลสวยงามใน Word
+  const formatThaiDate = (dateVal: any) => {
+    if (!dateVal) return ".........................";
+    try {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return dateVal;
+      return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch { return dateVal; }
+  };
+
+  const formattedRequests = items.map((req) => {
+    let groupVcpu = 0, groupRam = 0, groupGpu = 0, groupStorage = 0, groupPrice = 0;
+
+    const formattedVms = (req.vms || []).map((vm: any, vmIndex: number) => {
+      const vcpu = Number(vm.vcpu) || 0;
+      const ram = Number(vm.ramGb) || 0;
+      const gpu = Number(vm.gpuGb) || 0;
+      const storage = Number(vm.storageGb) || 0;
+      const price = Number(vm.price) || 0;
+
+      groupVcpu += vcpu;
+      groupRam += ram;
+      groupGpu += gpu;
+      groupStorage += storage;
+      groupPrice += price;
+
+      return {
+        ...vm,
+        index: vmIndex + 1,
+        priceFormatted: price.toLocaleString('th-TH', { minimumFractionDigits: 2 })
+      };
+    });
+
+    gVcpu += groupVcpu;
+    gRam += groupRam;
+    gGpu += groupGpu;
+    gStorage += groupStorage;
+    gPrice += groupPrice;
+
+    return {
+      ...req,
+      systemName: req.systemName || "................................",
+      requestedServiceDate: formatThaiDate(req.requestedServiceDate),
+      recordedRequestDate: formatThaiDate(req.recordedRequestDate),
+      vms: formattedVms,
+      groupTotalVcpu: groupVcpu,
+      groupTotalRam: groupRam,
+      groupTotalGpu: groupGpu,
+      groupTotalStorage: groupStorage,
+      groupTotalPriceFormatted: groupPrice.toLocaleString('th-TH', { minimumFractionDigits: 2 })
+    };
+  });
+
+  return {
+    formattedRequests,
+    grandTotals: { vcpu: gVcpu, ram: gRam, gpu: gGpu, storage: gStorage, price: gPrice }
+  };
+};
+
 // Adapter หลักสำหรับจัดเตรียมข้อมูลเข้าสู่ Word Template
 export const prepareTemplateData = (
   rawData: ProposalDraftValues
@@ -284,6 +359,9 @@ export const prepareTemplateData = (
     const percent = (amount / total) * 100;
     return percent.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+
+  // --- จัดการข้อมูล Cloud Requests ---
+  const cloudData = mapCloudRequests(rawData.cloudRequests || []);
 
   return {
     ...rawData, // โยนข้อมูลพื้นฐานไปก่อน
@@ -366,5 +444,13 @@ export const prepareTemplateData = (
     otherReadiness: withPlaceholder(rawData.otherReadiness, "-ไม่มี-"),
     chkInRoadmap: rawData.isInRoadmap === true ? "☑" : "☐",
     chkNotInRoadmap: rawData.isInRoadmap === false ? "☑" : "☐",
+    // --- Cloud Requests ---
+    hasCloudRequests: hasItems(rawData.cloudRequests),
+    cloudRequests: cloudData.formattedRequests,
+    grandTotalVcpu: cloudData.grandTotals.vcpu,
+    grandTotalRam: cloudData.grandTotals.ram,
+    grandTotalGpu: cloudData.grandTotals.gpu,
+    grandTotalStorage: cloudData.grandTotals.storage,
+    grandTotalPriceFormatted: cloudData.grandTotals.price.toLocaleString('th-TH', { minimumFractionDigits: 2 }),
   };
 };
