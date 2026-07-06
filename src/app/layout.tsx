@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 // 1. Import ฟอนต์ Noto Sans Thai
 import { Noto_Sans_Thai } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next"
+import { Providers } from "./Providers";
 
 
 // 2. ตั้งค่าฟอนต์
@@ -28,7 +29,9 @@ export default function RootLayout({
     <html lang="th" className={`${notoSansThai.variable}`}>
       {/* 4. เรียกใช้คลาส font-sans ที่เราจะไปผูกไว้ใน Tailwind */}
       <body className="font-sans antialiased bg-background text-foreground">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Analytics />
       </body>
     </html>

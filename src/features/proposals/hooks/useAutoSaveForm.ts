@@ -1,31 +1,58 @@
-import { useEffect } from "react";
+// src/features/proposals/hooks/useAutoSaveForm.ts
+import { useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { useProposalFormStore } from "../stores/useProposalFormStore";
+import { useAutoSaveDraft } from "./useProposalMutations";
 import { ProposalDraftValues } from "../types";
 
-export const useAutoSaveForm = () => {
-  // ดึงค่า watch จาก FormProvider ของหน้าแม่
-  const { watch } = useFormContext<ProposalDraftValues>();
+const DEBOUNCE_MS = 2000;
 
-  const updateFormData = useProposalFormStore((state) => state.updateFormData);
-  const setLastSavedAt = useProposalFormStore((state) => state.setLastSavedAt);
+/**
+ * useAutoSaveForm
+ *
+ * Watches RHF form changes, debounces for 2 seconds, then:
+ *   1. Updates the local Zustand store
+ *   2. Fires the PATCH /api/proposals/projects/:projectId/draft mutation
+ *
+ * Must be rendered inside a <FormProvider> and receive the projectId.
+ */
+export const useAutoSaveForm = (projectId: string | undefined) => {
+  const { watch } = useFormContext<ProposalDraftValues>();
+  const { updateFormData, setLastSavedAt } = useProposalFormStore();
+  const { mutate: saveDraft } = useAutoSaveDraft(projectId);
+
+  // Track last saved value to avoid redundant API calls
+  const lastPayloadRef = useRef<string>("");
 
   useEffect(() => {
-    // RHF watch จะทำงานทุกครั้งที่มีการเปลี่ยนค่าในฟอร์ม
     const subscription = watch((value) => {
-      // ทำ Debounce 1 วินาที (1000ms) ก่อนเซฟลง Store
       const handler = setTimeout(() => {
-        updateFormData(value as Partial<ProposalDraftValues>);
-        setLastSavedAt(new Date().toISOString());
+        const payload = value as Partial<ProposalDraftValues>;
+        const serialized = JSON.stringify(payload);
 
-        // TODO: ตรงนี้สามารถแทรกโค้ด React Query (useMutation)
-        // เพื่อยิง API บันทึก Draft ไปที่ Backend แบบเงียบๆ ได้
-        console.log("Auto-saved to local storage:", value);
-      }, 1000);
+        // Skip if nothing changed since last save
+        if (serialized === lastPayloadRef.current) return;
+        lastPayloadRef.current = serialized;
+
+        // 1. Update local Zustand store
+        updateFormData(payload);
+
+        // 2. Fire API mutation
+        if (projectId) {
+          saveDraft(
+            { ...payload, currentStep: undefined } as Record<string, unknown>,
+            {
+              onSuccess: () => {
+                setLastSavedAt(new Date().toISOString());
+              },
+            }
+          );
+        }
+      }, DEBOUNCE_MS);
 
       return () => clearTimeout(handler);
     });
 
     return () => subscription.unsubscribe();
-  }, [watch, updateFormData, setLastSavedAt]);
+  }, [watch, updateFormData, setLastSavedAt, saveDraft, projectId]);
 };

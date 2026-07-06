@@ -10,7 +10,8 @@ interface ProposalFormState {
   currentStep: number;
   formData: ProposalDraftValues;
   lastSavedAt: string | null;
-  stepErrors: number[]; // เก็บหมายเลข Step ที่มี Error (เช่น [1, 3])
+  stepErrors: number[];
+  saveStatus: "idle" | "saving" | "saved" | "error";
 
   // Actions - การนำทางและข้อมูล
   setStep: (step: number) => void;
@@ -18,6 +19,7 @@ interface ProposalFormState {
   prevStep: () => void;
   updateFormData: (data: Partial<ProposalDraftValues>) => void;
   setLastSavedAt: (timestamp: string) => void;
+  setSaveStatus: (status: "idle" | "saving" | "saved" | "error") => void;
   resetForm: () => void;
 
   // Actions - จัดการ Validation Errors
@@ -31,9 +33,10 @@ interface ProposalFormState {
 // ----------------------------------------------------------------------
 const initialState = {
   currentStep: 1,
-  formData: {} as ProposalDraftValues, // ระบุ Type ป้องกัน TypeScript บ่นตอนเริ่มต้น
+  formData: {} as ProposalDraftValues,
   lastSavedAt: null,
-  stepErrors: [], // เริ่มต้นมาจะยังไม่มี Error ใดๆ
+  stepErrors: [],
+  saveStatus: "idle" as const,
 };
 
 // ----------------------------------------------------------------------
@@ -65,6 +68,8 @@ export const useProposalFormStore = create<ProposalFormState>()(
         })),
 
       setLastSavedAt: (timestamp) => set({ lastSavedAt: timestamp }),
+
+      setSaveStatus: (status) => set({ saveStatus: status }),
 
       // --- จัดการสถานะ Error ของแต่ละสเต็ป (Error Management) ---
       setStepErrors: (errors) => set({ stepErrors: errors }),
