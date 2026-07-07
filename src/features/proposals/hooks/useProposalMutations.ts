@@ -14,9 +14,14 @@ async function apiFetch(url: string, options: RequestInit) {
     credentials: "include",
     headers: { "Content-Type": "application/json", ...options.headers },
   });
-  const json = await res.json();
+  const json = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(json.message ?? "API error"), { status: res.status, data: json });
   return json;
+}
+
+function requireProjectId(projectId: string | undefined) {
+  if (!projectId) throw new Error("projectId is required");
+  return projectId;
 }
 
 // ---------------------------------------------------------------------------
@@ -26,7 +31,10 @@ async function apiFetch(url: string, options: RequestInit) {
 export function useInitializeDraft(projectId: string | undefined) {
   return useMutation({
     mutationFn: () =>
-      apiFetch(`${API_BASE}/proposals/projects/${projectId}/draft`, { method: "POST", body: "{}"}),
+      apiFetch(`${API_BASE}/proposals/projects/${requireProjectId(projectId)}/draft`, {
+        method: "POST",
+        body: "{}",
+      }),
     onError: (error) => {
       console.error("[useInitializeDraft] Failed to initialize draft:", error);
     },
@@ -42,7 +50,7 @@ export function useAutoSaveDraft(projectId: string | undefined) {
 
   return useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
-      apiFetch(`${API_BASE}/proposals/projects/${projectId}/draft`, {
+      apiFetch(`${API_BASE}/proposals/projects/${requireProjectId(projectId)}/draft`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       }),
@@ -76,7 +84,8 @@ export function useSubmitProposal() {
       }),
     onSuccess: (data, variables) => {
       // Invalidate draft query so it returns null after deletion
-      const projectId = (variables as any).projectId;
+      const projectId =
+        typeof variables.projectId === "string" ? variables.projectId : undefined;
       if (projectId) {
         qc.invalidateQueries({ queryKey: ["proposals", "draft", projectId] });
       }

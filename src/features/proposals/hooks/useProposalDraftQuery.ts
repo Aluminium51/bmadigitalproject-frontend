@@ -7,8 +7,14 @@ async function fetchDraft(projectId: string) {
   const res = await fetch(`${API_BASE}/proposals/projects/${projectId}/draft`, {
     credentials: "include",
   });
-  if (!res.ok) throw new Error(`Failed to fetch draft: ${res.status}`);
-  return res.json() as Promise<{ data: Record<string, unknown> | null; message?: string }>;
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw Object.assign(
+      new Error(json.message ?? `Failed to fetch draft: ${res.status}`),
+      { status: res.status, data: json },
+    );
+  }
+  return json as { data: Record<string, unknown> | null; message?: string };
 }
 
 /**

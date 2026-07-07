@@ -15,6 +15,7 @@ The system ensures that all proposed IT projects align with the organization's E
 *   🔐 **Role-Based Access Control (RBAC):** Secure, domain-specific access ensuring users only see and interact with data relevant to their specific role and department.
 *   📊 **Real-Time Status Tracking:** Intuitive dashboards for users to monitor their project's status (Draft, Submitted, Passed, Need Revision, Rejected) at a glance.
 *   📄 **Document Management:** Integrated file handling with automated PDF compression for supporting project documents and architectural diagrams.
+*   ⚡ **Hybrid Data Fetching (Server Actions + React Query):** Strategically separates secure, server-side data mutations (Next.js Server Actions) from highly interactive, cached client-side UI states (React Query) for optimal performance.
 
 ## Target Audience (User Roles)
 
