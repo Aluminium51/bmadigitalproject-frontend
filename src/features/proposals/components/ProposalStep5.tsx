@@ -104,7 +104,7 @@ const CloudSystemItem = ({ nestIndex, control, register, errors, watch, removeSy
       </div>
 
       <div className="overflow-x-auto border border-border rounded-md">
-        <table className="w-full text-left min-w-[900px] text-sm">
+        <table className="w-full text-left min-w-225 text-sm">
           <thead className="bg-surface-container-low text-slate-gray">
             <tr>
               <th className="p-3 w-12 text-center">ลำดับ</th>
@@ -263,7 +263,7 @@ export const ProposalStep5 = () => {
           </div>
           
           <div className="overflow-x-auto border border-border rounded-md">
-            <table className="w-full text-left min-w-[600px] text-sm">
+            <table className="w-full text-left min-w-150 text-sm">
               <thead className="bg-surface-container-low text-slate-gray">
                 <tr>
                   <th className="p-3 w-16 text-center">ลำดับ</th>

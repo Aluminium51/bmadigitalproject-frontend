@@ -40,7 +40,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
               </div>
 
               {/* --- Project Name --- */}
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191c20] tracking-tight leading-snug break-words">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191c20] tracking-tight leading-snug wrap-break-words">
                 {project.name}
               </h1>
 
@@ -107,7 +107,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
             </div>
 
             {/* --- Action Button --- */}
-            <Button className="gap-2 bg-[#00734b] hover:bg-[#005838] text-white rounded-md px-6 h-11 font-bold shadow-sm shrink-0 xl:self-start w-full xl:w-auto transition-all active:scale-95">
+            <Button className="gap-2 bg-primary hover:bg-primary-dark text-white rounded-md px-6 h-11 font-bold shadow-sm shrink-0 xl:self-start w-full xl:w-auto transition-all active:scale-95">
               <Send className="w-4 h-4" />
               ส่งข้อเสนอโครงการ
             </Button>

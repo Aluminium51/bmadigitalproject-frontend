@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useRef, ChangeEvent, useEffect } from "react";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
 import imageCompression from "browser-image-compression";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, Image as ImageIcon, Download, Settings2 } from "lucide-react"; // ใช้ Icon จาก Lucide
+import { UploadCloud, Image as ImageIcon, Download, Settings2 } from "lucide-react";
 
 interface ImageStats {
   name: string;
