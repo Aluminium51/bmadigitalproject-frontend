@@ -17,7 +17,9 @@ export function WorkspaceTabsList() {
         "
       >
         <ClipboardList className="w-4 h-4 transition-transform duration-300 group-data-[state=active]:scale-110" />
-        เอกสารเสนอโครงการ
+        <span className="hidden sm:inline">เอกสารเสนอโครงการ</span>
+        <span className="sm:hidden">Form</span>
+
       </TabsTrigger>
 
       <TabsTrigger

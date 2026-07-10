@@ -1,20 +1,16 @@
 // src/app/(protected)/projects/page.tsx
 "use client";
 
-import { useState } from "react";
+import Link from "next/link"; // เพิ่ม Import Link จาก next/link
 import { Plus, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Import Components ที่เราเพิ่งแยกออกมา
-import { CreateProjectDialog } from "@/features/projects/components/CreateProjectDialog";
 import { useProjects } from "@/features/projects/hooks/useProjects";
 import { ProjectTabs } from "@/features/projects/components/ProjectTabs";
 import { ProjectTable } from "@/features/projects/components/ProjectTable";
 import { ProjectPagination } from "@/features/projects/components/ProjectPagination";
 
 export default function ProjectsDashboard() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
   // Custom Hook
   const { 
     activeTab, handleTabChange, 
@@ -32,15 +28,14 @@ export default function ProjectsDashboard() {
           <h1 className="text-3xl font-extrabold text-[#191c20] tracking-tight">รายการโครงการ</h1>
           <p className="text-sm text-[#3f4942] mt-1">จัดการแบบร่างและติดตามสถานะโครงการทั้งหมด</p>
         </div>
-        <button 
-          onClick={() => setIsDialogOpen(true)}
+        {/* เปลี่ยนจาก <button> เป็น <Link> และระบุ href ไปที่หน้า create */}
+        <Link 
+          href="/projects/create"
           className="flex items-center gap-2 bg-[#00734b] hover:bg-primary-dark text-white px-6 py-3 rounded-full font-bold transition-all shadow-sm active:scale-95"
         >
-          <Plus className="w-5 h-5" /> สร้างโครงการใหม่
-        </button>
+          <Plus className="w-5 h-5 text-white" /> <span className="text-white">สร้างโครงการใหม่</span>
+        </Link>
       </div>
-
-      <CreateProjectDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
 
       {/* --- พื้นที่ตารางหลัก --- */}
       <div className="bg-white rounded-md border border-[#D1CDC7] shadow-sm flex-1 flex flex-col overflow-hidden">
