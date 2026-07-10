@@ -17,12 +17,12 @@ export default function ClientImageCompressor() {
   const [original, setOriginal] = useState<ImageStats | null>(null);
   const [compressed, setCompressed] = useState<ImageStats | null>(null);
   const [quality, setQuality] = useState<number>(0.75);
-  const [maxWidth, setMaxWidth] = useState<number>(1920); // 🌟 เปลี่ยน Default เป็น 1920px (Full HD) เหมาะกับงานเว็บ
+  const [maxWidth, setMaxWidth] = useState<number>(1920); // เปลี่ยน Default เป็น 1920px (Full HD) เหมาะกับงานเว็บ
   const [loading, setLoading] = useState<boolean>(false);
   
   const currentFileRef = useRef<File | null>(null);
 
-  // 🚨 แก้ปัญหา Memory Leak: เคลียร์ ObjectURL ทิ้งเมื่อ Component ถูกทำลาย
+  // แก้ปัญหา Memory Leak: เคลียร์ ObjectURL ทิ้งเมื่อ Component ถูกทำลาย
   useEffect(() => {
     return () => {
       if (original?.url) URL.revokeObjectURL(original?.url);

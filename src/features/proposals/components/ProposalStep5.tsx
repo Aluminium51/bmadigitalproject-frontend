@@ -38,7 +38,7 @@ const CloudSystemItem = ({ nestIndex, control, register, errors, watch, removeSy
   return (
     <div className="border border-border p-5 rounded-lg bg-surface-container-lowest shadow-sm">
       
-      {/* 🌟 ส่วน Header ของกล่อง (แสดงลำดับ และ ปุ่มลบ) */}
+      {/* ส่วน Header ของกล่อง (แสดงลำดับ และ ปุ่มลบ) */}
       <div className="flex justify-between items-center mb-5 border-b border-border/50 pb-3">
         <div className="flex items-center gap-2">
           <div className="bg-primary text-primary-foreground w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm shadow-sm">

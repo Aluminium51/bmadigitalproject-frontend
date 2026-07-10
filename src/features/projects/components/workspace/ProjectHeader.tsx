@@ -33,7 +33,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                 >
                   แบบร่าง (Draft)
                 </Badge>
-                {/* 🌟 เปลี่ยนมาแสดง projectCode แทน UUID เพื่อให้คนอ่านรู้เรื่อง */}
+                {/* เปลี่ยนมาแสดง projectCode แทน UUID เพื่อให้คนอ่านรู้เรื่อง */}
                 <span className="font-mono text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
                   {project.projectCode || "รอการสร้างรหัส"}
                 </span>
@@ -61,7 +61,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                   </div>
                 </div>
 
-                {/* 🌟 2. รองผู้ว่าฯ ที่กำกับดูแล */}
+                {/* 2. รองผู้ว่าฯ ที่กำกับดูแล */}
                 <div className="space-y-1">
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                     ผู้บริหารที่กำกับดูแล
@@ -76,7 +76,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                   </div>
                 </div>
 
-                {/* 🌟 3. 4 Quadrants Model */}
+                {/* 3. 4 Quadrants Model */}
                 <div className="space-y-1">
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                     4 Quadrants Model
