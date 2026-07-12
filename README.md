@@ -110,6 +110,15 @@ src/features/[feature-name]/
 └── types.ts          # TypeScript interfaces/types specific to this feature
 ```
 
+## Architecture & Design Patterns
+
+This project follows modern React and Next.js (App Router) best practices to ensure maintainability, scalability, and clean code.
+*   **Feature-Sliced Design (FSD):** Code is organized by feature domains (e.g., `src/features/projects`) rather than file types, making it easier to scale and locate related logic.
+*   **Container / Presentational Pattern:** We strictly separate Server-side logic and Routing from Client-side UI.
+    *   **`page.tsx` (Container / Server Component):** Responsible for routing, handling URL params, SEO metadata, and initial server-side data fetching.
+    *   **`Template.tsx` (Presentational / Client Component):** Acts as the main UI layout for a specific page, handling client-side interactivity (`"use client"`), hooks, and layout structuring.
+*   **Separation of Concerns (SoC):** By isolating the UI templates from the Next.js router, components become highly reusable and easier to test in isolation (e.g., via Storybook or Jest).
+
 ## 🎨 UI & Styling Guidelines
 - Tailwind CSS: Use Tailwind for all styling[cite: 1]. Avoid writing custom CSS unless absolutely necessary (add to src/app/globals.css)[cite: 1].
 - Component Composition: Use the cn() utility (located in src/lib/utils.ts) to merge Tailwind classes dynamically[cite: 1].

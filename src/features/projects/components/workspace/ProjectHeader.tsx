@@ -15,7 +15,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
   return (
     <div className="space-y-4 mb-6">
       <button
-        onClick={() => router.push("/projects")}
+        onClick={() => router.back()}
         className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#00734b] transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> กลับไปหน้ารวมโครงการ

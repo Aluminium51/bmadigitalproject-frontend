@@ -16,7 +16,13 @@ const Breadcrumbs = () => {
   const pathname = usePathname();
   const pathSegments = pathname.split("/").filter((segment) => segment);
 
+  // 1. เพิ่มรายการ Path ที่เป็นแค่โครงสร้าง ห้ามกดลิงก์
+  const unclickableSegments = ["proposal", "tasks"];
+
   const formatPathName = (segment: string, index: number, segments: string[]) => {
+    const segmentLower = segment.toLowerCase();
+    const parent = segments[index - 1]?.toLowerCase();
+
     const names: Record<string, string> = {
       dashboard: "ภาพรวม",
       projects: "โครงการทั้งหมด",
@@ -29,21 +35,37 @@ const Breadcrumbs = () => {
       resolutions: "บันทึกมติที่ประชุม",
       users: "จัดการผู้ใช้งาน",
       profile: "ข้อมูลส่วนตัว",
+      proposal: "เอกสารเสนอโครงการ", // เพิ่มคำแปล proposal
     };
 
-    if (segment === "create") {
-      const parent = segments[index - 1]; // ดูว่า path ก่อนหน้าคืออะไร
+    // 2. จัดการ Action: สร้างใหม่
+    if (segmentLower === "create") {
       if (parent === "projects") return "สร้างโครงการใหม่";
+      if (parent === "proposal") return "สร้างเอกสารเสนอโครงการ";
       if (parent === "users") return "เพิ่มผู้ใช้งานใหม่";
       if (parent === "meetings") return "สร้างการประชุมใหม่";
-      return "สร้างใหม่"; // Default ถ้าหา parent ไม่เจอ
+      return "สร้างรายการใหม่";
     }
 
-    if (names[segment]) return names[segment];
-    
-    // ดักจับถ้า segment เป็นตัวเลข ID (ปรับให้เป็นกลาง เพราะอาจจะเป็น ID ของโครงการ หรือ ผู้ใช้งาน ก็ได้)
-    if (/^\d+$/.test(segment) || /^[0-9a-fA-F-]{36}$/.test(segment)) { // รองรับทั้งตัวเลขและ UUID
-      return `รหัส: ${segment.substring(0, 8)}...`; // ตัดโชว์แค่ 8 ตัวแรกถ้าเป็น UUID
+    // 3. จัดการ Action: แก้ไข
+    if (segmentLower === "edit") {
+      if (parent === "projects") return "แก้ไขโครงการ";
+      if (parent === "proposal") return "แก้ไขเอกสารเสนอโครงการ";
+      if (parent === "users") return "แก้ไขผู้ใช้งาน";
+      if (parent === "meetings") return "แก้ไขการประชุม";
+      return "แก้ไขข้อมูล";
+    }
+
+    if (names[segmentLower]) return names[segmentLower];
+
+    // ดักจับถ้า segment เป็นตัวเลข ID หรือ UUID
+    if (/^\d+$/.test(segment) || /^[0-9a-fA-F-]{36}$/.test(segment)) {
+      return `รหัส: ${segment.substring(0, 8)}...`;
+    }
+
+    // ดักจับรหัสโครงการ เช่น p1, P2 ให้เป็นตัวใหญ่
+    if (/^p\d+$/i.test(segment)) {
+      return segment.toUpperCase();
     }
 
     return segment.charAt(0).toUpperCase() + segment.slice(1);
@@ -54,16 +76,22 @@ const Breadcrumbs = () => {
       <Link href="/dashboard" className="hover:text-primary transition-colors flex items-center">
         <Home className="w-4 h-4" />
       </Link>
-      
+
       {pathSegments.map((segment, index) => {
         const isLast = index === pathSegments.length - 1;
+
+        // เช็คว่าเป็น path ที่ห้ามกดหรือไม่
+        const isUnclickable = unclickableSegments.includes(segment.toLowerCase());
+
         const href = `/${pathSegments.slice(0, index + 1).join("/")}`;
 
         return (
           <div key={href} className="flex items-center space-x-2">
             <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
-            {isLast ? (
-              <span className="font-bold text-[#191c20]">
+
+            {/* 4. ถ้าเป็นอันสุดท้าย หรือเป็นพาธที่ห้ามกด ให้แสดงเป็น span */}
+            {isLast || isUnclickable ? (
+              <span className={isLast ? "font-bold text-[#191c20]" : "text-slate-500"}>
                 {formatPathName(segment, index, pathSegments)}
               </span>
             ) : (
@@ -88,14 +116,14 @@ export default function WorkspaceLayout({
       <SidebarProvider>
         <AppSidebar />
         <main className="flex-1 min-w-0 flex flex-col bg-surface-container-low min-h-screen">
-          
+
           {/* --- Navbar --- */}
           <nav className="p-4 bg-white border-b border-[#ededf4] flex items-center justify-between sticky top-0 z-40 shadow-sm h-16">
             <section className="flex items-center w-full overflow-hidden pr-4">
               <CustomSidebarTrigger />
               <Breadcrumbs />
             </section>
-            
+
             <div className="flex items-center gap-4 shrink-0">
               <UserMenu />
             </div>
