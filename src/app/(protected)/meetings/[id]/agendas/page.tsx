@@ -75,13 +75,10 @@ export default function AgendasPage({
           กลับไปรายการประชุม
         </Link>
 
-        <div className="bg-white rounded-xl border border-[#ededf4] shadow-[0px_4px_24px_rgba(0,0,0,0.04)] p-5">
+        <div className="bg-white rounded-md border border-[#ededf4] shadow-level-1 p-5">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#00734b]/10 flex items-center justify-center shrink-0">
-                  <ListChecks className="w-5 h-5 text-[#00734b]" />
-                </div>
+              <div className="flex items-center">
                 <div>
                   <p className="text-xs text-muted-foreground font-mono">
                     ครั้งที่ {meeting.meeting_no}
@@ -91,7 +88,7 @@ export default function AgendasPage({
                   </h1>
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground pl-[46px]">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <CalendarDays className="w-3 h-3" />
                   {meeting.meeting_date}

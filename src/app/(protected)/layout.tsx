@@ -1,5 +1,5 @@
 // src/app/(protected)/layout.tsx
-"use client"; // เพิ่ม "use client" เพราะเราใช้ usePathname
+"use client";
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -16,13 +16,11 @@ const Breadcrumbs = () => {
   const pathname = usePathname();
   const pathSegments = pathname.split("/").filter((segment) => segment);
 
-  // ฟังก์ชันแปลงชื่อ path เป็นภาษาไทย (ปรับแต่งตามโครงสร้างจริงของคุณ)
-  const formatPathName = (segment: string) => {
+  const formatPathName = (segment: string, index: number, segments: string[]) => {
     const names: Record<string, string> = {
       dashboard: "ภาพรวม",
       projects: "โครงการทั้งหมด",
       active: "ติดตามการดำเนินงาน",
-      create: "สร้างเอกสารรายละเอียดประกอบการพิจารณา",
       tasks: "งานตรวจสอบ",
       screening: "มอบหมาย",
       analysis: "วิเคราะห์",
@@ -32,11 +30,20 @@ const Breadcrumbs = () => {
       users: "จัดการผู้ใช้งาน",
       profile: "ข้อมูลส่วนตัว",
     };
+
+    if (segment === "create") {
+      const parent = segments[index - 1]; // ดูว่า path ก่อนหน้าคืออะไร
+      if (parent === "projects") return "สร้างโครงการใหม่";
+      if (parent === "users") return "เพิ่มผู้ใช้งานใหม่";
+      if (parent === "meetings") return "สร้างการประชุมใหม่";
+      return "สร้างใหม่"; // Default ถ้าหา parent ไม่เจอ
+    }
+
     if (names[segment]) return names[segment];
     
-    // ดักจับถ้า segment เป็นตัวเลข ID ให้จัดฟอร์แมตให้อ่านง่ายในระบบราชการ
-    if (/^\d+$/.test(segment)) {
-      return `การประชุม ID: #${segment}`;
+    // ดักจับถ้า segment เป็นตัวเลข ID (ปรับให้เป็นกลาง เพราะอาจจะเป็น ID ของโครงการ หรือ ผู้ใช้งาน ก็ได้)
+    if (/^\d+$/.test(segment) || /^[0-9a-fA-F-]{36}$/.test(segment)) { // รองรับทั้งตัวเลขและ UUID
+      return `รหัส: ${segment.substring(0, 8)}...`; // ตัดโชว์แค่ 8 ตัวแรกถ้าเป็น UUID
     }
 
     return segment.charAt(0).toUpperCase() + segment.slice(1);
@@ -57,11 +64,11 @@ const Breadcrumbs = () => {
             <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
             {isLast ? (
               <span className="font-bold text-[#191c20]">
-                {formatPathName(segment)}
+                {formatPathName(segment, index, pathSegments)}
               </span>
             ) : (
               <Link href={href} className="hover:text-primary transition-colors">
-                {formatPathName(segment)}
+                {formatPathName(segment, index, pathSegments)}
               </Link>
             )}
           </div>
@@ -87,10 +94,8 @@ export default function WorkspaceLayout({
             <section className="flex items-center w-full overflow-hidden pr-4">
               <CustomSidebarTrigger />
               <Breadcrumbs />
-              
             </section>
             
-            {/* ฝั่งขวา: โปรไฟล์ผู้ใช้งาน */}
             <div className="flex items-center gap-4 shrink-0">
               <UserMenu />
             </div>
