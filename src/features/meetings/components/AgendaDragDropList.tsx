@@ -113,7 +113,7 @@ export function AgendaDragDropList({
           return (
             <div
               key={group.type}
-              className="bg-white rounded-xl border border-[#ededf4] shadow-[0px_4px_24px_rgba(0,0,0,0.04)] overflow-hidden"
+              className="bg-white rounded-md border border-[#ededf4] shadow-[0px_4px_24px_rgba(0,0,0,0.04)] overflow-hidden"
             >
               {/* Group Header */}
               <div
@@ -152,7 +152,7 @@ export function AgendaDragDropList({
         })}
 
         {groupedAgendas.length === 0 && (
-          <div className="bg-white rounded-xl border border-[#ededf4] shadow-sm p-16 text-center">
+          <div className="bg-white rounded-md border border-[#ededf4] shadow-sm p-16 text-center">
             <FileText className="w-12 h-12 mx-auto mb-3 text-slate-200" />
             <p className="font-semibold text-slate-500">
               ยังไม่มีวาระการประชุม
@@ -262,7 +262,7 @@ function AgendaCard({
 
         {/* Linked Project Card */}
         {showProjectLinker && agenda.project && (
-          <div className="ml-9 mt-2 flex items-center gap-3 p-3 rounded-lg bg-[#00734b]/5 border border-[#00734b]/15">
+          <div className="ml-9 mt-2 flex items-center gap-3 p-3 rounded-md bg-[#00734b]/5 border border-[#00734b]/15">
             <FolderOpen className="w-4 h-4 text-[#00734b] shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-[#00734b] truncate">

@@ -111,7 +111,7 @@ export function ProjectSelectorModal({
             filteredProjects.map((project) => (
               <div
                 key={project.project_id}
-                className="group flex items-start gap-4 p-4 rounded-xl border border-[#ededf4] hover:border-[#00734b]/30 hover:bg-[#00734b]/5 transition-all cursor-pointer"
+                className="group flex items-start gap-4 p-4 rounded-md border border-[#ededf4] hover:border-[#00734b]/30 hover:bg-[#00734b]/5 transition-all cursor-pointer"
                 onClick={() => handleSelect(project.project_id)}
               >
                 {/* Info */}
