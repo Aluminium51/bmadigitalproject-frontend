@@ -1,4 +1,4 @@
-// src/features/projects/components/CreateProjectForm.tsx
+// src/features/projects/templates/CreateProjectForm.tsx
 "use client";
 import { useForm, Controller } from "react-hook-form";
 import { AlertCircle, Save, X } from "lucide-react";
@@ -36,11 +36,11 @@ const DEPUTY_GOVERNORS = [
   { id: 4, name: "รองผู้ว่าฯ ด้านสิ่งแวดล้อม" }
 ];
 
-export const CreateProjectForm = () => {
+export function CreateProjectTemplate() {
   // --- 3. Mock Context ---
   const mockContext = {
-    userId: "018f3a3b-1b2c-7d3e-8f4g-5h6i7j8k9l0m", 
-    divisionId: 1, 
+    userId: "018f3a3b-1b2c-7d3e-8f4g-5h6i7j8k9l0m",
+    divisionId: 1,
   };
 
   const {
@@ -66,12 +66,12 @@ export const CreateProjectForm = () => {
       projectStatusId: 1, // 1 = Draft
       userId: mockContext.userId,
       divisionId: mockContext.divisionId,
-      createdAt: new Date().toISOString(), 
+      createdAt: new Date().toISOString(),
     };
 
     console.log("Submitting Project Payload:", payload);
     // TODO: ส่ง payload นี้ไปที่ API / Controller
-    
+
     // จำลองการโหลด
     await new Promise((resolve) => setTimeout(resolve, 1000));
     alert("ร่างโครงการถูกสร้างสำเร็จ! ดู Payload ได้ใน Console");
@@ -79,7 +79,7 @@ export const CreateProjectForm = () => {
 
   return (
     <div className="mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl">
-      
+
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground border-b border-border pb-2">
@@ -92,19 +92,19 @@ export const CreateProjectForm = () => {
 
       {/* Form เนื้อหาหลัก */}
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-        
+
         {/* ชื่อโครงการ (Textarea) */}
         <div className="w-full">
           <Label htmlFor="projectName" className="text-sm font-medium text-foreground mb-1.5 block">
             ชื่อโครงการ <span className="text-status-orange">*</span>
           </Label>
-          <Textarea 
+          <Textarea
             id="projectName"
             {...register("projectName")}
             rows={3}
             placeholder="ระบุชื่อโครงการ..."
             className={cn(
-              "resize-none bg-surface text-base", 
+              "resize-none bg-surface text-base",
               errors.projectName && "border-status-orange focus-visible:ring-status-orange bg-orange-50/50"
             )}
           />
@@ -116,7 +116,7 @@ export const CreateProjectForm = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
+
           {/* 4 Quadrants Model */}
           <div className="w-full">
             <Label className="text-sm font-medium text-foreground mb-1.5 block">
