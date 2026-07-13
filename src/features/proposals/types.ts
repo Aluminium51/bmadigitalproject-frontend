@@ -1,3 +1,4 @@
+// frontend/src/features/proposals/types.ts
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -85,13 +86,13 @@ const imageWithDescriptionSchema = z.object({
 export const proposalStep3Schema = z.object({
   // ข้อ 1
   isBmaPlan: z.boolean().default(false),
-  
+
   // ข้อ 2
   isAgencyPlan: z.boolean().default(false),
   agencyStrategy: z.string().optional(),
   agencyIssue: z.string().optional(),
   agencyKpi: z.string().optional(),
-  
+
   // ข้อ 3
   isGovernorPolicy: z.boolean().default(false),
   governorPolicyCode: z.string().optional(),
@@ -101,7 +102,7 @@ export const proposalStep3Schema = z.object({
   appArchitecture: z.string().min(5, "กรุณาอธิบายด้านระบบสารสนเทศ"),
   dataOwner: z.string().min(2, "กรุณาระบุหน่วยงานเจ้าของข้อมูล"),
   dataExchangePlan: z.string().min(5, "กรุณาอธิบายแนวทางการแลกเปลี่ยนข้อมูล"),
-  
+
   // for this 4 files, when user uploads a file, it will instantly be saved in the database (projetc_attachments table)
   systemDiagramFile: imageWithDescriptionSchema.optional().nullable(),
   networkDiagramFile: imageWithDescriptionSchema.optional().nullable(),
@@ -148,7 +149,7 @@ export const hardwareCostSchema = z.object({
   itemName: z.string().min(1, "กรุณาระบุรายการ"),
   quantity: z.coerce.number().min(1, "กรุณาระบุจำนวน"),
   unitPrice: z.coerce.number().min(0, "ห้ามติดลบ"),
-  
+
 // ตัวแปรหลักสำหรับเก็บว่า User เลือกตัวเลือกไหน
   referenceType: z.enum(["MDES", "MARKET", "PREVIOUS", "OTHER"], {
     message: "กรุณาเลือกที่มาของราคากลาง 1 รายการ",
@@ -158,13 +159,13 @@ export const hardwareCostSchema = z.object({
   mdesMonth: z.string().optional(),
   mdesYear: z.string().optional(),
   mdesItemNo: z.string().optional(),
-  
+
   marketCount: z.coerce.number().optional(),
   marketCompany: z.string().optional(),
-  
+
   prevProject: z.string().optional(),
   prevYear: z.string().optional(),
-  
+
   otherDetail: z.string().optional(),
 
 }).superRefine((data, ctx) => {
@@ -201,13 +202,13 @@ export const softwareCostSchema = z.object({
   mdesMonth: z.string().optional(),
   mdesYear: z.string().optional(),
   mdesItemNo: z.string().optional(),
-  
+
   marketCount: z.coerce.number().optional(),
   marketCompany: z.string().optional(),
-  
+
   prevProject: z.string().optional(),
   prevYear: z.string().optional(),
-  
+
   otherDetail: z.string().optional(),
 
 }).superRefine((data, ctx) => {
@@ -230,7 +231,7 @@ export const softwareCostSchema = z.object({
   }
 });
 
-// ค่าใช้จ่ายบุคลากรที่ใช้ในการพัฒนาระบบ 
+// ค่าใช้จ่ายบุคลากรที่ใช้ในการพัฒนาระบบ
 // 1. Schema สำหรับ บุคลากรหลัก และ บุคลากรผู้ช่วย (บังคับสาขาและตัวคูณ)
 const personnelCoreAndAsstSchema = z.object({
   position: z.string().min(1, "ระบุตำแหน่ง"),
@@ -278,7 +279,7 @@ const trainingCourseSchema = z.object({
   courseName: z.string().min(1, "กรุณาระบุหลักสูตร"),
   trainingMethod: z.string().min(1, "กรุณาระบุวิธีการฝึกอบรม"),
   locationType: z.enum(["สถานที่ราชการ", "สถานที่เอกชน"]),
-  
+
   // ตารางวิทยากร (แสดง/ซ่อน ผ่าน UI แต่ข้อมูลเก็บตรงนี้)
   hasSpeakerCost: z.boolean().default(false),
   speakerReason: z.string().optional(),
@@ -343,11 +344,11 @@ const vmRequirementSchema = z.object({
 const cloudRequestSchema = z.object({
   id: z.string().optional(),
   systemName: z.string().min(1, "ระบุชื่อโครงการ/ระบบงาน"),
-  requestedServiceDate: z.coerce.date({ 
-    message: "กรุณาระบุวันที่ต้องการขอใช้บริการ (รูปแบบวันที่ให้ถูกต้อง)" 
-  }), 
-  recordedRequestDate: z.coerce.date({ 
-    message: "กรุณาระบุวันที่บันทึกคำขอ (รูปแบบวันที่ให้ถูกต้อง)" 
+  requestedServiceDate: z.coerce.date({
+    message: "กรุณาระบุวันที่ต้องการขอใช้บริการ (รูปแบบวันที่ให้ถูกต้อง)"
+  }),
+  recordedRequestDate: z.coerce.date({
+    message: "กรุณาระบุวันที่บันทึกคำขอ (รูปแบบวันที่ให้ถูกต้อง)"
   }),
   vms: z.array(vmRequirementSchema).default([]),
 });
@@ -364,7 +365,7 @@ export const proposalStep5Schema = z.object({
   ictPersonnel: z.array(ictPersonnelSchema).default([]),
 
   cloudRequests: z.array(cloudRequestSchema).default([]),
-  
+
   otherReadiness: z.string().optional(),
   expectedBenefits: z.string().min(1, "กรุณาระบุประโยชน์ที่คาดว่าจะได้รับ"),
   isInRoadmap: z.boolean({ message: "กรุณาเลือกสถานะ Roadmap" }),

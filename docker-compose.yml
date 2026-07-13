@@ -1,0 +1,23 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bma_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://172.27.15.59:8081/api/v1
+    # จำกัดทรัพยากร (Optional: ป้องกันไม่ให้ Next.js กินแรมเซิร์ฟเวอร์จนหมด)
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    # ปรับแต่งระบบ Logging ไม่ให้ไฟล์ Log บวมจนเต็มเซิร์ฟเวอร์
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

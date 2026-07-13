@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "clean": "rimraf .next && next dev"
+    "clean": "rimraf .next && next dev",
+    "generate:types": "npx openapi-typescript http://localhost:8081/openapi-v1.json -o src/types/api.d.ts",
+    "generate:schemas": "openapi-zod-client http://localhost:8081/openapi-v1.json -o src/types/api-schemas.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -15,6 +17,8 @@
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",
     "@vercel/analytics": "^2.0.1",
+    "@zodios/core": "^10.9.6",
+    "axios": "^1.18.1",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -47,6 +51,8 @@
     "embla-carousel": "^8.6.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "openapi-typescript": "^7.13.0",
+    "openapi-zod-client": "^1.18.3",
     "rimraf": "^6.1.3",
     "tailwindcss": "^4",
     "typescript": "^5"

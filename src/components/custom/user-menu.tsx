@@ -1,6 +1,6 @@
 // src/components/custom/user-menu.tsx
 "use client";
-
+import { useTransition } from "react";
 import { LogOut, User, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -13,15 +13,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { logoutAction } from "@/features/auth/actions/auth.actions";
 
 export function UserMenu() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
-  const handleLogout = async () => {
-    // 💡 ตรงนี้สามารถใส่ Logic การล้างข้อมูลคุกกี้ / JWT / Zustand ล้างสเตทได้เลยครับ
-    console.log("กำลังออกจากระบบ...");
-    router.push("/login");
-  };
+  const handleLogout = () => {
+      // ใช้ startTransition เพื่อครอบการทำงานของ Server Action ใน Client Component
+      startTransition(async () => {
+        await logoutAction();
+      });
+    };
 
   return (
     <DropdownMenu>
@@ -37,7 +40,7 @@ export function UserMenu() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      
+
       <DropdownMenuContent className="w-56" align="end" forceMount>
         {/* หัวข้อแสดงข้อมูลผู้ใช้เบื้องต้น */}
         <DropdownMenuLabel className="font-normal">
@@ -48,29 +51,30 @@ export function UserMenu() {
             </p>
           </div>
         </DropdownMenuLabel>
-        
+
         <DropdownMenuSeparator />
-        
+
         {/* เมนูเชื่อมโยงไปยังหน้าต่างๆ */}
         <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer">
           <User className="mr-2 h-4 w-4 text-muted-foreground" />
           <span>โปรไฟล์ของฉัน</span>
         </DropdownMenuItem>
-        
+
         <DropdownMenuItem onClick={() => router.push("/profile/edit")} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
           <span>ตั้งค่าระบบ</span>
         </DropdownMenuItem>
-        
+
         <DropdownMenuSeparator />
-        
+
         {/* ปุ่มออกจากระบบ (ตกแต่งสีส้มตามดีไซน์ของโครงการ) */}
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={handleLogout}
+          disabled={isPending}
           className="text-status-orange focus:text-status-orange focus:bg-red-50 cursor-pointer font-medium"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>ออกจากระบบ</span>
+          <span>{isPending ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

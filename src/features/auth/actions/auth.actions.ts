@@ -1,9 +1,22 @@
-// app/actions/auth.actions.ts
+// src/features/auth/actions/auth.actions.ts
 'use server'
 
 import { cookies } from 'next/headers';
+import { serverFetch } from "@/lib/server-fetch";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { schemas } from "@/types/api-schemas";
 
-// กำหนด Type ผลลัพธ์สำหรับ Auth Actions
+// --- 1. สกัด Type จาก Zod Schemas ของ Backend ---
+// ใช้ชื่ออ้างอิงตามที่ Backend กำหนดไว้ใน .openapi('LoginRequest') หรือ Path ของมัน
+type LoginRequestDTO = z.infer<typeof schemas.LoginRequest>;
+type LoginResponseDTO = z.infer<typeof schemas.LoginResponse>;
+
+// สำหรับหน้า Register (เปลี่ยนชื่อ schemas.postApiv1users_Body ให้ตรงกับ Path ของ API คุณจริงๆ)
+// สมมติว่าใน Backend API เป็น POST /users
+type RegisterRequestDTO = z.infer<typeof schemas.CreateUserRequest>;
+
+// --- 2. Type ผลลัพธ์สำหรับ Auth Actions (ของ Frontend) ---
 type AuthResponse = {
   success: boolean;
   message: string;
@@ -11,9 +24,9 @@ type AuthResponse = {
 };
 
 // ฟังก์ชันสำหรับสมัครสมาชิกผู้ใช้งานใหม่
-export async function registerUserAction(data: Record<string, unknown>): Promise<AuthResponse> {
+export async function registerUserAction(data: RegisterRequestDTO): Promise<AuthResponse> {
   try {
-    const response = await fetch(`${process.env.BACKEND_URL}/users`, {
+    const response = await fetch(`${process.env.BACKEND_URL}/api/v1/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -22,8 +35,8 @@ export async function registerUserAction(data: Record<string, unknown>): Promise
     const result = await response.json();
 
     if (!response.ok) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: result.error || 'เกิดข้อผิดพลาด',
         field: result.field
       };
@@ -36,9 +49,9 @@ export async function registerUserAction(data: Record<string, unknown>): Promise
 }
 
 // ฟังก์ชันสำหรับเข้าสู่ระบบ
-export async function loginUserAction(data: Record<string, unknown>): Promise<AuthResponse> {
+export async function loginUserAction(data: LoginRequestDTO): Promise<AuthResponse> {
   try {
-    const response = await fetch(`${process.env.BACKEND_URL}/auth/login`, {
+    const response = await fetch(`${process.env.BACKEND_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -50,10 +63,14 @@ export async function loginUserAction(data: Record<string, unknown>): Promise<Au
       return { success: false, message: result.error, field: result.field };
     }
 
+    // บังคับ Type ให้ result ตรงกับ Backend Schema
+    const successData = result as LoginResponseDTO;
+
     const cookieStore = await cookies();
-    
+
     // บันทึก JWT Token ลงใน HTTP-Only Cookie
-    cookieStore.set('token', result.token, {
+    // โดย successData.token จะถูกบังคับให้มีอยู่จริงตาม Schema ของ Backend แน่นอน
+    cookieStore.set('token', successData.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -61,8 +78,24 @@ export async function loginUserAction(data: Record<string, unknown>): Promise<Au
       maxAge: 60 * 60 * 24 * 7, // 7 วัน
     });
 
-    return { success: true, message: result.message };
+    return { success: true, message: successData.message };
   } catch {
     return { success: false, message: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' };
   }
+}
+
+export async function logoutAction() {
+  try {
+    // 1. ยิง API ไปบอก Backend ให้ทำลาย Token ฝั่งเซิร์ฟเวอร์
+    await serverFetch("/api/v1/auth/logout", { method: "POST" });
+  } catch (error) {
+    console.error("Backend logout error:", error);
+  }
+
+  // 2. ลบ Cookie
+  const cookieStore = await cookies();
+  cookieStore.delete("token");
+
+  // 3. Redirect กลับไปหน้า Login
+  redirect("/login");
 }

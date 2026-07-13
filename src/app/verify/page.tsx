@@ -9,11 +9,11 @@ function VerifyContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
-  
+
   // กำหนดสถานะเริ่มต้นจากตัวแปร token ทันทีเพื่อเลี่ยงการใช้ setState ใน effect
   const [status, setStatus] = useState<"loading" | "success" | "error">(() => token ? "loading" : "error");
-  
-  // กำหนดข้อความเริ่มต้นตามเงื่อนไขการมีอยู่ของ token 
+
+  // กำหนดข้อความเริ่มต้นตามเงื่อนไขการมีอยู่ของ token
   const [message, setMessage] = useState(() => token ? "กำลังตรวจสอบข้อมูลและเปิดใช้งานบัญชี..." : "ลิงก์ไม่ถูกต้อง หรือไม่มีรหัสยืนยันตัวตนส่งมา");
 
   useEffect(() => {
@@ -22,12 +22,12 @@ function VerifyContent() {
     const verifyToken = async () => {
       try {
         const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081/api/v1";
-        
-        const res = await fetch(`${baseUrl}/auth/verify?token=${token}`, {
+
+        const res = await fetch(`${baseUrl}/api/v1/auth/verify?token=${token}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" }
         });
-        
+
         const data = await res.json();
 
         if (res.ok) {
@@ -50,7 +50,7 @@ function VerifyContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-container-low p-4">
       <div className="max-w-md w-full bg-surface p-8 rounded-xl shadow-sm border border-border text-center flex flex-col items-center">
-        
+
         {status === "loading" && <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />}
         {status === "success" && <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />}
         {status === "error" && <XCircle className="w-16 h-16 text-status-orange mb-4" />}

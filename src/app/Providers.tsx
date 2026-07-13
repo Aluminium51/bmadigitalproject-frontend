@@ -8,10 +8,10 @@ import { ReactNode } from "react";
  * Providers — wraps the app with all client-side context providers.
  * Kept separate from layout.tsx so the root layout stays a Server Component.
  */
-export function Providers({ children }: { children: ReactNode }) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
-}
+ export function Providers({ children }: { children: ReactNode }) {
+   return (
+     <QueryClientProvider client={queryClient}>
+       {children}
+     </QueryClientProvider>
+   );
+ }
