@@ -15,7 +15,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { ProjectDetail } from "../../types/workspace";
-import type { SubmitProposalDTO } from "@/modules/proposals/proposal.schema";
+
+// 1. ประกาศ Type สำหรับ Proposal ให้ตรงกับฟิลด์ที่มีการเรียกใช้ใน Component
+export interface SubmitProposalDTO {
+  agencyName: string;
+  headOfAgency: string;
+  dcioName: string;
+  projectManager: string;
+  background: string;
+  objective: string;
+  scope: string;
+  target: string;
+  currentSystemStatus: string;
+  currentProblems: string;
+  isGovernorPolicy: boolean;
+  governorPolicyName?: string;
+  governorPolicyCode?: string;
+  isAgencyPlan: boolean;
+  agencyStrategy?: string;
+  agencyKpi?: string;
+  expectedBenefits: string;
+  appArchitecture?: string;
+  dataOwner?: string;
+  dataExchangePlan?: string;
+  totalBudget: number;
+  budgetsByYear?: { year: string | number; amount: number; budgetType: string }[];
+  durationDays: number;
+  ictPersonnel?: { position: string; level: string; count: number }[];
+  otherReadiness?: string;
+}
 
 interface ProposalTabContentProps {
   project: ProjectDetail;
@@ -25,9 +53,8 @@ interface ProposalTabContentProps {
 export function ProposalTabContent({ project, proposal }: ProposalTabContentProps) {
   const router = useRouter();
 
-  // หากยังไม่มี Proposal
-  // if (!project.hasProposal || !proposal) {
-  if (!project.hasProposal) {
+  // 2. นำเงื่อนไข !proposal กลับมา เพื่อให้ TypeScript มั่นใจว่าด้านล่างจะมีค่า proposal แน่นอน
+  if (!project.hasProposal || !proposal) {
     return (
       <Card className="rounded-md border-orange-200 bg-orange-50/50 shadow-sm">
         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -57,9 +84,9 @@ export function ProposalTabContent({ project, proposal }: ProposalTabContentProp
     );
   }
 
-  // Helper สำหรับ Format ตัวเลข
+  // 3. เอา Comment ออก เพื่อให้สามารถคำนวณ totalBudgetInMillions นำไปแสดงผลได้
   const formatCurrency = (amount: number) => new Intl.NumberFormat('th-TH').format(amount);
-  // const totalBudgetInMillions = (proposal.totalBudget / 1000000).toFixed(2);
+  const totalBudgetInMillions = (proposal.totalBudget / 1000000).toFixed(2);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
