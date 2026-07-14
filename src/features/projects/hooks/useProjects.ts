@@ -1,9 +1,63 @@
 // src/features/projects/hooks/useProjects.ts
 import { useState } from "react";
-// หมายเหตุ: ตรวจสอบชื่อไฟล์ mock-projects ให้ตรงกับที่คุณเซฟไว้จริง (เช่น mockProjects หรือ mock-projects)
-import { teamDraftProjects, myActiveProjects, teamProjects, otherDepartmentProjects } from "../data/mock-projects";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { getProjectsAction } from "../actions/project.actions"; // 👈 Import Server Action เข้ามา
 
 export type TabType = "drafts" | "active" | "team" | "all";
+
+type ProjectQuery = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "draft" | "submitted" | "all_except_draft" | "all";
+  ownership?: "mine" | "team_only" | "team_and_mine" | "all";
+};
+
+// ฟังก์ชันแปลง TabType เป็น Query Parameters ที่ Backend เข้าใจ
+const getQueryParamsForTab = (tab: TabType): ProjectQuery => {
+  switch (tab) {
+    case "drafts":
+      return { status: "draft", ownership: "team_and_mine" };
+    case "active":
+      return { status: "all_except_draft", ownership: "mine" };
+    case "team":
+      return { status: "all_except_draft", ownership: "team_and_mine" };
+    case "all":
+      return { status: "all", ownership: "all" };
+    default:
+      return { status: "all", ownership: "all" };
+  }
+};
+
+const fetchProjectsAPI = async (params: { page: number; limit: number; search: string; tab: TabType }) => {
+  const tabConditions = getQueryParamsForTab(params.tab);
+
+  // สร้าง Object สำหรับส่งไปเป็น URL Query String
+  const queryParams = new URLSearchParams({
+    page: params.page.toString(),
+    limit: params.limit.toString(),
+    ...(params.search ? { search: params.search } : {}),
+    ...(tabConditions.status ? { status: tabConditions.status } : {}),
+    ...(tabConditions.ownership ? { ownership: tabConditions.ownership } : {}),
+  });
+
+  // 👈 เรียกใช้งาน Server Action แทนการเรียก serverFetch ตรงๆ
+  const result = await getProjectsAction(queryParams.toString());
+
+  // ปรับโครงสร้างข้อมูลที่ส่งกลับ ให้ตรงกับที่ UI Template และ Hook ต้องการ
+  return {
+    data: result.data,
+    meta: {
+      currentPage: result.pagination.page,
+      totalPages: result.pagination.totalPages,
+      totalItems: result.pagination.total,
+    },
+    summary: {
+      draftsCount: 0,
+      activeCount: 0,
+    }
+  };
+};
 
 export function useProjects() {
   const [activeTab, setActiveTab] = useState<TabType>("drafts");
@@ -11,57 +65,42 @@ export function useProjects() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const { data: response, isLoading, isError, isFetching } = useQuery({
+    queryKey: ["projects", activeTab, currentPage, searchQuery],
+    queryFn: () => fetchProjectsAPI({
+      page: currentPage,
+      limit: itemsPerPage,
+      search: searchQuery,
+      tab: activeTab
+    }),
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setCurrentPage(1);
-    setSearchQuery(""); 
+    setSearchQuery("");
   };
 
-  const getActiveData = () => {
-    let dataset: any[] = []; 
-
-    if (activeTab === "drafts") {
-      dataset = teamDraftProjects;
-    } 
-    else if (activeTab === "team") {
-      dataset = teamProjects;
-    } 
-    else if (activeTab === "active") {
-      dataset = [...myActiveProjects].sort((a, b) => {
-        if (a.status === "Need Revision" && b.status !== "Need Revision") return -1;
-        if (a.status !== "Need Revision" && b.status === "Need Revision") return 1;
-        return 0;
-      });
-    }
-    else if (activeTab === "all") {
-      // ✨ จุดแก้ไข: ยุบโค้ดให้กระชับขึ้น เพราะใน Mock Data ใหม่มีฟิลด์ agency ครบถ้วนแล้ว
-      dataset = [...myActiveProjects, ...teamProjects, ...otherDepartmentProjects];
-    }
-
-    // 🔍 ปรับปรุงระบบค้นหา
-    if (searchQuery.trim() !== "") {
-      const lowerQuery = searchQuery.toLowerCase();
-      dataset = dataset.filter(p => 
-        (p.name && p.name.toLowerCase().includes(lowerQuery)) || 
-        (p.id && p.id.toLowerCase().includes(lowerQuery)) ||
-        // ✨ จุดเพิ่มเติม: ให้ค้นหาจากชื่อผู้รับผิดชอบ (Owner) ได้ด้วย
-        (p.owner && p.owner.toLowerCase().includes(lowerQuery))
-      );
-    }
-
-    return dataset;
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
   };
-
-  const currentDataset = getActiveData();
-  const totalPages = Math.ceil(currentDataset.length / itemsPerPage) || 1;
-  const paginatedData = currentDataset.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return {
-    activeTab, handleTabChange,
-    searchQuery, setSearchQuery,
-    currentPage, setCurrentPage, totalPages,
-    paginatedData,
-    draftsCount: teamDraftProjects.length,
-    activeCount: myActiveProjects.length
+    activeTab,
+    handleTabChange,
+    searchQuery,
+    setSearchQuery: handleSearch,
+    projectsData: response?.data || [],
+    currentPage: response?.meta.currentPage || 1,
+    totalPages: response?.meta.totalPages || 1,
+    setCurrentPage,
+    draftsCount: response?.summary.draftsCount || 0,
+    activeCount: response?.summary.activeCount || 0,
+    isLoading,
+    isFetching,
+    isError
   };
 }

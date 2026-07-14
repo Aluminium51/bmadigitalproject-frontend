@@ -157,14 +157,18 @@ export function RegisterForm() {
     ).filter(Boolean);
 
   const onSubmit = async (values: RegisterValues) => {
-    setStatusMessage(null); 
-    const { confirmPassword, ...dataToSend } = values;
+    setStatusMessage(null);
+    const { confirmPassword: _, ...formData } = values;
+    const dataToSend = {
+          ...formData,
+          roleIds: [1], // role = "user" (Default)
+    };
 
     const response = await registerUserAction(dataToSend);
 
     if (response.success) {
       setStatusMessage({ type: 'success', text: response.message + " ระบบกำลังพาท่านไปหน้าเข้าสู่ระบบ..." });
-      reset(); 
+      reset();
 
       setTimeout(() => {
         router.push("/login");
@@ -199,7 +203,7 @@ export function RegisterForm() {
         </div>
       )}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        
+
         {/* ============================================================== */}
         {/* --- Section 1: ข้อมูลบัญชี (Account Information) --- */}
         {/* ============================================================== */}
@@ -326,7 +330,7 @@ export function RegisterForm() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-            
+
             <RegisterField label="หน่วยงาน (Department)" error={errors.department?.message}>
               <Controller
                 control={control}
@@ -357,8 +361,8 @@ export function RegisterForm() {
                     value={field.value}
                     onChange={field.onChange}
                     placeholder={
-                      selectedDepartment 
-                        ? "ค้นหาหรือเลือกส่วนราชการ..." 
+                      selectedDepartment
+                        ? "ค้นหาหรือเลือกส่วนราชการ..."
                         : "กรุณาเลือกหน่วยงานก่อน"
                     }
                     error={!!errors.division}

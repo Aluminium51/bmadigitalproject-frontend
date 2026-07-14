@@ -1,3 +1,4 @@
+// frontend/src/features/projects/components/CreateProjectTemplate.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -17,7 +18,7 @@ import { useFourQuadrants, useDeputyGovernors } from "@/features/lookups/hooks/u
 import { schemas } from "@/types/api-schemas";
 
 // 1. ดึง Base Schema ที่ Generate มาจาก Backend
-const baseSchema = schemas.postApiv1projects_Body;
+const baseSchema = schemas.CreateProjectRequest;
 
 // 2. ใช้ .extend() สวมทับเฉพาะฟิลด์ที่ต้องการ Custom Message หรือต้องการแปลง Type
 export const createProjectSchema = baseSchema.extend({

@@ -1,3 +1,4 @@
+// src/features/workspaces/hooks/useProjectWorkspace.ts
 import { useState } from "react";
 import type { WorkspaceTab } from "../types/workspace";
 

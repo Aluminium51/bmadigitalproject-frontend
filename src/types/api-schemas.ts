@@ -141,7 +141,7 @@ const PaginatedProjectResponse = z
       .passthrough(),
   })
   .passthrough();
-const postApiv1projects_Body = z
+const CreateProjectRequest = z
   .object({
     projectName: z.string().min(1).max(600),
     projectTypeId: z.number().int().optional(),
@@ -150,7 +150,7 @@ const postApiv1projects_Body = z
     deputyGovernorId: z.number().int().nullable(),
   })
   .passthrough();
-const patchApiv1projectsId_Body = z
+const UpdateProjectRequest = z
   .object({
     projectName: z.string().min(1).max(600),
     projectTypeId: z.number().int(),
@@ -160,8 +160,14 @@ const patchApiv1projectsId_Body = z
   })
   .partial()
   .passthrough();
-const patchApiv1projectsIdstatus_Body = z
+const UpdateProjectStatusRequest = z
   .object({ projectStatusId: z.number().int(), remark: z.string().optional() })
+  .passthrough();
+const UpdateProjectTypeRequest = z
+  .object({ projectTypeId: z.number().int() })
+  .passthrough();
+const AssignProjectRequest = z
+  .object({ analystId: z.string().uuid() })
   .passthrough();
 const postApiv1proposalsprojectsProjectIdsubmit_Body = z
   .object({
@@ -611,9 +617,11 @@ export const schemas = {
   SuccessResponse,
   Project,
   PaginatedProjectResponse,
-  postApiv1projects_Body,
-  patchApiv1projectsId_Body,
-  patchApiv1projectsIdstatus_Body,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  UpdateProjectStatusRequest,
+  UpdateProjectTypeRequest,
+  AssignProjectRequest,
   postApiv1proposalsprojectsProjectIdsubmit_Body,
   CreateMeeting,
   Meeting,
@@ -1013,7 +1021,7 @@ const endpoints = makeApi([
       {
         status: 500,
         description: `ข้อผิดพลาดเซิร์ฟเวอร์`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        schema: ErrorResponse,
       },
     ],
   },
@@ -1026,7 +1034,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: postApiv1projects_Body,
+        schema: CreateProjectRequest,
       },
     ],
     response: z.object({ message: z.string(), project: Project }).passthrough(),
@@ -1034,7 +1042,7 @@ const endpoints = makeApi([
       {
         status: 401,
         description: `Unauthorized`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        schema: ErrorResponse,
       },
     ],
   },
@@ -1055,12 +1063,12 @@ const endpoints = makeApi([
       {
         status: 400,
         description: `รูปแบบ ID ไม่ถูกต้อง`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        schema: ErrorResponse,
       },
       {
         status: 404,
         description: `ไม่พบข้อมูลโครงการ`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        schema: ErrorResponse,
       },
     ],
   },
@@ -1073,7 +1081,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: patchApiv1projectsId_Body,
+        schema: UpdateProjectRequest,
       },
       {
         name: "id",
@@ -1086,7 +1094,7 @@ const endpoints = makeApi([
       {
         status: 404,
         description: `ไม่พบข้อมูลโครงการ`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        schema: ErrorResponse,
       },
     ],
   },
@@ -1107,7 +1115,7 @@ const endpoints = makeApi([
       {
         status: 404,
         description: `ไม่พบข้อมูลโครงการ`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        schema: ErrorResponse,
       },
     ],
   },
@@ -1139,7 +1147,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: patchApiv1projectsIdstatus_Body,
+        schema: UpdateProjectStatusRequest,
       },
       {
         name: "id",
