@@ -4,7 +4,6 @@
 FROM oven/bun:alpine AS deps
 WORKDIR /app
 COPY package.json bun.lockb* ./
-# Bun ติดตั้งไวกว่า pnpm และไม่ต้องตั้งค่า Cache ยุ่งยาก
 RUN bun install --frozen-lockfile
 
 # ---------------------------------------------------

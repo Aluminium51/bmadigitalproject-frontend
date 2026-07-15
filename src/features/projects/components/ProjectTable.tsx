@@ -72,11 +72,11 @@ export function ProjectTable({ data, activeTab }: ProjectTableProps) {
                   <span>{project.projectName || "-"}</span>
                 </td>
 
-                {/* หน่วยงาน (Department Name) */}
-                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">{project.division?.departmentName || "-"}</td>
-
-                {/* ส่วนราชการ (Division Name) */}
+                {/* หน่วยงาน (Division Name) */}
                 <td className="px-6 sm:px-10 py-5 text-[#3f4942]">{project.division?.name || "-"}</td>
+
+                {/* ส่วนราชการ (Department Name) */}
+                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">{project.division?.departmentName || "-"}</td>
 
                 {/* ประเภทงบประมาณ (Project Type) */}
                 <td className="px-6 sm:px-10 py-5 text-[#3f4942]">{project.projectType?.name || "-"}</td>

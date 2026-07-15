@@ -1,4 +1,3 @@
-// frontend/src/features/projects/components/CreateProjectTemplate.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -6,36 +5,46 @@ import { useForm, Controller } from "react-hook-form";
 import { AlertCircle, Save, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { createProjectAction } from "@/features/projects/actions/project.actions";
-import { useFourQuadrants, useDeputyGovernors } from "@/features/lookups/hooks/useLookups";
+import {
+  useFourQuadrants,
+  useDeputyGovernors,
+} from "@/features/lookups/hooks/useLookups";
 import { schemas } from "@/types/api-schemas";
 
-// 1. ดึง Base Schema ที่ Generate มาจาก Backend
 const baseSchema = schemas.CreateProjectRequest;
 
-// 2. ใช้ .extend() สวมทับเฉพาะฟิลด์ที่ต้องการ Custom Message หรือต้องการแปลง Type
 export const createProjectSchema = baseSchema.extend({
-
-  projectName: z.string({ message: "กรุณาระบุชื่อโครงการ" })
+  projectName: z
+    .string({ message: "กรุณาระบุชื่อโครงการ" })
     .min(5, "กรุณาระบุชื่อโครงการอย่างน้อย 5 ตัวอักษร")
     .max(500, "ชื่อโครงการต้องไม่เกิน 500 ตัวอักษร"),
 
-  // ใช้ z.coerce.number() เพื่อให้มันรับค่าเป็น String จาก <Select> แล้วแปลงเป็น Number ให้อัตโนมัติ
-  fourQuadrantsId: z.coerce.number({
-    message: "กรุณาเลือกมิติการพัฒนา",
-  }).min(1, "กรุณาเลือกมิติการพัฒนา"),
+  fourQuadrantsId: z.coerce
+    .number({
+      message: "กรุณาเลือกมิติการพัฒนา",
+    })
+    .min(1, "กรุณาเลือกมิติการพัฒนา"),
 
-  deputyGovernorId: z.coerce.number({
-    message: "กรุณาเลือกรองผู้ว่าฯ ที่กำกับดูแล",
-  }).min(1, "กรุณาเลือกรองผู้ว่าฯ ที่กำกับดูแล"),
-
+  deputyGovernorId: z.coerce
+    .number({
+      message: "กรุณาเลือกรองผู้ว่าฯ ที่กำกับดูแล",
+    })
+    .min(1, "กรุณาเลือกรองผู้ว่าฯ ที่กำกับดูแล"),
 });
 
 type CreateProjectFormInput = z.input<typeof createProjectSchema>;
@@ -44,15 +53,14 @@ type CreateProjectValues = z.infer<typeof createProjectSchema>;
 export function CreateProjectTemplate() {
   const router = useRouter();
 
-  // 1. เปลี่ยนชื่อตัวแปรรับค่าจาก Hook (ตั้งชื่อเล่นเป็น Raw หรือ Res) เพื่อไม่ให้ชื่อซ้ำกัน
-  const { data: quadrantsRes, isLoading: isLoadingQuadrants } = useFourQuadrants();
-  const { data: governorsRes, isLoading: isLoadingGovernors } = useDeputyGovernors();
+  const { data: quadrantsRes, isLoading: isLoadingQuadrants } =
+    useFourQuadrants();
+  const { data: governorsRes, isLoading: isLoadingGovernors } =
+    useDeputyGovernors();
 
-  // 2. แกะกล่องเอาเฉพาะ Array ออกมาเตรียมไว้ตรงนี้เลย (ตามวิธีที่สอง ไม่ต้องใช้ await)
   const quadrants = quadrantsRes?.data || [];
   const governors = governorsRes?.data || [];
 
-  // --- Mock Context ---
   const mockContext = {
     userId: "018f3a3b-1b2c-7d3e-8f4g-5h6i7j8k9l0m",
     divisionId: 1,
@@ -85,11 +93,18 @@ export function CreateProjectTemplate() {
 
     const response = await createProjectAction(payload);
 
+    // Toast notification for success or error
     if (response.success) {
-      alert("ร่างโครงการถูกสร้างสำเร็จ!");
+      toast.success("สร้างโครงการสำเร็จ", {
+        description: "ระบบได้ทำการบันทึกร่างโครงการของคุณเรียบร้อยแล้ว",
+      });
       router.push("/projects");
     } else {
-      alert(`เกิดข้อผิดพลาด: ${response.message}`);
+      toast.error("สร้างโครงการไม่สำเร็จ", {
+        description:
+          response.message ||
+          "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง",
+      });
     }
   };
 
@@ -109,7 +124,10 @@ export function CreateProjectTemplate() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         {/* ชื่อโครงการ */}
         <div className="w-full">
-          <Label htmlFor="projectName" className="text-sm font-medium text-foreground mb-1.5 block">
+          <Label
+            htmlFor="projectName"
+            className="text-sm font-medium text-foreground mb-1.5 block"
+          >
             ชื่อโครงการ <span className="text-status-orange">*</span>
           </Label>
           <Textarea
@@ -119,7 +137,8 @@ export function CreateProjectTemplate() {
             placeholder="ระบุชื่อโครงการ..."
             className={cn(
               "resize-none bg-surface text-base",
-              errors.projectName && "border-status-orange focus-visible:ring-status-orange bg-orange-50/50"
+              errors.projectName &&
+                "border-status-orange focus-visible:ring-status-orange bg-orange-50/50",
             )}
           />
           {errors.projectName && (
@@ -140,14 +159,24 @@ export function CreateProjectTemplate() {
               name="fourQuadrantsId"
               render={({ field: { onChange, value } }) => (
                 <Select
-                  // 1. แปลงค่าที่ User เลือก (String) ให้กลายเป็น Number ทันที
                   onValueChange={(val) => onChange(Number(val))}
-                  // 2. แปลงค่าจาก Form State (Number/Undefined) กลับเป็น String เพื่อให้ Select แสดงผลได้ถูกต้อง
                   value={value?.toString() || ""}
                   disabled={isLoadingQuadrants || isSubmitting}
                 >
-                  <SelectTrigger className={cn("bg-surface", errors.fourQuadrantsId && "border-status-orange ring-1 ring-status-orange bg-orange-50/50")}>
-                    <SelectValue placeholder={isLoadingQuadrants ? "กำลังโหลดข้อมูล..." : "เลือกมิติการพัฒนา..."} />
+                  <SelectTrigger
+                    className={cn(
+                      "bg-surface",
+                      errors.fourQuadrantsId &&
+                        "border-status-orange ring-1 ring-status-orange bg-orange-50/50",
+                    )}
+                  >
+                    <SelectValue
+                      placeholder={
+                        isLoadingQuadrants
+                          ? "กำลังโหลดข้อมูล..."
+                          : "เลือกมิติการพัฒนา..."
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {quadrants.map((q: any) => (
@@ -161,7 +190,8 @@ export function CreateProjectTemplate() {
             />
             {errors.fourQuadrantsId && (
               <p className="mt-1.5 text-sm text-status-orange flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {errors.fourQuadrantsId.message}
+                <AlertCircle className="w-4 h-4" />{" "}
+                {errors.fourQuadrantsId.message}
               </p>
             )}
           </div>
@@ -169,21 +199,32 @@ export function CreateProjectTemplate() {
           {/* รองผู้ว่าฯ ที่ดูแล */}
           <div className="w-full">
             <Label className="text-sm font-medium text-foreground mb-1.5 block">
-              รองผู้ว่าฯ ที่กำกับดูแล <span className="text-status-orange">*</span>
+              รองผู้ว่าฯ ที่กำกับดูแล{" "}
+              <span className="text-status-orange">*</span>
             </Label>
             <Controller
               control={control}
               name="deputyGovernorId"
               render={({ field: { onChange, value } }) => (
                 <Select
-                  // 1. แปลงค่าที่ User เลือกเป็น Number ทันที
                   onValueChange={(val) => onChange(Number(val))}
-                  // 2. แปลงค่ากลับเป็น String สำหรับ UI
                   value={value?.toString() || ""}
                   disabled={isLoadingGovernors || isSubmitting}
                 >
-                  <SelectTrigger className={cn("bg-surface", errors.deputyGovernorId && "border-status-orange ring-1 ring-status-orange bg-orange-50/50")}>
-                    <SelectValue placeholder={isLoadingGovernors ? "กำลังโหลดข้อมูล..." : "เลือกรองผู้ว่าฯ..."} />
+                  <SelectTrigger
+                    className={cn(
+                      "bg-surface",
+                      errors.deputyGovernorId &&
+                        "border-status-orange ring-1 ring-status-orange bg-orange-50/50",
+                    )}
+                  >
+                    <SelectValue
+                      placeholder={
+                        isLoadingGovernors
+                          ? "กำลังโหลดข้อมูล..."
+                          : "เลือกรองผู้ว่าฯ..."
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {governors.map((gov: any) => (
@@ -197,7 +238,8 @@ export function CreateProjectTemplate() {
             />
             {errors.deputyGovernorId && (
               <p className="mt-1.5 text-sm text-status-orange flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {errors.deputyGovernorId.message}
+                <AlertCircle className="w-4 h-4" />{" "}
+                {errors.deputyGovernorId.message}
               </p>
             )}
           </div>
@@ -217,7 +259,11 @@ export function CreateProjectTemplate() {
             <X className="w-4 h-4 mr-2" />
             ยกเลิก
           </Button>
-          <Button type="submit" disabled={isSubmitting || isLoadingQuadrants || isLoadingGovernors} className="rounded-full bg-primary hover:bg-primary/90 text-white">
+          <Button
+            type="submit"
+            disabled={isSubmitting || isLoadingQuadrants || isLoadingGovernors}
+            className="rounded-full bg-primary hover:bg-primary/90 text-white"
+          >
             <Save className="w-4 h-4 mr-2" />
             {isSubmitting ? "กำลังบันทึก..." : "บันทึกและสร้างโครงการ"}
           </Button>
