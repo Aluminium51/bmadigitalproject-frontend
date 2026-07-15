@@ -53,18 +53,29 @@ Ensure you have the following installed on your local machine:
 ### Installation & Setup
 
 1.  **Install dependencies:**
+    Navigate to the frontend directory and install packages using pnpm:
     ```bash
     pnpm install
     ```
 
 2.  **Environment Variables:**
     Create a `.env.local` file in the root directory and configure the necessary environment variables (e.g., API endpoints, authentication secrets).
+    ```bash
+    BACKEND_URL=http://localhost:8081
+    # Add any other required environment variables here
+    ```
 
-3.  **Run the development server:**
+3.  **Generate API Schemas (Types):**
+    Important: Ensure the Backend server is currently running. Then, pull the latest OpenAPI schema to generate TypeScript types:
+    ```bash
+    pnpm generate:schemas
+    ```
+
+4.  **Run the development server:**
     ```bash
     pnpm dev
     ```
-    The application will be available at `http://localhost:3000`.
+    The frontend application will be available at `http://localhost:3000`.
 
 ---
 
