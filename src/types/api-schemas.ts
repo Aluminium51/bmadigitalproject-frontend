@@ -598,9 +598,9 @@ const CloudRequest = z
   .passthrough();
 const DivisionItem = z
   .object({
-    divisionId: z.number().int(),
+    id: z.number().int(),
     departmentId: z.number().int(),
-    divisionName: z.string().max(255),
+    name: z.string().max(255),
   })
   .passthrough();
 const DivisionResponse = z
@@ -751,31 +751,31 @@ const endpoints = makeApi([
   },
   {
     method: "get",
+    path: "/api/v1/lookups/departments",
+    alias: "getApiv1lookupsdepartments",
+    requestFormat: "json",
+    response: LookupResponse,
+  },
+  {
+    method: "get",
     path: "/api/v1/lookups/deputy-governors",
     alias: "getApiv1lookupsdeputyGovernors",
     requestFormat: "json",
     response: LookupResponse,
-    errors: [
-      {
-        status: 401,
-        description: `Unauthorized`,
-        schema: z.object({ message: z.string() }).passthrough(),
-      },
-    ],
   },
   {
     method: "get",
     path: "/api/v1/lookups/divisions",
     alias: "getApiv1lookupsdivisions",
     requestFormat: "json",
-    response: DivisionResponse,
-    errors: [
+    parameters: [
       {
-        status: 401,
-        description: `Unauthorized`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        name: "departmentId",
+        type: "Query",
+        schema: z.number().nullish(),
       },
     ],
+    response: DivisionResponse,
   },
   {
     method: "get",
@@ -783,13 +783,6 @@ const endpoints = makeApi([
     alias: "getApiv1lookupsfourQuadrants",
     requestFormat: "json",
     response: LookupResponse,
-    errors: [
-      {
-        status: 401,
-        description: `Unauthorized`,
-        schema: z.object({ message: z.string() }).passthrough(),
-      },
-    ],
   },
   {
     method: "get",
@@ -797,13 +790,6 @@ const endpoints = makeApi([
     alias: "getApiv1lookupsprojectStatuses",
     requestFormat: "json",
     response: ProjectStatusResponse,
-    errors: [
-      {
-        status: 401,
-        description: `Unauthorized`,
-        schema: z.object({ message: z.string() }).passthrough(),
-      },
-    ],
   },
   {
     method: "post",
