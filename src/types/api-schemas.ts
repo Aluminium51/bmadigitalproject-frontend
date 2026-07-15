@@ -126,6 +126,14 @@ const Project = z
       })
       .passthrough()
       .nullable(),
+    analyst: z
+      .object({
+        userId: z.string().uuid(),
+        firstName: z.string(),
+        lastName: z.string(),
+      })
+      .passthrough()
+      .nullable(),
   })
   .passthrough();
 const PaginatedProjectResponse = z

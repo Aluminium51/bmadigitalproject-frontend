@@ -12,11 +12,10 @@ type ActionResponse<T = any> = {
   data?: T;
 };
 
-// นำเข้า Type ที่ Generate มาจาก Backend เพื่อให้มี Auto-complete ตอนใช้งาน
 type PaginatedResponse = z.infer<typeof schemas.PaginatedProjectResponse>;
+type ProjectResponse = z.infer<typeof schemas.Project>;
 
 // --- Action สำหรับสร้างโครงการ ---
-// (ส่วนนี้ใช้งานได้ปกติ ไม่ต้องแก้)
 export async function createProjectAction(payload: Record<string, unknown>): Promise<ActionResponse> {
   try {
     const result = await serverFetch("/api/v1/projects", {
@@ -58,5 +57,26 @@ export async function getProjectsAction(queryString: string): Promise<PaginatedR
     // 3. 🚨 หากเกิด Error เราจะ throw กลับไปตรงๆ
     // เพื่อให้ตัวจัดการ State อย่าง TanStack Query (isError) ตรวจจับได้
     throw new Error(error.message || "ไม่สามารถติดต่อฐานข้อมูลโครงการได้");
+  }
+}
+
+// --- Action สำหรับดึงข้อมูลโครงการตาม ID ---
+export async function getProjectByIdAction(id: string): Promise<ProjectResponse> {
+  try {
+    const response = await serverFetch(`/api/v1/projects/${id}`, {
+      method: "GET",
+    });
+
+    if (response instanceof Response) {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "เกิดข้อผิดพลาดจากเซิร์ฟเวอร์");
+      }
+      return (await response.json()) as ProjectResponse;
+    }
+
+    return response as ProjectResponse;
+  } catch (error: any) {
+    throw new Error(error.message || "ไม่สามารถดึงข้อมูลโครงการได้");
   }
 }

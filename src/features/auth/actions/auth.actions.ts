@@ -72,7 +72,7 @@ export async function loginUserAction(data: LoginRequestDTO): Promise<AuthRespon
     // โดย successData.token จะถูกบังคับให้มีอยู่จริงตาม Schema ของ Backend แน่นอน
     cookieStore.set('token', successData.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' && process.env.ALLOW_HTTP_COOKIE !== 'true',
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 วัน
