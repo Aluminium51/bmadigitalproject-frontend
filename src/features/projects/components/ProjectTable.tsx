@@ -38,7 +38,7 @@ export function ProjectTable({ data, activeTab }: ProjectTableProps) {
             <th className="px-6 sm:px-10 py-4 w-full">ชื่อโครงการ</th>
             <th className="px-6 sm:px-10 py-4">หน่วยงาน (Division)</th>
             <th className="px-6 sm:px-10 py-4">ส่วนราชการ (Department)</th>
-            <th className="px-6 sm:px-10 py-4">ประเภทงบประมาณ</th>
+            <th className="px-6 sm:px-10 py-4">ประเภทโครงการ</th>
             <th className="px-6 sm:px-10 py-4">ปีงบที่เริ่มต้น</th>
             <th className="px-6 sm:px-10 py-4">งบประมาณที่ขอจัดสรร</th>
             <th className="px-6 sm:px-10 py-4">ผู้วิเคราะห์</th>

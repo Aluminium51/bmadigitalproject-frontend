@@ -57,11 +57,10 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "pnpm": {
-    "overrides": {
+  "pnpm.overrides": {
       "docxtemplater-image-module-free>xmldom": "npm:@xmldom/xmldom@^0.8.10",
       "@modelcontextprotocol/sdk>hono": "^4.12.25",
       "next>postcss": "^8.5.10"
-    }
-  }
+  },
+  "packageManager": "pnpm@11.13.0"
 }
