@@ -169,7 +169,18 @@ const UpdateProjectTypeRequest = z
 const AssignProjectRequest = z
   .object({ analystId: z.string().uuid() })
   .passthrough();
-const postApiv1proposalsprojectsProjectIdsubmit_Body = z
+const DraftProposalRequest = z
+  .object({
+    projectId: z.string().uuid(),
+    currentStep: z.number().nullable(),
+    draftPayload: z.object({}).partial().passthrough(),
+    projectName: z.string(),
+    objective: z.string(),
+    totalBudget: z.number().nullable(),
+  })
+  .partial()
+  .passthrough();
+const SubmitProposalRequest = z
   .object({
     projectName: z.string().min(5),
     agencyName: z.string().min(2),
@@ -622,7 +633,8 @@ export const schemas = {
   UpdateProjectStatusRequest,
   UpdateProjectTypeRequest,
   AssignProjectRequest,
-  postApiv1proposalsprojectsProjectIdsubmit_Body,
+  DraftProposalRequest,
+  SubmitProposalRequest,
   CreateMeeting,
   Meeting,
   UpdateMeeting,
@@ -1283,7 +1295,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: z.record(z.unknown().nullable()),
+        schema: DraftProposalRequest,
       },
       {
         name: "projectId",
@@ -1316,7 +1328,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: postApiv1proposalsprojectsProjectIdsubmit_Body,
+        schema: SubmitProposalRequest,
       },
       {
         name: "projectId",
