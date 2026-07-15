@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 type FetchOptions = RequestInit & {
   params?: Record<string, string>;
+  skipToken?: boolean;
 };
 
 /**
@@ -16,6 +17,10 @@ export async function serverFetch<T>(endpoint: string, options: FetchOptions = {
 
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
+
+  if (token && !options.skipToken) {
+      headers.set("Authorization", `Bearer ${token}`);
+  }
 
   // ถ้ามี Token ให้แนบ Authorization Header ไปด้วยเสมอ
   if (token) {
