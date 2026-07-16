@@ -5,12 +5,12 @@ import { serverFetch } from "@/lib/server-fetch";
 import { schemas } from "@/types/api-schemas";
 import { z } from "zod";
 
-// ใช้ Type ที่ Generate มาจาก Backend Schema[cite: 13]
+// ใช้ Type ที่ Generate มาจาก Backend Schema
 type UserProfileResponse = z.infer<typeof schemas.UserProfileResponse>;
 
 export async function getUserProfileAction(userId: string): Promise<UserProfileResponse> {
   try {
-    // ยิง API ไปที่ Route ดึงข้อมูลรายบุคคล[cite: 12]
+    // ยิง API ไปที่ Route ดึงข้อมูลรายบุคคล
     const response = await serverFetch(`/api/v1/users/profile/${userId}`, {
       method: "GET",
     });
@@ -24,7 +24,9 @@ export async function getUserProfileAction(userId: string): Promise<UserProfileR
     }
 
     return response as UserProfileResponse;
-  } catch (error: any) {
-    throw new Error(error.message || "เกิดข้อผิดพลาดในการติดต่อเซิร์ฟเวอร์");
+  } catch (error: unknown) {
+    // ใช้ Type Guard เช็คให้มั่นใจว่าเป็น Instance ของ Error จริงๆ
+    const errorMessage = error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการติดต่อเซิร์ฟเวอร์";
+    throw new Error(errorMessage);
   }
 }

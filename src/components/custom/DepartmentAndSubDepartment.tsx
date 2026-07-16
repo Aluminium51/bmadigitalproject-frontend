@@ -5,7 +5,6 @@ import {
   ComboboxContent,
   ComboboxList,
   ComboboxItem,
-  ComboboxEmpty,
 } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +27,6 @@ export const DepartmentAndSubDepartmentComboBox = ({
 }: DepartmentAndSubDepartmentProps) => {
   const [inputValue, setInputValue] = useState("");
 
-  // กรองตัวเลือกตามข้อความที่พิมพ์ค้นหา
   const filteredOptions = options.filter((option) =>
     option.toLowerCase().includes(inputValue.toLowerCase())
   );
@@ -42,7 +40,11 @@ export const DepartmentAndSubDepartmentComboBox = ({
     >
       <ComboboxInput
         placeholder={placeholder}
-        className={cn("w-full bg-surface", className)}
+        className={cn(
+          "w-full bg-surface",
+          !!error && "border-destructive focus-visible:ring-destructive",
+          className
+        )}
         showTrigger={true}
         showClear={!!value}
       />
@@ -54,7 +56,6 @@ export const DepartmentAndSubDepartmentComboBox = ({
             </div>
           ) : (
             <>
-              {/* <ComboboxEmpty>ไม่พบข้อมูลที่คุณค้นหา</ComboboxEmpty> */}
               {filteredOptions.map((option) => (
                 <ComboboxItem key={option} value={option}>
                   {option}

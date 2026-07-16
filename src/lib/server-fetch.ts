@@ -22,11 +22,6 @@ export async function serverFetch<T>(endpoint: string, options: FetchOptions = {
       headers.set("Authorization", `Bearer ${token}`);
   }
 
-  // ถ้ามี Token ให้แนบ Authorization Header ไปด้วยเสมอ
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
   const url = new URL(`${process.env.BACKEND_URL}${endpoint}`);
 
   // แปลง params ให้เป็น Query String (เช่น ?status=pending)
@@ -57,8 +52,9 @@ export async function serverFetch<T>(endpoint: string, options: FetchOptions = {
     }
 
     return data as T;
-  } catch (error: any) {
-    console.error(`[ServerFetch Error] ${endpoint}:`, error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    console.error(`[ServerFetch Error] ${endpoint}:`, errorMessage);
     throw error;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,19 +21,20 @@ interface RoleModalProps {
 }
 
 export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
-  // จำลอง State เพื่อเก็บสิทธิ์ที่ถูกเลือกหลายอัน
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  // ใช้ Lazy Initial State เพื่อดึงค่าเริ่มต้นจาก user ได้เลย โดยไม่เกิด Cascading Render
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(() =>
+    user ? [...user.roles] : []
+  );
 
-  // เมื่อเปิด Modal ให้ดึงค่า roles ดั้งเดิมมาใส่ใน State
-  useEffect(() => {
-    if (isOpen && user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedRoles([...user.roles]); 
-    } else if (!isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedRoles([]); 
+  // ควบคุมการ Reset ค่าผ่าน Callback ของการเปิด/ปิด Dialog โดยตรง แทนการใช้ useEffect
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setSelectedRoles([]);
+      onClose();
+    } else if (user) {
+      setSelectedRoles([...user.roles]);
     }
-  }, [isOpen, user]);
+  };
 
   // ฟังก์ชันสลับเลือก/ยกเลิกสิทธิ์
   const handleRoleToggle = (role: string, isChecked: boolean) => {
@@ -44,8 +45,14 @@ export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
     }
   };
 
+  // ฟังก์ชันก่อนกดปิดเพื่อ Clear State
+  const handleCancel = () => {
+    setSelectedRoles([]);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>ปรับเปลี่ยนสิทธิ์ผู้ใช้งาน</DialogTitle>
@@ -53,16 +60,15 @@ export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
             ผู้ใช้: <span className="font-bold text-slate-900">{user?.first_name} {user?.last_name}</span>
           </DialogDescription>
         </DialogHeader>
-        
+
         {user && (
           <div className="space-y-4 py-2">
-            {/* เปลี่ยนจาก Select มาเป็น Checkbox รองรับได้หลายบทบาท */}
             <div className="space-y-3">
               <label className="text-sm font-bold text-slate-700">กำหนดบทบาทและสิทธิ์ (Roles)</label>
               <div className="border border-border rounded-lg p-1 bg-slate-50/50">
                 <div className="flex items-center space-x-3 p-3 hover:bg-slate-100 rounded-md transition-colors">
-                  <Checkbox 
-                    id="role-admin" 
+                  <Checkbox
+                    id="role-admin"
                     checked={selectedRoles.includes("ADMIN")}
                     onCheckedChange={(c) => handleRoleToggle("ADMIN", c as boolean)}
                   />
@@ -71,10 +77,10 @@ export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
                     <span className="text-xs text-slate-500">ผู้ดูแลระบบ จัดการตารางข้อมูลอ้างอิงและตั้งค่าระบบได้ทั้งหมด</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-3 p-3 hover:bg-slate-100 rounded-md transition-colors border-t border-slate-100">
-                  <Checkbox 
-                    id="role-analyst" 
+                  <Checkbox
+                    id="role-analyst"
                     checked={selectedRoles.includes("ANALYST")}
                     onCheckedChange={(c) => handleRoleToggle("ANALYST", c as boolean)}
                   />
@@ -85,8 +91,8 @@ export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
                 </div>
 
                 <div className="flex items-center space-x-3 p-3 hover:bg-slate-100 rounded-md transition-colors border-t border-slate-100">
-                  <Checkbox 
-                    id="role-user" 
+                  <Checkbox
+                    id="role-user"
                     checked={selectedRoles.includes("GENERAL_USER")}
                     onCheckedChange={(c) => handleRoleToggle("GENERAL_USER", c as boolean)}
                   />
@@ -97,12 +103,11 @@ export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
                 </div>
               </div>
             </div>
-
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>ยกเลิก</Button>
+          <Button variant="outline" onClick={handleCancel}>ยกเลิก</Button>
           <Button onClick={onClose} className="gap-2">
             <Check className="w-4 h-4" /> บันทึกสิทธิ์ใหม่
           </Button>
