@@ -18,7 +18,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BluetoothIcon } from "lucide-react";
-import { toast } from "sonner"; // ✅ Import toast จาก sonner เข้ามาใช้งาน
+import { toast } from "sonner";
 
 export default function TypographyPage() {
   // ฟังก์ชันจำลองสำหรับการทดสอบ Toast แบบ Promise (Loading -> Success/Error)

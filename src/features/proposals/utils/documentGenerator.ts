@@ -17,7 +17,7 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// 🟢 เพิ่มฟังก์ชัน: อ่านขนาด Original ของภาพจาก Base64 (รันบน Browser)
+// อ่านขนาด Original ของภาพจาก Base64 (รันบน Browser)
 const getImageDimensions = (base64: string): Promise<{ width: number; height: number }> => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -27,7 +27,7 @@ const getImageDimensions = (base64: string): Promise<{ width: number; height: nu
   });
 };
 
-// 🟢 เพิ่มฟังก์ชัน: คำนวณสัดส่วนภาพไม่ให้ล้น A4 (สมมติจำกัดกว้างสุด 600px)
+// คำนวณสัดส่วนภาพไม่ให้ล้น A4 (สมมติจำกัดกว้างสุด 600px)
 const calculateScaledDimensions = (originalW: number, originalH: number, maxWidth = 600): [number, number] => {
   if (originalW === 0 || originalH === 0) return [1, 1];
   if (originalW <= maxWidth) return [originalW, originalH]; // ถ้าภาพเล็กกว่า A4 อยู่แล้ว ให้ใช้ขนาดจริง
@@ -51,31 +51,31 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
     const zip = new PizZip(arrayBuffer);
     const blankImageBase64 = getBlankImageBase64();
 
-    // 🟢 สร้าง Object ไว้เก็บขนาด Original ของแต่ละภาพ
+    // สร้าง Object ไว้เก็บขนาด Original ของแต่ละภาพ
     const imageDimensions: Record<string, { width: number; height: number }> = {};
 
     let systemImageBase64 = blankImageBase64;
     if (formData.systemDiagramFile?.file) {
       systemImageBase64 = await fileToBase64(formData.systemDiagramFile.file);
-      imageDimensions["systemImage"] = await getImageDimensions(systemImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
+      imageDimensions["systemImage"] = await getImageDimensions(systemImageBase64);
     }
 
     let networkImageBase64 = blankImageBase64;
     if (formData.networkDiagramFile?.file) {
       networkImageBase64 = await fileToBase64(formData.networkDiagramFile.file);
-      imageDimensions["networkImage"] = await getImageDimensions(networkImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
+      imageDimensions["networkImage"] = await getImageDimensions(networkImageBase64);
     }
 
     let useCaseImageBase64 = blankImageBase64;
     if (formData.useCaseDiagramFile?.file) {
       useCaseImageBase64 = await fileToBase64(formData.useCaseDiagramFile.file);
-      imageDimensions["useCaseImage"] = await getImageDimensions(useCaseImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
+      imageDimensions["useCaseImage"] = await getImageDimensions(useCaseImageBase64);
     }
 
     let securityImageBase64 = blankImageBase64;
     if (formData.securityDiagramFile?.file) {
       securityImageBase64 = await fileToBase64(formData.securityDiagramFile.file);
-      imageDimensions["securityImage"] = await getImageDimensions(securityImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
+      imageDimensions["securityImage"] = await getImageDimensions(securityImageBase64);
     }
 
     const imageOptions = {
@@ -102,7 +102,7 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
       getSize: function (img: ArrayBuffer, tagValue: string, tagName: string): [number, number] {
         if (img.byteLength === 0 || tagValue === blankImageBase64) return [1, 1];
 
-        // 🟢 ดึงสัดส่วนภาพที่คำนวณเก็บไว้มาใช้งาน แล้ว Scale ให้พอดีหน้ากระดาษ (600px)
+        // ดึงสัดส่วนภาพที่คำนวณเก็บไว้มาใช้งาน แล้ว Scale ให้พอดีหน้ากระดาษ (600px)
         const dim = imageDimensions[tagName];
         if (dim) {
           return calculateScaledDimensions(dim.width, dim.height, 600);
