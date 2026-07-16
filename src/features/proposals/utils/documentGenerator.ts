@@ -17,7 +17,24 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// ใช้ Base64 ของภาพขนาด 1x1 แบบเรียบง่ายที่สุด (สีขาวโปร่งใส) เพื่อป้องกัน Header ของ Base64 เสียหาย
+// 🟢 เพิ่มฟังก์ชัน: อ่านขนาด Original ของภาพจาก Base64 (รันบน Browser)
+const getImageDimensions = (base64: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({ width: 0, height: 0 }); // Fallback กรณีโหลดภาพล้มเหลว
+    img.src = base64;
+  });
+};
+
+// 🟢 เพิ่มฟังก์ชัน: คำนวณสัดส่วนภาพไม่ให้ล้น A4 (สมมติจำกัดกว้างสุด 600px)
+const calculateScaledDimensions = (originalW: number, originalH: number, maxWidth = 600): [number, number] => {
+  if (originalW === 0 || originalH === 0) return [1, 1];
+  if (originalW <= maxWidth) return [originalW, originalH]; // ถ้าภาพเล็กกว่า A4 อยู่แล้ว ให้ใช้ขนาดจริง
+  const scale = maxWidth / originalW;
+  return [maxWidth, Math.round(originalH * scale)];
+};
+
 const getBlankImageBase64 = (): string => {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 };
@@ -25,45 +42,50 @@ const getBlankImageBase64 = (): string => {
 export const generateProposalDocx = async (formData: ProposalDraftValues) => {
   try {
     const response = await fetch("/templates/project-proposal.docx");
-    
+
     if (!response.ok) {
       throw new Error(`ดาวน์โหลด Template ไม่สำเร็จ (Status: ${response.status})`);
     }
-    
+
     const arrayBuffer = await response.arrayBuffer();
     const zip = new PizZip(arrayBuffer);
     const blankImageBase64 = getBlankImageBase64();
 
-    // จัดการเตรียมภาพ
+    // 🟢 สร้าง Object ไว้เก็บขนาด Original ของแต่ละภาพ
+    const imageDimensions: Record<string, { width: number; height: number }> = {};
+
     let systemImageBase64 = blankImageBase64;
     if (formData.systemDiagramFile?.file) {
       systemImageBase64 = await fileToBase64(formData.systemDiagramFile.file);
+      imageDimensions["systemImage"] = await getImageDimensions(systemImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
     }
 
     let networkImageBase64 = blankImageBase64;
     if (formData.networkDiagramFile?.file) {
       networkImageBase64 = await fileToBase64(formData.networkDiagramFile.file);
+      imageDimensions["networkImage"] = await getImageDimensions(networkImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
     }
 
     let useCaseImageBase64 = blankImageBase64;
     if (formData.useCaseDiagramFile?.file) {
       useCaseImageBase64 = await fileToBase64(formData.useCaseDiagramFile.file);
+      imageDimensions["useCaseImage"] = await getImageDimensions(useCaseImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
     }
 
     let securityImageBase64 = blankImageBase64;
     if (formData.securityDiagramFile?.file) {
       securityImageBase64 = await fileToBase64(formData.securityDiagramFile.file);
+      imageDimensions["securityImage"] = await getImageDimensions(securityImageBase64); // 👈 แอบอ่านขนาดเก็บไว้ก่อน
     }
 
     const imageOptions = {
       centered: true,
       getImage: function (tagValue: string): ArrayBuffer {
         try {
-          // ดักไว้เผื่อเป็นค่าว่าง
           if (!tagValue || typeof tagValue !== 'string') {
              tagValue = blankImageBase64;
           }
-          
+
           const base64Data = tagValue.replace(/^data:image\/(png|jpg|jpeg);base64,/, "");
           const binaryString = window.atob(base64Data);
           const len = binaryString.length;
@@ -74,24 +96,22 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
           return bytes.buffer;
         } catch (err) {
            console.error("Error converting image:", err);
-           // ส่งกลับ buffer ว่างถ้ามีปัญหา (สำคัญมาก เพื่อไม่ให้แอป crash)
-           return new ArrayBuffer(0); 
+           return new ArrayBuffer(0);
         }
       },
       getSize: function (img: ArrayBuffer, tagValue: string, tagName: string): [number, number] {
-        // หาก buffer ว่าง หรือเป็นภาพโปร่งใส ให้ปรับลดเหลือ 1x1
         if (img.byteLength === 0 || tagValue === blankImageBase64) return [1, 1];
-        
-        // กำหนดขนาดให้ครอบคลุมชื่อ Tag ที่เพิ่มมาใหม่
-        if (tagName === "systemImage") return [500, 350];
-        if (tagName === "networkImage") return [500, 350];
-        if (tagName === "useCaseImage") return [500, 350];
-        if (tagName === "securityImage") return [500, 350];
-        
-        return [400, 300]; // ค่าดีฟอลต์
+
+        // 🟢 ดึงสัดส่วนภาพที่คำนวณเก็บไว้มาใช้งาน แล้ว Scale ให้พอดีหน้ากระดาษ (600px)
+        const dim = imageDimensions[tagName];
+        if (dim) {
+          return calculateScaledDimensions(dim.width, dim.height, 600);
+        }
+
+        return [400, 300]; // ค่าดีฟอลต์เผื่อฉุกเฉิน
       },
     };
-    
+
     const imageModule = new ImageModule(imageOptions);
 
     const doc = new Docxtemplater(zip, {
@@ -99,7 +119,7 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
       linebreaks: true,
       modules: [imageModule],
       nullGetter: function () {
-        return ""; 
+        return "";
       },
     });
 
@@ -107,23 +127,23 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
 
     const finalTemplateData = {
       ...baseTemplateData,
-      totalBudgetFormatted: formData.totalBudget 
+      totalBudgetFormatted: formData.totalBudget
         ? new Intl.NumberFormat('th-TH').format(formData.totalBudget)
         : "0.00",
       budgets: formData.budgetsByYear?.map(b => ({
         year: b.year,
         amount: new Intl.NumberFormat('th-TH').format(b.amount)
       })) || [],
-      currentDate: new Date().toLocaleDateString('th-TH', { 
-        year: 'numeric', month: 'long', day: 'numeric' 
+      currentDate: new Date().toLocaleDateString('th-TH', {
+        year: 'numeric', month: 'long', day: 'numeric'
       }),
-      
+
       systemImage: systemImageBase64,
       systemImageDesc: formData.systemDiagramFile?.description || "-",
-      
+
       networkImage: networkImageBase64,
       networkImageDesc: formData.networkDiagramFile?.description || "-",
-      
+
       useCaseImage: useCaseImageBase64,
       useCaseImageDesc: formData.useCaseDiagramFile?.description || "-",
 
@@ -138,10 +158,10 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
       mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     });
 
-    const fileName = formData.projectName 
-      ? `แบบเสนอโครงการ_${formData.projectName}.docx` 
+    const fileName = formData.projectName
+      ? `แบบเสนอโครงการ_${formData.projectName}.docx`
       : "แบบเสนอโครงการ.docx";
-      
+
     saveAs(output, fileName);
 
     return { success: true };
