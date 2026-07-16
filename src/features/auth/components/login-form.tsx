@@ -16,7 +16,7 @@ import { AuthShell } from "./auth-shell";
 import { loginUserAction } from "@/features/auth/actions/auth.actions";
 
 const loginSchema = z.object({
-  username: z.string().min(3, "กรุณากรอกชื่อผู้ใช้อย่างน้อย 3 ตัวอักษร"),
+  username: z.string().min(3, "กรุณากรอกชื่อผู้ใช้หรืออีเมลอย่างน้อย 3 ตัวอักษร"),
   password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
 });
 
@@ -47,22 +47,17 @@ export function LoginForm() {
 
     if (response.success) {
       setStatusMessage({ type: 'success', text: response.message });
-      // 💡 ในอนาคตคุณจะเก็บ Token ลง localStorage/Cookies ตรงนี้
-      setTimeout(() => router.push("/dashboard"), 1000); 
+      setTimeout(() => router.push("/dashboard"), 1000);
     } else {
       if (response.field === "general") {
-         // กรณี 403: ยังไม่ยืนยันอีเมล
          setStatusMessage({ type: 'warning', text: response.message || "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ" });
       } else {
-         // กรณี 401: Username หรือ Password ผิด (หรือ Error อื่นๆ)
          setStatusMessage({ type: 'error', text: response.message || "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง" });
-         // ตัวเลือก: สั่งล้างช่องรหัสผ่านเพื่อให้พิมพ์ใหม่ (เพิ่ม UX)
          setValue("password", "");
       }
     }
   };
 
-  // 🚀 ฟังก์ชันสำหรับจัดการการล็อกอินด้วย Google
   const handleGoogleLogin = () => {
     console.log("Google login triggered");
     // TODO: เชื่อมต่อกับ NextAuth หรือ OAuth Providers ตรงนี้ในอนาคต
@@ -76,8 +71,8 @@ export function LoginForm() {
     >
       {statusMessage && (
         <div className={`p-4 mb-6 rounded-md text-sm font-medium animate-in fade-in slide-in-from-top-2 border ${
-          statusMessage.type === 'success' 
-            ? 'bg-green-50 text-green-700 border-green-200' 
+          statusMessage.type === 'success'
+            ? 'bg-green-50 text-green-700 border-green-200'
             : statusMessage.type === 'warning'
               ? 'bg-orange-50 text-orange-700 border-orange-200'
               : 'bg-red-50 text-red-700 border-red-200'
@@ -89,18 +84,18 @@ export function LoginForm() {
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-5 sm:space-y-6"
       >
-        {/* --- Username Field --- */}
+        {/* --- Username / Email Field --- */}
         <div className="space-y-1.5 sm:space-y-2">
           <Label
             htmlFor="username"
             className="text-base font-medium text-foreground"
           >
-            Username
+            Username หรือ Email
           </Label>
           <Input
             id="username"
             autoComplete="username"
-            placeholder="กรอกชื่อผู้ใช้"
+            placeholder="กรอกชื่อผู้ใช้ หรือ อีเมล"
             error={!!errors.username}
             {...register("username")}
             className="h-12 rounded-full bg-surface px-4 text-foreground focus-visible:ring-primary-light text-base transition-all"

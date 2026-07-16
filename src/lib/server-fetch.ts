@@ -11,7 +11,10 @@ type FetchOptions = RequestInit & {
  * - จัดการดึง Token จาก HTTP-Only Cookie มาใส่ Header ให้อัตโนมัติ
  * - จัดการ Error กลาง
  */
-export async function serverFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
+export async function serverFetch<T>(
+  endpoint: string,
+  options: FetchOptions = {},
+): Promise<T> {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
 
@@ -19,7 +22,7 @@ export async function serverFetch<T>(endpoint: string, options: FetchOptions = {
   headers.set("Content-Type", "application/json");
 
   if (token && !options.skipToken) {
-      headers.set("Authorization", `Bearer ${token}`);
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const url = new URL(`${process.env.BACKEND_URL}${endpoint}`);
@@ -47,14 +50,16 @@ export async function serverFetch<T>(endpoint: string, options: FetchOptions = {
     const data = text ? JSON.parse(text) : {};
 
     if (!response.ok) {
-      // โยน Error ไปให้ Server Action จับ
-      throw new Error(data.message || data.error || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      let errorDetail = data.message || data.error || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+      if (typeof errorDetail === "object") {
+        errorDetail = JSON.stringify(errorDetail);
+      }
+      throw new Error(errorDetail);
     }
 
     return data as T;
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-    console.error(`[ServerFetch Error] ${endpoint}:`, errorMessage);
+    console.error(`[ServerFetch Error] ${endpoint}:`, error);
     throw error;
   }
 }
