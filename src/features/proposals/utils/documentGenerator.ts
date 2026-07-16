@@ -8,13 +8,31 @@ import { prepareTemplateData } from "@/features/proposals/utils/template-adapter
 // @ts-expect-error - ImageModule ไม่มี Type definition ของ TypeScript อย่างเป็นทางการ
 import ImageModule from "docxtemplater-image-module-free";
 
-const fileToBase64 = (file: File): Promise<string> => {
+const fileToBase64 = (file: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = (error) => reject(error);
   });
+};
+
+const attachmentToBase64 = async (attachment: unknown): Promise<string> => {
+  if (typeof Blob !== "undefined" && attachment instanceof Blob) {
+    return fileToBase64(attachment);
+  }
+
+  if (typeof attachment === "string") {
+    if (attachment.startsWith("data:")) return attachment;
+
+    const response = await fetch(attachment, { credentials: "include" });
+    if (!response.ok) {
+      throw new Error(`Unable to load image attachment (${response.status})`);
+    }
+    return fileToBase64(await response.blob());
+  }
+
+  throw new Error("Image attachment is not a File or URL");
 };
 
 // อ่านขนาด Original ของภาพจาก Base64 (รันบน Browser)
@@ -56,25 +74,25 @@ export const generateProposalDocx = async (formData: ProposalDraftValues) => {
 
     let systemImageBase64 = blankImageBase64;
     if (formData.systemDiagramFile?.file) {
-      systemImageBase64 = await fileToBase64(formData.systemDiagramFile.file);
+      systemImageBase64 = await attachmentToBase64(formData.systemDiagramFile.file);
       imageDimensions["systemImage"] = await getImageDimensions(systemImageBase64);
     }
 
     let networkImageBase64 = blankImageBase64;
     if (formData.networkDiagramFile?.file) {
-      networkImageBase64 = await fileToBase64(formData.networkDiagramFile.file);
+      networkImageBase64 = await attachmentToBase64(formData.networkDiagramFile.file);
       imageDimensions["networkImage"] = await getImageDimensions(networkImageBase64);
     }
 
     let useCaseImageBase64 = blankImageBase64;
     if (formData.useCaseDiagramFile?.file) {
-      useCaseImageBase64 = await fileToBase64(formData.useCaseDiagramFile.file);
+      useCaseImageBase64 = await attachmentToBase64(formData.useCaseDiagramFile.file);
       imageDimensions["useCaseImage"] = await getImageDimensions(useCaseImageBase64);
     }
 
     let securityImageBase64 = blankImageBase64;
     if (formData.securityDiagramFile?.file) {
-      securityImageBase64 = await fileToBase64(formData.securityDiagramFile.file);
+      securityImageBase64 = await attachmentToBase64(formData.securityDiagramFile.file);
       imageDimensions["securityImage"] = await getImageDimensions(securityImageBase64);
     }
 

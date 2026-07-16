@@ -20,8 +20,9 @@ import imageCompression from "browser-image-compression";
 // กำหนดโครงสร้างข้อมูลไฟล์ที่เก็บใน React Hook Form ให้ชัดเจน
 interface MappedFile {
   id: string;
-  file: File;
+  file: File | string;
   description: string;
+  url?: string;
 }
 
 interface SingleFileUploadWithDescBoxProps {
@@ -30,6 +31,24 @@ interface SingleFileUploadWithDescBoxProps {
   watch: UseFormWatch<ProposalStep3Values>;
   setValue: UseFormSetValue<ProposalStep3Values>;
   errors: FieldErrors<ProposalStep3Values>;
+  onUploadingChange?: (uploading: boolean) => void;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081/api/v1";
+
+async function uploadImage(file: File): Promise<string> {
+  const body = new FormData();
+  body.append("file", file);
+  const response = await fetch(`${API_BASE}/uploads/document`, {
+    method: "POST",
+    credentials: "include",
+    body,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.data?.url) {
+    throw new Error(payload.message ?? payload.error ?? "Image upload failed");
+  }
+  return payload.data.url;
 }
 
 // --- Component สำหรับอัปโหลด 1 ไฟล์รูปภาพ + คำอธิบาย ---
@@ -39,27 +58,52 @@ const SingleFileUploadWithDescBox = ({
   watch,
   setValue,
   errors,
+  onUploadingChange,
 }: SingleFileUploadWithDescBoxProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false); // นำมาสร้าง UI Loading ด้านล่างแล้ว
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const localPreviewUrlRef = useRef<string | null>(null);
+
+  const clearLocalPreview = () => {
+    if (localPreviewUrlRef.current) {
+      URL.revokeObjectURL(localPreviewUrlRef.current);
+      localPreviewUrlRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrlRef.current) {
+        URL.revokeObjectURL(localPreviewUrlRef.current);
+      }
+    };
+  }, []);
 
   // ดึงค่ามาเช็คและ Cast ไทป์ให้ตรงตาม Interface
-  const currentFile = watch(name) as MappedFile | null | undefined;
+  const watchedFile = watch(name);
+  const currentFile = (typeof watchedFile === "string"
+    ? { id: `${String(name)}-server`, file: watchedFile, description: "" }
+    : watchedFile) as MappedFile | null | undefined;
   const isFull = !!currentFile;
 
   // Effect: สำหรับคอยจัดการเปิด/ปิด Object URL เพื่อทำภาพพรีวิว
   useEffect(() => {
     // 1. จัดการกรณีไม่มีไฟล์
     if (!currentFile || !currentFile.file) {
-      // ใช้วิธีหน่วงเวลา (setTimeout) เล็กน้อยเพื่อนำ setState ออกจาก Synchronous Execution
-      const timer = setTimeout(() => setPreviewUrl(null), 0);
-      return () => clearTimeout(timer);
+      clearLocalPreview();
+      setPreviewUrl(null);
+      return;
     }
 
     // บังคับ Cast ข้อมูลให้เป็น any ก่อนเช็ค instanceof
     const fileData = currentFile.file as any;
+
+    if (typeof fileData === "string") {
+      setPreviewUrl(localPreviewUrlRef.current ?? fileData);
+      return;
+    }
 
     if (!(fileData instanceof File || fileData instanceof Blob)) {
       console.warn(
@@ -98,6 +142,7 @@ const SingleFileUploadWithDescBox = ({
     }
 
     setIsCompressing(true);
+    onUploadingChange?.(true);
 
     try {
       const options = {
@@ -115,17 +160,27 @@ const SingleFileUploadWithDescBox = ({
         lastModified: Date.now(),
       });
 
+      clearLocalPreview();
+      localPreviewUrlRef.current = URL.createObjectURL(compressedFile);
+      setPreviewUrl(localPreviewUrlRef.current);
+
       const mappedFile: MappedFile = {
         id: Math.random().toString(36).substring(7),
-        file: compressedFile,
+        file: "",
         description: "",
       };
 
-      setValue(name, mappedFile as any, { shouldValidate: true });
+      const url = await uploadImage(compressedFile);
+      const urlField = `${String(name).replace("File", "Url")}` as keyof ProposalStep3Values;
+      setValue(name, { ...mappedFile, file: url, url } as any, { shouldValidate: true });
+      setValue(urlField, url as any, { shouldValidate: true });
     } catch (error) {
       console.error("Image compression error:", error);
+      clearLocalPreview();
+      setPreviewUrl(null);
       alert("เกิดข้อผิดพลาดในการบีบอัดรูปภาพ กรุณาลองใหม่อีกครั้ง");
     } finally {
+      onUploadingChange?.(false);
       setIsCompressing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
@@ -140,6 +195,8 @@ const SingleFileUploadWithDescBox = ({
   };
 
   const removeFile = () => {
+    clearLocalPreview();
+    setPreviewUrl(null);
     setValue(name, null as any, { shouldValidate: true });
   };
 
@@ -224,7 +281,7 @@ const SingleFileUploadWithDescBox = ({
               <div className="flex items-center gap-2 overflow-hidden">
                 <FileImage className="w-4 h-4 text-primary shrink-0" />
                 <span className="text-sm font-medium truncate">
-                  {currentFile.file.name}
+                  {typeof currentFile.file === "string" ? "Uploaded image" : currentFile.file.name}
                 </span>
               </div>
               <button
@@ -262,13 +319,28 @@ const SingleFileUploadWithDescBox = ({
 };
 
 // --- Component หลัก ---
-export const ProposalStep3 = () => {
+export const ProposalStep3 = ({
+  onUploadingChange,
+}: {
+  onUploadingChange?: (uploading: boolean) => void;
+}) => {
+  const [uploadingCount, setUploadingCount] = useState(0);
   const {
     register,
     watch,
     setValue,
     formState: { errors },
   } = useFormContext<ProposalStep3Values>();
+
+  useEffect(() => {
+    onUploadingChange?.(uploadingCount > 0);
+  }, [onUploadingChange, uploadingCount]);
+
+  const handleChildUploadingChange = (uploading: boolean) => {
+    setUploadingCount((count) =>
+      Math.max(0, count + (uploading ? 1 : -1)),
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -369,6 +441,7 @@ export const ProposalStep3 = () => {
             watch={watch}
             setValue={setValue}
             errors={errors}
+            onUploadingChange={handleChildUploadingChange}
           />
           <SingleFileUploadWithDescBox
             title="Network Diagram"
@@ -376,6 +449,7 @@ export const ProposalStep3 = () => {
             watch={watch}
             setValue={setValue}
             errors={errors}
+            onUploadingChange={handleChildUploadingChange}
           />
           <SingleFileUploadWithDescBox
             title="Use Case Diagram"
@@ -383,6 +457,7 @@ export const ProposalStep3 = () => {
             watch={watch}
             setValue={setValue}
             errors={errors}
+            onUploadingChange={handleChildUploadingChange}
           />
           <SingleFileUploadWithDescBox
             title="Security Diagram"
@@ -390,6 +465,7 @@ export const ProposalStep3 = () => {
             watch={watch}
             setValue={setValue}
             errors={errors}
+            onUploadingChange={handleChildUploadingChange}
           />
         </div>
       </div>

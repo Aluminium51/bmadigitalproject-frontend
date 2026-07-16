@@ -1,5 +1,6 @@
 // src/features/projects/components/workspace/ProjectHeader.tsx
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ArrowLeft, Building2, CalendarDays, Send, Briefcase, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +9,9 @@ import type { ProjectDetail } from "../../types/workspace";
 
 // 1. นำเข้า Hook สำหรับดึงข้อมูล Lookup ของจริง
 import { useFourQuadrants, useDeputyGovernors } from "@/features/lookups/hooks/useLookups";
+import { useProposalState } from "@/features/proposals/hooks/useProposalState";
+import { useGetDraft } from "@/features/proposals/hooks/useProposalDraftQuery";
+import { useSubmitProposal } from "@/features/proposals/hooks/useProposalMutations";
 
 interface ProjectHeaderProps {
   project: ProjectDetail;
@@ -16,6 +20,26 @@ interface ProjectHeaderProps {
 
 export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const router = useRouter();
+  const projectId = String(project.id);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const proposalState = useProposalState(projectId);
+  const { data: currentDraft, isLoading: isDraftLoading } = useGetDraft(projectId);
+  const { mutate: submitProposal, isPending: isSubmitting } = useSubmitProposal(projectId);
+  const isSubmitDisabled = isDraftLoading || isSubmitting || !currentDraft;
+
+  const handleSubmit = () => {
+    setSubmitError(null);
+    if (!currentDraft) {
+      setSubmitError("The current draft is still loading. Please try again.");
+      return;
+    }
+
+    submitProposal(currentDraft, {
+      onError: (error) => {
+        setSubmitError(error instanceof Error ? error.message : "Unable to submit proposal.");
+      },
+    });
+  };
 
   // 2. เรียกใช้ Hook ดึงข้อมูลจาก API
   const { data: quadrantsRes } = useFourQuadrants();
@@ -140,11 +164,20 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
               </div>
             </div>
 
-            {/* --- Action Button --- */}
-            <Button className="gap-2 bg-primary hover:bg-primary-dark text-white rounded-md px-6 h-11 font-bold shadow-sm shrink-0 xl:self-start w-full xl:w-auto transition-all active:scale-95">
-              <Send className="w-4 h-4" />
-              ส่งข้อเสนอโครงการ
-            </Button>
+            {/* --- Single explicit final-submission action --- */}
+            {proposalState.status === "draft" && (
+              <div className="flex flex-col items-stretch gap-2 shrink-0 xl:self-start w-full xl:w-auto">
+                <Button
+                  disabled={isSubmitDisabled}
+                  onClick={handleSubmit}
+                  className="gap-2 bg-primary hover:bg-primary-dark text-white rounded-md px-6 h-11 font-bold shadow-sm w-full xl:w-auto transition-all active:scale-95"
+                >
+                  <Send className="w-4 h-4" />
+                  {isSubmitting ? "Submitting..." : "Submit Project"}
+                </Button>
+                {submitError && <p className="max-w-xs text-sm text-red-600">{submitError}</p>}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

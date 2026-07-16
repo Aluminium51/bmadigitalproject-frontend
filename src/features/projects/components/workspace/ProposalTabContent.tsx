@@ -1,4 +1,3 @@
-import { useRouter } from "next/navigation";
 import {
   Clock,
   FileSpreadsheet,
@@ -10,11 +9,15 @@ import {
   Users,
   Building2,
   Database,
+  Loader2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { ProjectDetail } from "../../types/workspace";
+import { useProposalState } from "@/features/proposals/hooks/useProposalState";
+import { useInitializeDraft } from "@/features/proposals/hooks/useProposalMutations";
 
 // 1. ประกาศ Type สำหรับ Proposal ให้ตรงกับฟิลด์ที่มีการเรียกใช้ใน Component
 export interface SubmitProposalDTO {
@@ -47,14 +50,53 @@ export interface SubmitProposalDTO {
 
 interface ProposalTabContentProps {
   project: ProjectDetail;
-  proposal?: SubmitProposalDTO | null;
 }
 
-export function ProposalTabContent({ project, proposal }: ProposalTabContentProps) {
+export function ProposalTabContent({ project }: ProposalTabContentProps) {
+  const projectId = String(project.id);
   const router = useRouter();
+  const proposalState = useProposalState(projectId);
+  const { mutate: initializeDraft, isPending: isCreatingDraft } = useInitializeDraft(projectId);
+
+  if (proposalState.status === "loading") {
+    return (
+      <div className="flex min-h-48 items-center justify-center text-slate-500">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading proposal...
+      </div>
+    );
+  }
+
+  if (proposalState.status === "error") {
+    return <p className="rounded-md border border-red-200 bg-red-50 p-6 text-red-700">Unable to load proposal.</p>;
+  }
+
+  if (proposalState.status === "draft") {
+    return (
+      <Card className="rounded-md border-orange-200 bg-orange-50/50 shadow-sm">
+        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h3 className="font-extrabold text-[#191c20] text-lg">เอกสารรายละเอียดประกอบการพิจารณาโครงการ กำลังอยู่ในระหว่างการเขียน</h3>
+            <p className="text-sm text-slate-600 mt-1">กรุณาดำเนินการต่อให้เสร็จสิ้น เพื่อยื่นเรื่องส่งโครงการ</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/projects/${projectId}/proposal/create`)}
+            className="font-bold gap-2 rounded-md px-6 h-12 w-full md:w-auto"
+          >
+            Continue Proposal Draft
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const proposal = proposalState.status === "submitted"
+    ? (proposalState.data as unknown as SubmitProposalDTO)
+    : null;
 
   // 2. นำเงื่อนไข !proposal กลับมา เพื่อให้ TypeScript มั่นใจว่าด้านล่างจะมีค่า proposal แน่นอน
-  if (!project.hasProposal || !proposal) {
+  if (!proposal) {
     return (
       <Card className="rounded-md border-orange-200 bg-orange-50/50 shadow-sm">
         <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -64,7 +106,7 @@ export function ProposalTabContent({ project, proposal }: ProposalTabContentProp
             </div>
             <div>
               <h3 className="font-extrabold text-[#191c20] text-lg">
-                ขั้นตอนถัดไป: จัดทำข้อเสนอโครงการ (Proposal)
+                ยังไม่มีแบบร่างเอกสารรายละเอียดประกอบการพิจารณาโครงการ
               </h3>
               <p className="text-sm text-slate-600 mt-1">
                 กรุณากรอกรายละเอียดโครงการทั้ง 5 หมวดหลัก เพื่อใช้ในการพิจารณาอนุมัติ
@@ -72,11 +114,17 @@ export function ProposalTabContent({ project, proposal }: ProposalTabContentProp
             </div>
           </div>
           <Button
-            onClick={() => router.push(`/projects/${project.id}/proposal/create`)}
-            className="font-bold gap-2 bg-status-orange hover:bg-[#d65f00] text-white rounded-md px-8 h-12 shadow-sm shrink-0 w-full md:w-auto transition-all active:scale-95"
+            disabled={isCreatingDraft}
+            onClick={() =>
+              initializeDraft(undefined, {
+                onSuccess: () => {
+                  router.push(`/projects/${projectId}/proposal/create`);
+                },
+              })
+            }
+            className="font-bold bg-status-orange hover:bg-[#d65f00] text-white rounded-md px-8 h-12 shadow-sm shrink-0 w-full md:w-auto transition-all active:scale-95"
           >
-            <FileSpreadsheet className="w-5 h-5" />
-            เริ่มเขียนแบบฟอร์ม
+            เริ่มต้นสร้างแบบร่าง
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </CardContent>

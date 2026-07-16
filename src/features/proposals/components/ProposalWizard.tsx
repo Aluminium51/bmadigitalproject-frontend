@@ -1,9 +1,10 @@
 "use client";
 
-import { useForm, FormProvider, Resolver, SubmitHandler } from "react-hook-form";
+import { useForm, FormProvider, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 
 import {
   proposalFormSchema,
@@ -18,7 +19,7 @@ import {
 import { useProposalFormStore } from "../stores/useProposalFormStore";
 import { useAutoSaveForm } from "../hooks/useAutoSaveForm";
 import { useGetDraft } from "../hooks/useProposalDraftQuery";
-import { useInitializeDraft, useSubmitProposal } from "../hooks/useProposalMutations";
+import { useInitializeDraft } from "../hooks/useProposalMutations";
 
 import { StepperIndicator } from "./StepperIndicator";
 import { ProposalStep1 } from "./ProposalStep1";
@@ -41,12 +42,11 @@ const AutoSaveWatcher = ({ projectId }: { projectId: string }) => {
 // WizardForm — the core multi-step form
 // ---------------------------------------------------------------------------
 const WizardForm = ({ projectId }: { projectId: string }) => {
+  const router = useRouter();
   const {
     currentStep,
     nextStep,
     prevStep,
-    formData,
-    resetForm,
     addStepError,
     removeStepError,
   } = useProposalFormStore();
@@ -54,24 +54,50 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
   // ── React Query: fetch existing draft ─────────────────────────────────────
   const { data: existingDraft, isLoading: isDraftLoading } = useGetDraft(projectId);
   const { mutate: initDraft } = useInitializeDraft(projectId);
-  const { mutate: submitProposal, isPending: isSubmitting } = useSubmitProposal();
 
   // ── RHF setup ─────────────────────────────────────────────────────────────
   const methods = useForm<ProposalFormValues>({
     resolver: zodResolver(proposalFormSchema as any) as unknown as Resolver<ProposalFormValues>,
-    defaultValues: formData as unknown as ProposalFormValues,
+    defaultValues: {} as ProposalFormValues,
     mode: "all",
   });
 
-  const { handleSubmit, reset } = methods;
+  const { reset } = methods;
 
   // ── On mount: hydrate form from draft or initialize a blank draft ──────────
   useEffect(() => {
     if (isDraftLoading) return;
 
     if (existingDraft && Object.keys(existingDraft).length > 0) {
-      // Restore saved payload into the form
-      reset(existingDraft as Partial<ProposalFormValues>);
+      const hydratedDraft = { ...existingDraft } as Record<string, any>;
+      const fileFields = [
+        "systemDiagram",
+        "networkDiagram",
+        "useCaseDiagram",
+        "securityDiagram",
+      ];
+
+      // Recreate the small UI descriptor from the server URL so the diagram
+      // controls can render an already-uploaded attachment after refresh.
+      for (const field of fileFields) {
+        const fileKey = `${field}File`;
+        const urlKey = `${field}Url`;
+        const current = hydratedDraft[fileKey];
+        const url = hydratedDraft[urlKey] ??
+          (typeof current === "string" ? current : undefined) ??
+          current?.url ??
+          (typeof current?.file === "string" ? current.file : undefined);
+        if (url && !current?.file) {
+          hydratedDraft[fileKey] = {
+            id: `${field}-server`,
+            file: url,
+            url,
+            description: "",
+          };
+        }
+      }
+
+      reset(hydratedDraft as Partial<ProposalFormValues>);
     } else {
       // No draft yet — create one so we have a record to PATCH against
       initDraft();
@@ -105,37 +131,21 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
   };
 
   const handleNext = async () => {
-    await validateCurrentStep();
+    void validateCurrentStep();
     nextStep();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePrev = async () => {
-    await validateCurrentStep();
+    void validateCurrentStep();
     prevStep();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ── Final submission ───────────────────────────────────────────────────────
-  const onSubmit: SubmitHandler<ProposalFormValues> = async (data) => {
-    const result = proposalFormSchema.safeParse(data);
-    if (!result.success) {
-      console.error("Validation failed — some steps have errors.");
-      return;
-    }
-
-    submitProposal(
-      { projectId, ...data } as Record<string, unknown>,
-      {
-        onSuccess: () => {
-          resetForm();
-        },
-        onError: (error: any) => {
-          console.error("Submission error:", error?.message ?? error);
-          // TODO: show a toast notification here once a toast library is integrated
-        },
-      }
-    );
+  // Completing the wizard only leaves the draft intact. The project workspace
+  // owns the explicit final-submission action.
+  const handleFinishDraft = () => {
+    router.push(`/projects/${projectId}`);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -147,7 +157,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
       <FormProvider {...methods}>
         <AutoSaveWatcher projectId={projectId} />
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8">
+        <form onSubmit={(event) => event.preventDefault()} className="mt-8">
 
           <div className="min-h-100">
             {currentStep === 1 && <ProposalStep1 />}
@@ -188,12 +198,12 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
               ) : (
                 <Button
                   key="submit-btn"
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-status-orange hover:bg-[#d65f00] text-white shadow-sm transition-transform active:scale-[0.99] disabled:opacity-60"
+                  type="button"
+                  onClick={handleFinishDraft}
+                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-status-orange hover:bg-[#d65f00] text-white shadow-sm transition-transform active:scale-[0.99]"
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  {isSubmitting ? "กำลังยื่น..." : "ยื่นเสนอโครงการ"}
+                  <Save className="w-4 h-4 mr-2" />
+                  บันทึกฉบับร่าง
                 </Button>
               )}
             </div>

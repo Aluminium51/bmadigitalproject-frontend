@@ -76,10 +76,7 @@ export const proposalStep2Schema = z.object({
 // ---------------------------------------------------------------------------
 const imageWithDescriptionSchema = z.object({
   id: z.string(),
-  file: typeof window === "undefined" ? z.any() : z.instanceof(File).refine(
-    (file) => file.type.startsWith("image/"),
-    { message: "ต้องเป็นไฟล์รูปภาพเท่านั้น" }
-  ),
+  file: z.any(),
   description: z.string().min(1, "กรุณาระบุคำอธิบายรูปภาพ (บังคับ)"),
 });
 
@@ -108,6 +105,10 @@ export const proposalStep3Schema = z.object({
   networkDiagramFile: imageWithDescriptionSchema.optional().nullable(),
   useCaseDiagramFile: imageWithDescriptionSchema.optional().nullable(),
   securityDiagramFile: imageWithDescriptionSchema.optional().nullable(),
+  systemDiagramUrl: z.string().url().optional().nullable(),
+  networkDiagramUrl: z.string().url().optional().nullable(),
+  useCaseDiagramUrl: z.string().url().optional().nullable(),
+  securityDiagramUrl: z.string().url().optional().nullable(),
 }).superRefine((data, ctx) => {
   // ตรวจสอบว่าต้องเลือกอย่างน้อย 1 ข้อ
   if (!data.isBmaPlan && !data.isAgencyPlan && !data.isGovernorPolicy) {

@@ -13,9 +13,8 @@ export const StepperIndicator = ({ validateCurrentStep }: { validateCurrentStep:
   const handleStepClick = async (targetStep: number) => {
     if (targetStep === currentStep) return;
     
-    // ก่อนจะย้ายหน้า สั่ง validate หน้าปัจจุบันก่อน (เพื่อบันทึก Error ทิ้งไว้ถ้ากรอกไม่ครบ)
-    await validateCurrentStep(); 
-    
+    // Validate for error indicators, but never block navigation.
+    void validateCurrentStep();
     setStep(targetStep);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
