@@ -84,6 +84,56 @@ export async function loginUserAction(data: LoginRequestDTO): Promise<AuthRespon
   }
 }
 
+type RecoveryActionResponse = {
+  success: boolean;
+  message: string;
+  field?: string;
+};
+
+async function postAuthRecovery(
+  endpoint: string,
+  body: Record<string, string>,
+): Promise<RecoveryActionResponse> {
+  try {
+    const response = await fetch(`${process.env.BACKEND_URL}/api/v1/auth/${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: result.error || result.message || "Unable to process the request.",
+        field: result.field,
+      };
+    }
+
+    return {
+      success: true,
+      message: result.message || "If the email is registered, further instructions will be sent shortly.",
+    };
+  } catch {
+    return {
+      success: false,
+      message: "Unable to connect to the authentication service.",
+    };
+  }
+}
+
+export async function requestUsernameRecoveryAction(email: string) {
+  return postAuthRecovery("forgot-username", { email });
+}
+
+export async function requestPasswordResetAction(email: string) {
+  return postAuthRecovery("forgot-password", { email });
+}
+
+export async function resetPasswordAction(token: string, newPassword: string) {
+  return postAuthRecovery("reset-password", { token, newPassword });
+}
+
 export async function logoutAction() {
   try {
     // 1. ยิง API ไปบอก Backend ให้ทำลาย Token ฝั่งเซิร์ฟเวอร์

@@ -78,6 +78,12 @@ const LoginResponse = z
   })
   .passthrough();
 const SuccessResponse = z.object({ message: z.string() }).passthrough();
+const RecoveryEmailRequest = z
+  .object({ email: z.string().max(255).email() })
+  .passthrough();
+const ResetPasswordRequest = z
+  .object({ token: z.string().min(1), newPassword: z.string().min(8) })
+  .passthrough();
 const Project = z
   .object({
     id: z.string().uuid(),
@@ -634,6 +640,8 @@ export const schemas = {
   LoginRequest,
   LoginResponse,
   SuccessResponse,
+  RecoveryEmailRequest,
+  ResetPasswordRequest,
   Project,
   PaginatedProjectResponse,
   CreateProjectRequest,
@@ -659,6 +667,48 @@ export const schemas = {
 };
 
 const endpoints = makeApi([
+  {
+    method: "post",
+    path: "/api/v1/auth/forgot-password",
+    alias: "postApiv1authforgotPassword",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ email: z.string().max(255).email() }).passthrough(),
+      },
+    ],
+    response: z.object({ message: z.string() }).passthrough(),
+    errors: [
+      {
+        status: 429,
+        description: `Too many requests`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/auth/forgot-username",
+    alias: "postApiv1authforgotUsername",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ email: z.string().max(255).email() }).passthrough(),
+      },
+    ],
+    response: z.object({ message: z.string() }).passthrough(),
+    errors: [
+      {
+        status: 429,
+        description: `Too many requests`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
   {
     method: "post",
     path: "/api/v1/auth/login",
@@ -701,6 +751,32 @@ const endpoints = makeApi([
       {
         status: 500,
         description: `เกิดข้อผิดพลาดที่เซิร์ฟเวอร์`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/auth/reset-password",
+    alias: "postApiv1authresetPassword",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: ResetPasswordRequest,
+      },
+    ],
+    response: z.object({ message: z.string() }).passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Invalid or expired token`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 500,
+        description: `Server error`,
         schema: ErrorResponse,
       },
     ],
