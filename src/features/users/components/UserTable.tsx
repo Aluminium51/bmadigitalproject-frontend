@@ -9,6 +9,7 @@ import {
   ArrowUpDown,
   ArrowUp,
 } from "lucide-react";
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -31,9 +32,12 @@ import {
 import { User } from "../types";
 import { SortField } from "../hooks/useUserManagement";
 
+const SKELETON_ROWS = [0, 1, 2, 3, 4];
+
 interface UserTableProps {
   users: User[];
-  onToggleActive: (id: number) => void;
+  isLoading?: boolean;
+  onToggleActive: (id: string | number) => void;
   onOpenRoleModal: (user: User) => void;
   onOpenPasswordModal: (user: User) => void;
   sortField: string;
@@ -41,8 +45,9 @@ interface UserTableProps {
   onSort: (field: SortField) => void;
 }
 
-export const UserTable = ({
+export const UserTable = memo(({ 
   users,
+  isLoading = false,
   onToggleActive,
   onOpenRoleModal,
   onOpenPasswordModal,
@@ -98,10 +103,10 @@ export const UserTable = ({
           <TableRow>
             <TableHead
               className="font-bold text-slate-700 py-3.5 pl-6 cursor-pointer hover:bg-slate-100 transition-colors"
-              onClick={() => onSort("first_name")}
+              onClick={() => onSort("name")}
             >
               <div className="flex items-center">
-                ชื่อ-นามสกุล / ตำแหน่ง {getSortIcon("first_name")}
+                ชื่อ-นามสกุล / ตำแหน่ง {getSortIcon("name")}
               </div>
             </TableHead>
             <TableHead className="font-bold text-slate-700">
@@ -109,10 +114,10 @@ export const UserTable = ({
             </TableHead>
             <TableHead
               className="font-bold text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
-              onClick={() => onSort("department_name")}
+              onClick={() => onSort("department")}
             >
               <div className="flex items-center">
-                สังกัดหน่วยงาน {getSortIcon("department_name")}
+                สังกัดหน่วยงาน {getSortIcon("department")}
               </div>
             </TableHead>
             <TableHead className="font-bold text-slate-700">
@@ -130,7 +135,19 @@ export const UserTable = ({
           </TableRow>
         </TableHeader>
         <TableBody className="divide-y divide-slate-100">
-          {users.length === 0 ? (
+          {isLoading ? (
+            SKELETON_ROWS.map((row) => (
+              <TableRow key={`user-skeleton-${row}`}>
+                <TableCell className="py-4 pl-6"><div className="h-4 w-44 rounded bg-slate-200 animate-pulse" /></TableCell>
+                <TableCell><div className="h-4 w-36 rounded bg-slate-200 animate-pulse" /></TableCell>
+                <TableCell><div className="h-4 w-40 rounded bg-slate-200 animate-pulse" /></TableCell>
+                <TableCell><div className="h-5 w-16 rounded-full bg-slate-200 animate-pulse" /></TableCell>
+                <TableCell><div className="mx-auto h-4 w-20 rounded bg-slate-200 animate-pulse" /></TableCell>
+                <TableCell><div className="mx-auto h-5 w-16 rounded-full bg-slate-200 animate-pulse" /></TableCell>
+                <TableCell><div className="ml-auto h-8 w-8 rounded bg-slate-200 animate-pulse" /></TableCell>
+              </TableRow>
+            ))
+          ) : users.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={7}
@@ -262,4 +279,4 @@ export const UserTable = ({
       </Table>
     </div>
   );
-};
+});

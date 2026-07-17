@@ -1,6 +1,6 @@
 // src/features/users/types.ts
 export interface User {
-  user_id: number;
+  user_id: string | number;
   username: string; 
   email: string;
   first_name: string;

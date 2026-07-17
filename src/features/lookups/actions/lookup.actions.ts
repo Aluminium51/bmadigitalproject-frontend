@@ -15,6 +15,10 @@ export async function getDepartmentsAction() {
   return await serverFetch<any>("/api/v1/lookups/departments", { skipToken: true });
 }
 
+export async function getRolesAction() {
+  return await serverFetch<any>("/api/v1/lookups/roles", { skipToken: true });
+}
+
 export async function getDivisionsAction(departmentId?: number) {
   const query = departmentId ? `?departmentId=${departmentId}` : "";
   return await serverFetch<any>(`/api/v1/lookups/divisions${query}`, { skipToken: true });

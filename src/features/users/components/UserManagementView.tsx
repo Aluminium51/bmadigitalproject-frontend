@@ -1,12 +1,20 @@
 "use client";
 
-import React from "react";
+import dynamic from "next/dynamic";
 import { useUserManagement } from "../hooks/useUserManagement";
 import { UserHeader } from "./UserHeader";
 import { UserToolbar } from "./UserToolbar";
 import { UserTable } from "./UserTable";
-import { RoleModal } from "./modals/RoleModal";
-import { PasswordModal } from "./modals/PasswordModal";
+import { UserPagination } from "./UserPagination";
+
+const RoleModal = dynamic(
+  () => import("./modals/RoleModal").then((module) => module.RoleModal),
+  { ssr: false },
+);
+const PasswordModal = dynamic(
+  () => import("./modals/PasswordModal").then((module) => module.PasswordModal),
+  { ssr: false },
+);
 
 export const UserManagementView = () => {
   const {
@@ -24,7 +32,14 @@ export const UserManagementView = () => {
     openPasswordModal,
     sortField,
     sortDirection,
-    handleSort
+    handleSort,
+    currentPage,
+    setCurrentPage,
+    pagination,
+    isLoading,
+    isFetching,
+    isError,
+    error,
   } = useUserManagement();
 
   return (
@@ -40,12 +55,27 @@ export const UserManagementView = () => {
       
       <UserTable 
         users={users}
+        isLoading={isLoading}
         onToggleActive={handleToggleActive}
         onOpenRoleModal={openRoleModal}
         onOpenPasswordModal={openPasswordModal}
         sortField={sortField}
         sortDirection={sortDirection}
         onSort={handleSort}
+      />
+
+      {isError && (
+        <p className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error instanceof Error ? error.message : "Unable to load users."}
+        </p>
+      )}
+      {isFetching && !isLoading && (
+        <p className="text-right text-xs text-muted-foreground">Updating users...</p>
+      )}
+      <UserPagination
+        currentPage={currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={setCurrentPage}
       />
 
       <RoleModal 

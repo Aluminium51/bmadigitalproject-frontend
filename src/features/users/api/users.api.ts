@@ -1,0 +1,124 @@
+import type { User } from "../types";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
+  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+
+export type UserSortField = "createdAt" | "username" | "name" | "firstName" | "email" | "role" | "department";
+export type UserSortOrder = "asc" | "desc";
+export type UserStatusFilter = "all" | "active" | "inactive";
+
+export interface GetUsersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sort?: UserSortField;
+  order?: UserSortOrder;
+  role?: string;
+  status?: UserStatusFilter;
+  department?: string;
+  departmentId?: number;
+  divisionId?: number;
+}
+
+export interface UserPagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface GetUsersResponse {
+  data: User[];
+  pagination: UserPagination;
+}
+
+export type ApiUser = {
+  userId: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  position?: string | null;
+  isActive: boolean;
+  lastLogin?: string | null;
+  createdAt?: string | null;
+  division?: {
+    divisionName?: string;
+    departmentName?: string;
+  } | null;
+  roles?: Array<{ roleName?: string }> | string[];
+};
+
+export interface ApiUsersResponse {
+  data?: ApiUser[];
+  pagination?: UserPagination;
+}
+
+function mapApiUser(user: ApiUser): User {
+  const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
+
+  return {
+    user_id: user.userId,
+    username: user.username,
+    email: user.email,
+    first_name: user.firstName,
+    last_name: user.lastName,
+    position: user.position ?? null,
+    department_name: user.division?.departmentName ?? "-",
+    division_name: user.division?.divisionName ?? "-",
+    roles: (user.roles ?? []).map((role) =>
+      typeof role === "string" ? role : role.roleName ?? "USER",
+    ),
+    is_active: user.isActive,
+    last_login: lastLogin && !Number.isNaN(lastLogin.getTime())
+      ? lastLogin.toLocaleString("th-TH")
+      : null,
+    created_at: user.createdAt ?? undefined,
+  };
+}
+
+export function mapUsersResponse(
+  result: ApiUsersResponse,
+  fallbackPagination: UserPagination,
+): GetUsersResponse {
+  return {
+    data: (result.data ?? []).map(mapApiUser),
+    pagination: result.pagination ?? fallbackPagination,
+  };
+}
+
+export async function getUsers(params: GetUsersParams = {}): Promise<GetUsersResponse> {
+  const query = new URLSearchParams();
+  const normalized = {
+    page: params.page ?? 1,
+    limit: params.limit ?? 20,
+    sort: params.sort ?? "createdAt",
+    order: params.order ?? "desc",
+    status: params.status ?? "all",
+  };
+
+  for (const [key, value] of Object.entries({ ...normalized, ...params })) {
+    if (value === undefined || value === "" || value === "all") continue;
+    query.set(key, String(value));
+  }
+
+  const response = await fetch(`${API_BASE}/users?${query.toString()}`, {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw Object.assign(
+      new Error(result.message ?? result.error ?? "Unable to load users."),
+      { status: response.status, data: result },
+    );
+  }
+
+  return mapUsersResponse(result, {
+      total: 0,
+      page: normalized.page,
+      limit: normalized.limit,
+      totalPages: 0,
+    });
+}

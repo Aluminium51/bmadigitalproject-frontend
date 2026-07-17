@@ -3,6 +3,7 @@ import {
   getFourQuadrantsAction,
   getDeputyGovernorsAction,
   getDepartmentsAction,
+  getRolesAction,
   getDivisionsAction,
 } from "../actions/lookup.actions";
 
@@ -29,6 +30,14 @@ export function useDepartments() {
   return useQuery({
     queryKey: ["lookups", "departments"],
     queryFn: () => getDepartmentsAction(),
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useRoles() {
+  return useQuery({
+    queryKey: ["lookups", "roles"],
+    queryFn: () => getRolesAction(),
     staleTime: STALE_TIME,
   });
 }

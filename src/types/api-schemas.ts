@@ -40,6 +40,19 @@ const UserProfileResponse = z
     ),
   })
   .passthrough();
+const PaginatedUserResponse = z
+  .object({
+    data: z.array(UserProfileResponse),
+    pagination: z
+      .object({
+        total: z.number(),
+        page: z.number(),
+        limit: z.number(),
+        totalPages: z.number(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
 const ErrorResponse = z
   .object({ error: z.string(), field: z.string().optional() })
   .passthrough();
@@ -635,6 +648,7 @@ export const schemas = {
   HealthSuccess,
   HealthError,
   UserProfileResponse,
+  PaginatedUserResponse,
   ErrorResponse,
   CreateUserRequest,
   LoginRequest,
@@ -874,6 +888,13 @@ const endpoints = makeApi([
     alias: "getApiv1lookupsprojectStatuses",
     requestFormat: "json",
     response: ProjectStatusResponse,
+  },
+  {
+    method: "get",
+    path: "/api/v1/lookups/roles",
+    alias: "getApiv1lookupsroles",
+    requestFormat: "json",
+    response: LookupResponse,
   },
   {
     method: "post",
@@ -1441,7 +1462,70 @@ const endpoints = makeApi([
     path: "/api/v1/users",
     alias: "getApiv1users",
     requestFormat: "json",
-    response: z.array(UserProfileResponse),
+    parameters: [
+      {
+        name: "page",
+        type: "Query",
+        schema: z.number().int().gte(1).optional().default(1),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().int().gte(1).lte(100).optional().default(20),
+      },
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string().max(100).optional(),
+      },
+      {
+        name: "sort",
+        type: "Query",
+        schema: z
+          .enum([
+            "createdAt",
+            "username",
+            "name",
+            "firstName",
+            "email",
+            "role",
+            "department",
+          ])
+          .optional()
+          .default("createdAt"),
+      },
+      {
+        name: "order",
+        type: "Query",
+        schema: z.enum(["asc", "desc"]).optional().default("desc"),
+      },
+      {
+        name: "role",
+        type: "Query",
+        schema: z.string().max(50).optional(),
+      },
+      {
+        name: "status",
+        type: "Query",
+        schema: z.enum(["all", "active", "inactive"]).optional().default("all"),
+      },
+      {
+        name: "department",
+        type: "Query",
+        schema: z.string().max(255).optional(),
+      },
+      {
+        name: "departmentId",
+        type: "Query",
+        schema: z.number().int().gt(0).optional(),
+      },
+      {
+        name: "divisionId",
+        type: "Query",
+        schema: z.number().int().gt(0).optional(),
+      },
+    ],
+    response: PaginatedUserResponse,
     errors: [
       {
         status: 404,
