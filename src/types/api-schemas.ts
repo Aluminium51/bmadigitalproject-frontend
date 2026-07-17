@@ -22,10 +22,10 @@ const UserProfileResponse = z
     officePhone: z.string().max(20).nullable(),
     internalExtension: z.string().max(10).nullable(),
     isActive: z.boolean(),
-    lastLogin: z.string().datetime({ offset: true }).nullable(),
     isVerified: z.boolean(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
+    lastLogin: z.string().datetime({ offset: true }).nullable(),
     division: z
       .object({
         divisionId: z.number(),
