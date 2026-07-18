@@ -26,6 +26,7 @@ interface MappedFile {
 }
 
 interface SingleFileUploadWithDescBoxProps {
+  projectId: string;
   title: string;
   name: keyof ProposalStep3Values;
   watch: UseFormWatch<ProposalStep3Values>;
@@ -36,9 +37,10 @@ interface SingleFileUploadWithDescBoxProps {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081/api/v1";
 
-async function uploadImage(file: File): Promise<string> {
+async function uploadImage(file: File, projectId: string): Promise<string> {
   const body = new FormData();
   body.append("file", file);
+  body.append("projectId", projectId);
   const response = await fetch(`${API_BASE}/uploads/document`, {
     method: "POST",
     credentials: "include",
@@ -53,6 +55,7 @@ async function uploadImage(file: File): Promise<string> {
 
 // --- Component สำหรับอัปโหลด 1 ไฟล์รูปภาพ + คำอธิบาย ---
 const SingleFileUploadWithDescBox = ({
+  projectId,
   title,
   name,
   watch,
@@ -170,7 +173,7 @@ const SingleFileUploadWithDescBox = ({
         description: "",
       };
 
-      const url = await uploadImage(compressedFile);
+      const url = await uploadImage(compressedFile, projectId);
       const urlField = `${String(name).replace("File", "Url")}` as keyof ProposalStep3Values;
       setValue(name, { ...mappedFile, file: url, url } as any, { shouldValidate: true });
       setValue(urlField, url as any, { shouldValidate: true });
@@ -320,8 +323,10 @@ const SingleFileUploadWithDescBox = ({
 
 // --- Component หลัก ---
 export const ProposalStep3 = ({
+  projectId,
   onUploadingChange,
 }: {
+  projectId: string;
   onUploadingChange?: (uploading: boolean) => void;
 }) => {
   const [uploadingCount, setUploadingCount] = useState(0);
@@ -436,6 +441,7 @@ export const ProposalStep3 = ({
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <SingleFileUploadWithDescBox
+            projectId={projectId}
             title="System Diagram"
             name="systemDiagramFile"
             watch={watch}
@@ -444,6 +450,7 @@ export const ProposalStep3 = ({
             onUploadingChange={handleChildUploadingChange}
           />
           <SingleFileUploadWithDescBox
+            projectId={projectId}
             title="Network Diagram"
             name="networkDiagramFile"
             watch={watch}
@@ -452,6 +459,7 @@ export const ProposalStep3 = ({
             onUploadingChange={handleChildUploadingChange}
           />
           <SingleFileUploadWithDescBox
+            projectId={projectId}
             title="Use Case Diagram"
             name="useCaseDiagramFile"
             watch={watch}
@@ -460,6 +468,7 @@ export const ProposalStep3 = ({
             onUploadingChange={handleChildUploadingChange}
           />
           <SingleFileUploadWithDescBox
+            projectId={projectId}
             title="Security Diagram"
             name="securityDiagramFile"
             watch={watch}

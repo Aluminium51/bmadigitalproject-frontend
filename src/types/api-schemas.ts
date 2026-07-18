@@ -97,6 +97,9 @@ const RecoveryEmailRequest = z
 const ResetPasswordRequest = z
   .object({ token: z.string().min(1), newPassword: z.string().min(8) })
   .passthrough();
+const postApiv1uploadsdocument_Body = z
+  .object({ file: z.instanceof(File), projectId: z.string().uuid() })
+  .passthrough();
 const Project = z
   .object({
     id: z.string().uuid(),
@@ -188,7 +191,11 @@ const UpdateProjectRequest = z
   .partial()
   .passthrough();
 const UpdateProjectStatusRequest = z
-  .object({ projectStatusId: z.number().int(), remark: z.string().optional() })
+  .object({
+    projectStatusId: z.number().int(),
+    projectTypeId: z.number().int().optional(),
+    remark: z.string().optional(),
+  })
   .passthrough();
 const UpdateProjectTypeRequest = z
   .object({ projectTypeId: z.number().int() })
@@ -593,6 +600,12 @@ const UpdateAgenda = z
   })
   .partial()
   .passthrough();
+const RecordResolution = z
+  .object({
+    resolutionStatusId: z.number().int().gte(1).lte(4),
+    comment: z.string().optional(),
+  })
+  .passthrough();
 const CloudRequest = z
   .object({
     id: z.string().uuid(),
@@ -656,6 +669,7 @@ export const schemas = {
   SuccessResponse,
   RecoveryEmailRequest,
   ResetPasswordRequest,
+  postApiv1uploadsdocument_Body,
   Project,
   PaginatedProjectResponse,
   CreateProjectRequest,
@@ -671,6 +685,7 @@ export const schemas = {
   CreateAgenda,
   Agenda,
   UpdateAgenda,
+  RecordResolution,
   CloudRequest,
   DivisionItem,
   DivisionResponse,
@@ -1082,6 +1097,40 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: "post",
+    path: "/api/v1/meetings/agendas/:id/resolution",
+    alias: "postApiv1meetingsagendasIdresolution",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: RecordResolution,
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z
+      .object({ data: z.unknown().nullable() })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Invalid resolution`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+      {
+        status: 409,
+        description: `Invalid workflow state`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
     method: "get",
     path: "/api/v1/projects",
     alias: "getApiv1projects",
@@ -1452,7 +1501,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: z.object({ file: z.instanceof(File) }).passthrough(),
+        schema: postApiv1uploadsdocument_Body,
       },
     ],
     response: z.void(),

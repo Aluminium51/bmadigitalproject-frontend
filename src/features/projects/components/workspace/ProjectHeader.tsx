@@ -12,6 +12,10 @@ import { useFourQuadrants, useDeputyGovernors } from "@/features/lookups/hooks/u
 import { useProposalState } from "@/features/proposals/hooks/useProposalState";
 import { useGetDraft } from "@/features/proposals/hooks/useProposalDraftQuery";
 import { useSubmitProposal } from "@/features/proposals/hooks/useProposalMutations";
+import {
+  getProjectStatusMeta,
+  OWNER_EDITABLE_PROJECT_STATUSES,
+} from "../../utils/projectStatus";
 
 interface ProjectHeaderProps {
   project: ProjectDetail;
@@ -25,7 +29,11 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const proposalState = useProposalState(projectId);
   const { data: currentDraft, isLoading: isDraftLoading } = useGetDraft(projectId);
   const { mutate: submitProposal, isPending: isSubmitting } = useSubmitProposal(projectId);
-  const isSubmitDisabled = isDraftLoading || isSubmitting || !currentDraft;
+  const isOwnerEditableStage = OWNER_EDITABLE_PROJECT_STATUSES.includes(
+    project.projectStatusId as typeof OWNER_EDITABLE_PROJECT_STATUSES[number],
+  );
+  const isSubmitDisabled = isDraftLoading || isSubmitting || !currentDraft || !isOwnerEditableStage;
+  const statusMeta = getProjectStatusMeta(project.projectStatusId, project.status?.name);
 
   const handleSubmit = () => {
     setSubmitError(null);
@@ -88,9 +96,9 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                   variant="outline"
-                  className="bg-orange-50 text-status-orange border-orange-200 font-bold text-[11px] px-2.5 py-0.5 rounded-md"
+                  className={`${statusMeta.className} font-bold text-[11px] px-2.5 py-0.5 rounded-md`}
                 >
-                  แบบร่าง (Draft)
+                  {statusMeta.label}
                 </Badge>
                 <span className="font-mono text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
                   {project.projectCode || "รอการสร้างรหัส"}
@@ -165,7 +173,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
             </div>
 
             {/* --- Single explicit final-submission action --- */}
-            {proposalState.status === "draft" && (
+            {proposalState.status === "draft" && isOwnerEditableStage && (
               <div className="flex flex-col items-stretch gap-2 shrink-0 xl:self-start w-full xl:w-auto">
                 <Button
                   disabled={isSubmitDisabled}

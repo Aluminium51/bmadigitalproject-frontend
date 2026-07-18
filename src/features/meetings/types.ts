@@ -20,6 +20,7 @@ export enum AgendaType {
 
 export enum ResolutionStatus {
   APPROVED = "APPROVED",           // เห็นชอบ
+  ACKNOWLEDGED = "ACKNOWLEDGED",   // รับทราบ
   NEED_REVISION = "NEED_REVISION", // ให้ทบทวน
   REJECTED = "REJECTED",           // ไม่เห็นชอบ
 }
@@ -81,6 +82,7 @@ export const AGENDA_TYPE_ORDER: AgendaType[] = [
 
 export const RESOLUTION_STATUS_LABELS: Record<ResolutionStatus, string> = {
   [ResolutionStatus.APPROVED]: "เห็นชอบ",
+  [ResolutionStatus.ACKNOWLEDGED]: "รับทราบ",
   [ResolutionStatus.NEED_REVISION]: "ให้ทบทวน",
   [ResolutionStatus.REJECTED]: "ไม่เห็นชอบ",
 };
@@ -90,6 +92,11 @@ export const RESOLUTION_STATUS_COLORS: Record<
   { bg: string; text: string; border: string }
 > = {
   [ResolutionStatus.APPROVED]: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+  },
+  [ResolutionStatus.ACKNOWLEDGED]: {
     bg: "bg-emerald-50",
     text: "text-emerald-700",
     border: "border-emerald-200",

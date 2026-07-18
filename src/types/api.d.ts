@@ -677,6 +677,7 @@ export interface paths {
                     "application/json": {
                         /** @example 2 */
                         projectStatusId: number;
+                        projectTypeId?: number;
                         /** @example ผ่านการอนุมัติขั้นต้น */
                         remark?: string;
                     };

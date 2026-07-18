@@ -60,6 +60,7 @@ interface ResolutionFormProps {
 
 const STATUS_ICONS: Record<ResolutionStatus, React.ReactNode> = {
   [ResolutionStatus.APPROVED]: <CheckCircle2 className="w-4 h-4" />,
+  [ResolutionStatus.ACKNOWLEDGED]: <CheckCircle2 className="w-4 h-4" />,
   [ResolutionStatus.NEED_REVISION]: <AlertTriangle className="w-4 h-4" />,
   [ResolutionStatus.REJECTED]: <XCircle className="w-4 h-4" />,
 };
@@ -75,6 +76,9 @@ export function ResolutionForm({
   hasUnsavedChanges,
 }: ResolutionFormProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const requiresRemark = resolution?.resolution_status === ResolutionStatus.NEED_REVISION ||
+    resolution?.resolution_status === ResolutionStatus.REJECTED;
+  const hasRequiredRemark = (resolution?.comment ?? "").trim().length > 0;
 
   const formatBudget = useCallback((amount: number) => {
     return new Intl.NumberFormat("th-TH").format(amount);
@@ -208,6 +212,9 @@ export function ResolutionForm({
             onChange={(e) => onUpdateComment(e.target.value)}
             className="min-h-[150px] bg-white resize-y leading-relaxed"
           />
+          {requiresRemark && !hasRequiredRemark && (
+            <p className="text-xs text-red-600">A remark is required for returned or rejected resolutions.</p>
+          )}
           <p className="text-[10px] text-muted-foreground text-right">
             {(resolution?.comment ?? "").length} ตัวอักษร
           </p>
@@ -225,7 +232,7 @@ export function ResolutionForm({
         {!hasUnsavedChanges && <span />}
         <Button
           onClick={onSave}
-          disabled={isSaving || !hasUnsavedChanges}
+          disabled={isSaving || !hasUnsavedChanges || (requiresRemark && !hasRequiredRemark)}
           className="gap-1.5 bg-[#00734b] hover:bg-[#005838] text-white rounded-lg"
         >
           {isSaving ? (

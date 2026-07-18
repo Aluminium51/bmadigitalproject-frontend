@@ -29,12 +29,14 @@ import { ProposalStep4 } from "./ProposalStep4";
 import { ProposalStep5 } from "./ProposalStep5";
 import { SaveStatusIndicator } from "./SaveStatusIndicator";
 import { Button } from "@/components/ui/button";
+import { useProjectWorkspace } from "@/features/projects/hooks/useProjectWorkspace";
+import { OWNER_LOCKED_PROJECT_STATUSES } from "@/features/projects/utils/projectStatus";
 
 // ---------------------------------------------------------------------------
 // AutoSaveWatcher — renders null, just triggers the auto-save side-effect
 // ---------------------------------------------------------------------------
-const AutoSaveWatcher = ({ projectId }: { projectId: string }) => {
-  useAutoSaveForm(projectId);
+const AutoSaveWatcher = ({ projectId, disabled }: { projectId: string; disabled: boolean }) => {
+  useAutoSaveForm(projectId, disabled);
   return null;
 };
 
@@ -43,6 +45,7 @@ const AutoSaveWatcher = ({ projectId }: { projectId: string }) => {
 // ---------------------------------------------------------------------------
 const WizardForm = ({ projectId }: { projectId: string }) => {
   const router = useRouter();
+  const { projectDetail, isLoading: isProjectLoading } = useProjectWorkspace(projectId);
   const {
     currentStep,
     nextStep,
@@ -54,6 +57,9 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
   // ── React Query: fetch existing draft ─────────────────────────────────────
   const { data: existingDraft, isLoading: isDraftLoading } = useGetDraft(projectId);
   const { mutate: initDraft } = useInitializeDraft(projectId);
+  const isReadOnly = isProjectLoading || !projectDetail || OWNER_LOCKED_PROJECT_STATUSES.includes(
+    projectDetail.projectStatusId as typeof OWNER_LOCKED_PROJECT_STATUSES[number],
+  );
 
   // ── RHF setup ─────────────────────────────────────────────────────────────
   const methods = useForm<ProposalFormValues>({
@@ -98,12 +104,12 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
       }
 
       reset(hydratedDraft as Partial<ProposalFormValues>);
-    } else {
+    } else if (!isReadOnly) {
       // No draft yet — create one so we have a record to PATCH against
       initDraft();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDraftLoading]);
+  }, [isDraftLoading, isReadOnly]);
 
   // ── Step validation helper ─────────────────────────────────────────────────
   const getCurrentSchema = (step: number) => {
@@ -155,17 +161,23 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
       <StepperIndicator validateCurrentStep={validateCurrentStep} />
 
       <FormProvider {...methods}>
-        <AutoSaveWatcher projectId={projectId} />
+        <AutoSaveWatcher projectId={projectId} disabled={isReadOnly} />
+
+        {isReadOnly && (
+          <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+            This proposal is read-only while the project is being reviewed.
+          </div>
+        )}
 
         <form onSubmit={(event) => event.preventDefault()} className="mt-8">
 
-          <div className="min-h-100">
+          <fieldset disabled={isReadOnly} className="min-h-100">
             {currentStep === 1 && <ProposalStep1 />}
             {currentStep === 2 && <ProposalStep2 />}
-            {currentStep === 3 && <ProposalStep3 />}
+            {currentStep === 3 && <ProposalStep3 projectId={projectId} />}
             {currentStep === 4 && <ProposalStep4 />}
             {currentStep === 5 && <ProposalStep5 />}
-          </div>
+          </fieldset>
 
           <div className="mt-12 pt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between border-t border-[#ededf4] gap-4">
 
@@ -175,7 +187,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 order-1 sm:order-2 w-full justify-start sm:justify-end">
-              {currentStep > 1 && (
+              {currentStep > 1 && !isReadOnly && (
                 <Button
                   type="button"
                   onClick={handlePrev}
@@ -186,7 +198,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
                 </Button>
               )}
 
-              {currentStep < 5 ? (
+              {!isReadOnly && (currentStep < 5 ? (
                 <Button
                   key="next-btn"
                   type="button"
@@ -205,7 +217,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
                   <Save className="w-4 h-4 mr-2" />
                   บันทึกฉบับร่าง
                 </Button>
-              )}
+              ))}
             </div>
           </div>
         </form>

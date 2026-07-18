@@ -27,7 +27,7 @@ function toDraftRequest(formPayload: Record<string, unknown>) {
   return request;
 }
 
-export const useAutoSaveForm = (projectId: string | undefined) => {
+export const useAutoSaveForm = (projectId: string | undefined, disabled = false) => {
   const { watch } = useFormContext<ProposalDraftValues>();
   const { setLastSavedAt } = useProposalFormStore();
   const { mutate: saveDraft } = useAutoSaveDraft(projectId);
@@ -37,6 +37,8 @@ export const useAutoSaveForm = (projectId: string | undefined) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (disabled) return;
+
     const saveLatestWithMutation = () => {
       const payload = latestPayloadRef.current;
       const serialized = latestSerializedRef.current;
@@ -84,5 +86,5 @@ export const useAutoSaveForm = (projectId: string | undefined) => {
       // before the wizard unmounts so navigation cannot discard recent edits.
       saveLatestWithMutation();
     };
-  }, [projectId, saveDraft, setLastSavedAt, watch]);
+  }, [disabled, projectId, saveDraft, setLastSavedAt, watch]);
 };
