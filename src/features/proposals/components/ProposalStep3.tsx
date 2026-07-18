@@ -16,6 +16,7 @@ import { EAStrategySection } from "./EAStrategySection";
 import { CloudUpload, FileImage, X, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import imageCompression from "browser-image-compression";
+import { FileUploadField, type SharedFileValue } from "@/features/projects/components/workspace/ui/FileUploadField";
 
 // กำหนดโครงสร้างข้อมูลไฟล์ที่เก็บใน React Hook Form ให้ชัดเจน
 interface MappedFile {
@@ -54,7 +55,7 @@ async function uploadImage(file: File, projectId: string): Promise<string> {
 }
 
 // --- Component สำหรับอัปโหลด 1 ไฟล์รูปภาพ + คำอธิบาย ---
-const SingleFileUploadWithDescBox = ({
+const LegacySingleFileUploadWithDescBox = ({
   projectId,
   title,
   name,
@@ -322,6 +323,50 @@ const SingleFileUploadWithDescBox = ({
 };
 
 // --- Component หลัก ---
+const SingleFileUploadWithDescBox = ({
+  projectId,
+  title,
+  name,
+  watch,
+  setValue,
+  errors,
+  onUploadingChange,
+}: SingleFileUploadWithDescBoxProps) => {
+  const watchedFile = watch(name);
+  const value = (typeof watchedFile === "string"
+    ? { id: `${String(name)}-server`, name: "Uploaded image", url: watchedFile, file: watchedFile, type: "image", description: "" }
+    : watchedFile) as SharedFileValue | null | undefined;
+  const fieldError = errors[name] as Record<string, any> | undefined;
+  const urlField = `${String(name).replace("File", "Url")}` as keyof ProposalStep3Values;
+
+  return (
+    <FileUploadField
+      projectId={projectId}
+      docTypeId={
+        name === "systemDiagramFile" ? 1 :
+        name === "networkDiagramFile" ? 2 :
+        name === "useCaseDiagramFile" ? 3 : 4
+      }
+      title={title}
+      accept="image/png,image/jpeg,image/webp"
+      value={value}
+      showDescription
+      descriptionRequired
+      descriptionError={fieldError?.description?.message as string | undefined}
+      onUploadingChange={onUploadingChange}
+      onChange={(uploaded) => {
+        if (!uploaded) {
+          setValue(name, null as any, { shouldValidate: true });
+          setValue(urlField, null as any, { shouldValidate: true });
+          return;
+        }
+        setValue(name, { ...uploaded, file: uploaded.url || uploaded.file || "" } as any, { shouldValidate: true });
+        if (uploaded.url) setValue(urlField, uploaded.url as any, { shouldValidate: true });
+      }}
+    />
+  );
+};
+
 export const ProposalStep3 = ({
   projectId,
   onUploadingChange,

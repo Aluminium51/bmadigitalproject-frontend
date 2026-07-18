@@ -10,12 +10,16 @@ export interface ProjectDetail extends ProjectResponse {
   hasProposal: boolean;
 }
 
+export type ProjectAttachment = ProjectResponse["attachments"][number];
+
 export type DocumentFile = {
   id: string;
   name: string;
   type: "pdf" | "ppt" | "image" | "other";
+  mimeType?: string;
   size?: string;
   url?: string;
+  file?: File | string;
 };
 
 export type WorkspaceTab = "tab-proposal" | "tab-documents" | "tab-timeline";

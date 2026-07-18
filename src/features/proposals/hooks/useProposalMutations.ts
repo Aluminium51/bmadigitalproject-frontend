@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useProposalFormStore } from "../stores/useProposalFormStore";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
+  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
 
 // ---------------------------------------------------------------------------
 // Helper

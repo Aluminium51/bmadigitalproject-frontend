@@ -1,289 +1,114 @@
-import { Plus, Paperclip } from "lucide-react";
+import { Paperclip } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { useProjectDocuments } from "../../hooks/useProjectDocuments";
-import { DocListRow } from "./ui/DocListRow";
-import { DiagramPreviewCard } from "./ui/DiagramPreviewCard";
-import { DiagramUploadPlaceholder } from "./ui/DiagramUploadPlaceholder";
-import { InfoTooltip } from "./ui/InfoTooltip";
+import type { DocumentFile } from "../../types/workspace";
+import { FileAttachment, FileUploadField } from "./ui/FileUploadField";
 
-export function DocumentsTabContent() {
-  const {
-    presentation,
-    quotation,
-    onePage,
-    approvalDoc,
-    systemDiagram,
-    networkDiagram,
-    useCaseDiagram,
-    securityDiagram,
-    additionalDocs,
-    mandatoryUploadedCount,
-    diagramsUploadedCount,
-    setPresentation,
-    setQuotation,
-    setOnePage,
-    setApprovalDoc,
-    setSystemDiagram,
-    setNetworkDiagram,
-    setUseCaseDiagram,
-    setSecurityDiagram,
-    removeFile,
-    removeAdditionalDoc,
-    handleAddAdditionalDoc,
-  } = useProjectDocuments();
+const EMPTY_ATTACHMENTS: Parameters<typeof useProjectDocuments>[0] = [];
+
+type DocumentField = {
+  docTypeId: number;
+  title: string;
+  accept: string;
+  file: DocumentFile | null;
+  required?: boolean;
+  setFile: (file: DocumentFile | null) => void;
+};
+
+export function DocumentsTabContent({ projectId, initialAttachments = EMPTY_ATTACHMENTS }: { projectId: string; initialAttachments?: Parameters<typeof useProjectDocuments>[0] }) {
+  const documents = useProjectDocuments(initialAttachments);
+  const mandatory: DocumentField[] = [
+    { docTypeId: 5, title: "Presentation", accept: ".ppt,.pptx", file: documents.presentation, setFile: documents.setPresentation, required: true },
+    { docTypeId: 9, title: "Quotation", accept: ".pdf", file: documents.quotation, setFile: documents.setQuotation, required: true },
+    { docTypeId: 10, title: "One Page Summary", accept: ".pdf", file: documents.onePage, setFile: documents.setOnePage, required: true },
+    { docTypeId: 11, title: "Approval Document", accept: ".pdf", file: documents.approvalDoc, setFile: documents.setApprovalDoc, required: true },
+  ];
+  const diagrams: DocumentField[] = [
+    { docTypeId: 1, title: "System Diagram", accept: ".png,.jpg,.jpeg,.webp", file: documents.systemDiagram, setFile: documents.setSystemDiagram },
+    { docTypeId: 2, title: "Network Diagram", accept: ".png,.jpg,.jpeg,.webp", file: documents.networkDiagram, setFile: documents.setNetworkDiagram },
+    { docTypeId: 3, title: "Use Case Diagram", accept: ".png,.jpg,.jpeg,.webp", file: documents.useCaseDiagram, setFile: documents.setUseCaseDiagram },
+    { docTypeId: 4, title: "Security Diagram", accept: ".png,.jpg,.jpeg,.webp", file: documents.securityDiagram, setFile: documents.setSecurityDiagram },
+  ];
 
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-extrabold text-[#191c20]">
-              เอกสารประกอบโครงการ (บังคับ)
-            </h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              กรุณาอัปโหลดเอกสารสำคัญเหล่านี้ให้ครบถ้วนก่อนส่งโครงการ
-            </p>
+            <h2 className="text-lg font-extrabold text-[#191c20]">Project documents</h2>
+            <p className="text-sm text-slate-500">Upload files using the same validation, optimization, and modal preview as the proposal form.</p>
           </div>
-          <Badge
-            variant="outline"
-            className="bg-white text-slate-600 border-slate-200 font-bold text-xs rounded-md px-3 py-1 shadow-sm shrink-0 self-start"
-          >
-            อัปโหลดแล้ว {mandatoryUploadedCount} / 4
-          </Badge>
+          <Badge variant="outline">Uploaded {documents.mandatoryUploadedCount} / 4</Badge>
         </div>
-
-        <Card className="rounded-md border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
-          <CardContent className="p-0 flex flex-col divide-y divide-slate-100">
-            <DocListRow
-              title="Presentation สรุปโครงการ"
-              accept=".ppt,.pptx"
-              file={presentation}
-              onRemove={() => removeFile(setPresentation)}
-              isRequired
-            />
-            <DocListRow
-              title="ใบเสนอราคา (Quotation)"
-              accept=".pdf"
-              file={quotation}
-              onRemove={() => removeFile(setQuotation)}
-              isRequired
-            />
-            <DocListRow
-              title="สรุปโครงการ (One Page Summary)"
-              accept=".pdf"
-              file={onePage}
-              onRemove={() => removeFile(setOnePage)}
-              isRequired
-            />
-            <DocListRow
-              title="หนังสือรับรอง/เห็นชอบจากผู้บริหาร"
-              accept=".pdf"
-              file={approvalDoc}
-              onRemove={() => removeFile(setApprovalDoc)}
-              isRequired
-            />
+        <Card className="rounded-md border-[#D1CDC7] shadow-sm bg-white">
+          <CardContent className="p-4 grid gap-4 md:grid-cols-2">
+            {mandatory.map((field) => (
+              <FileUploadField
+                key={field.title}
+                projectId={projectId}
+                docTypeId={field.docTypeId}
+                title={`${field.title}${field.required ? " *" : ""}`}
+                accept={field.accept}
+                value={field.file}
+                onChange={(file) => field.setFile(file as DocumentFile | null)}
+              />
+            ))}
           </CardContent>
         </Card>
       </section>
 
       <section className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-extrabold text-[#191c20]">
-              สถาปัตยกรรมและรูปภาพระบบ
-            </h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              แผนผังประกอบเพื่อความชัดเจนในการประเมินระบบ{" "}
-              <span className="font-semibold text-slate-400">(ถ้ามี)</span>
-            </p>
+            <h2 className="text-lg font-extrabold text-[#191c20]">Architecture diagrams</h2>
+            <p className="text-sm text-slate-500">Images are resized and compressed before upload.</p>
           </div>
-          <Badge
-            variant="outline"
-            className="bg-white text-slate-600 border-slate-200 font-bold text-xs rounded-md px-3 py-1 shadow-sm shrink-0 self-start"
-          >
-            อัปโหลดแล้ว <span className="text-[#00734b]">{diagramsUploadedCount}</span> / 4
-          </Badge>
+          <Badge variant="outline">Uploaded {documents.diagramsUploadedCount} / 4</Badge>
         </div>
-
-        <Card className="rounded-md border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
-          <CardContent className="p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2.5 h-full">
-                <div className="flex items-center justify-between ml-1">
-                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">
-                      1
-                    </span>
-                    System Diagram
-                  </Label>
-                  <InfoTooltip
-                    content={
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm">แผนผังการเชื่อมโยงระบบ</p>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          แสดงองค์ประกอบหลักของระบบ (เช่น Server, Database, Client)
-                          และการไหลของข้อมูลเบื้องต้น
-                        </p>
-                      </div>
-                    }
-                  />
-                </div>
-                <div className="flex-1">
-                  {systemDiagram ? (
-                    <DiagramPreviewCard
-                      file={systemDiagram}
-                      onRemove={() => removeFile(setSystemDiagram)}
-                    />
-                  ) : (
-                    <DiagramUploadPlaceholder title="อัปโหลด System Diagram" />
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2.5 h-full">
-                <div className="flex items-center justify-between ml-1">
-                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">
-                      2
-                    </span>
-                    Network Diagram
-                  </Label>
-                  <InfoTooltip
-                    content={
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm">แผนผังการเชื่อมโยงเครือข่าย</p>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          แสดงการจัดวางอุปกรณ์ Network (Router, Switch, Firewall) วง LAN/WAN
-                          และการเชื่อมต่ออินเทอร์เน็ต
-                        </p>
-                      </div>
-                    }
-                  />
-                </div>
-                <div className="flex-1">
-                  {networkDiagram ? (
-                    <DiagramPreviewCard
-                      file={networkDiagram}
-                      onRemove={() => removeFile(setNetworkDiagram)}
-                    />
-                  ) : (
-                    <DiagramUploadPlaceholder title="อัปโหลด Network Diagram" />
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2.5 h-full">
-                <div className="flex items-center justify-between ml-1">
-                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">
-                      3
-                    </span>
-                    Use Case Diagram
-                  </Label>
-                  <InfoTooltip
-                    content={
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm">แผนภาพแสดงปฎิสัมพันธ์ระหว่างระบบงาน</p>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          แสดงกลุ่มผู้ใช้งานระบบ (Actor) และสิทธิ์การเข้าถึงฟังก์ชันต่างๆ
-                          ของระบบอย่างชัดเจน
-                        </p>
-                      </div>
-                    }
-                  />
-                </div>
-                <div className="flex-1">
-                  {useCaseDiagram ? (
-                    <DiagramPreviewCard
-                      file={useCaseDiagram}
-                      onRemove={() => removeFile(setUseCaseDiagram)}
-                    />
-                  ) : (
-                    <DiagramUploadPlaceholder title="อัปโหลด Use Case Diagram" />
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2.5 h-full">
-                <div className="flex items-center justify-between ml-1">
-                  <Label className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                    <span className="flex items-center justify-center bg-slate-100 w-5 h-5 rounded-md text-[11px] text-slate-500">
-                      4
-                    </span>
-                    Security Diagram
-                  </Label>
-                  <InfoTooltip
-                    content={
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm">
-                          การรักษาความมั่นคงปลอดภัยสารสนเทศ (Network, System, and Information
-                          Security)
-                        </p>
-                        <p className="text-xs text-slate-300 leading-relaxed">
-                          แสดงจุดติดตั้งระบบรักษาความปลอดภัย เช่น WAF, ระบบ Authentication,
-                          และการเข้ารหัสข้อมูล (Encryption)
-                        </p>
-                      </div>
-                    }
-                  />
-                </div>
-                <div className="flex-1">
-                  {securityDiagram ? (
-                    <DiagramPreviewCard
-                      file={securityDiagram}
-                      onRemove={() => removeFile(setSecurityDiagram)}
-                    />
-                  ) : (
-                    <DiagramUploadPlaceholder title="อัปโหลด Security Diagram" />
-                  )}
-                </div>
-              </div>
-            </div>
+        <Card className="rounded-md border-[#D1CDC7] shadow-sm bg-white">
+          <CardContent className="p-4 grid gap-4 md:grid-cols-2">
+            {diagrams.map((field) => (
+              <FileUploadField
+                key={field.title}
+                projectId={projectId}
+                docTypeId={field.docTypeId}
+                title={field.title}
+                accept={field.accept}
+                value={field.file}
+                onChange={(file) => field.setFile(file as DocumentFile | null)}
+              />
+            ))}
           </CardContent>
         </Card>
       </section>
 
       <section className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-extrabold text-[#191c20]">เอกสารอ้างอิงเพิ่มเติม</h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              เอกสารอื่นๆ ที่เกี่ยวข้องกับโครงการ (TOR, รายละเอียดคุณลักษณะ ฯลฯ)
-            </p>
-          </div>
-          <label className="flex items-center justify-center gap-2 px-5 py-2 bg-[#00734b]/10 text-[#00734b] border border-[#00734b]/20 rounded-md text-sm font-bold hover:bg-[#00734b] hover:text-white transition-all cursor-pointer shadow-sm whitespace-nowrap shrink-0 self-start">
-            <Plus className="w-4 h-4" />
-            เพิ่มเอกสาร
-            <input type="file" multiple onChange={handleAddAdditionalDoc} className="hidden" />
-          </label>
+        <div>
+          <h2 className="text-lg font-extrabold text-[#191c20]">Additional documents</h2>
+          <p className="text-sm text-slate-500">Unsupported preview formats download directly when selected.</p>
         </div>
-
-        <Card className="rounded-md border-[#D1CDC7] shadow-sm bg-white overflow-hidden">
-          <CardContent className="p-0">
-            {additionalDocs.length > 0 ? (
-              <div className="flex flex-col divide-y divide-slate-100">
-                {additionalDocs.map((doc) => (
-                  <DocListRow
-                    key={doc.id}
-                    title={doc.name.split(".")[0]}
-                    file={doc}
-                    onRemove={() => removeAdditionalDoc(doc.id)}
-                  />
-                ))}
+        <FileUploadField
+          projectId={projectId}
+          docTypeId={8}
+          title="Add document"
+          accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp"
+          value={null}
+          onChange={(file) => file && documents.addAdditionalDocument(file as DocumentFile)}
+        />
+        <Card className="rounded-md border-[#D1CDC7] shadow-sm bg-white">
+          <CardContent className="p-4 space-y-3">
+            {documents.additionalDocs.length === 0 ? (
+              <div className="py-8 flex flex-col items-center text-center text-slate-400">
+                <Paperclip className="w-7 h-7 mb-2" />
+                <p className="text-sm">No additional documents</p>
               </div>
             ) : (
-              <div className="p-12 flex flex-col items-center justify-center text-center">
-                <div className="w-14 h-14 bg-slate-50 rounded-md flex items-center justify-center mb-4 border border-slate-200">
-                  <Paperclip className="w-7 h-7 text-slate-300" />
+              documents.additionalDocs.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between gap-3 border-b last:border-b-0 pb-3 last:pb-0">
+                  <FileAttachment value={doc} onRemove={() => documents.removeAdditionalDoc(doc.id)} />
                 </div>
-                <h3 className="text-base font-bold text-slate-700">ยังไม่มีเอกสารเพิ่มเติม</h3>
-                <p className="text-sm text-slate-500 mt-1 max-w-sm">
-                  คุณสามารถอัปโหลดไฟล์เอกสารอ้างอิงอื่นๆ
-                  ที่จะเป็นประโยชน์ต่อการพิจารณาโครงการได้ที่นี่
-                </p>
-              </div>
+              ))
             )}
           </CardContent>
         </Card>

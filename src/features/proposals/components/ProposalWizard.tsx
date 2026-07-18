@@ -2,7 +2,7 @@
 
 import { useForm, FormProvider, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 
@@ -35,8 +35,24 @@ import { OWNER_LOCKED_PROJECT_STATUSES } from "@/features/projects/utils/project
 // ---------------------------------------------------------------------------
 // AutoSaveWatcher — renders null, just triggers the auto-save side-effect
 // ---------------------------------------------------------------------------
-const AutoSaveWatcher = ({ projectId, disabled }: { projectId: string; disabled: boolean }) => {
-  useAutoSaveForm(projectId, disabled);
+const AutoSaveWatcher = ({
+  projectId,
+  disabled,
+  flushRef,
+}: {
+  projectId: string;
+  disabled: boolean;
+  flushRef: { current: (() => Promise<boolean>) | null };
+}) => {
+  const { flush } = useAutoSaveForm(projectId, disabled);
+
+  useEffect(() => {
+    flushRef.current = flush;
+    return () => {
+      if (flushRef.current === flush) flushRef.current = null;
+    };
+  }, [flush, flushRef]);
+
   return null;
 };
 
@@ -45,6 +61,7 @@ const AutoSaveWatcher = ({ projectId, disabled }: { projectId: string; disabled:
 // ---------------------------------------------------------------------------
 const WizardForm = ({ projectId }: { projectId: string }) => {
   const router = useRouter();
+  const flushDraftRef = useRef<(() => Promise<boolean>) | null>(null);
   const { projectDetail, isLoading: isProjectLoading } = useProjectWorkspace(projectId);
   const {
     currentStep,
@@ -150,8 +167,9 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
 
   // Completing the wizard only leaves the draft intact. The project workspace
   // owns the explicit final-submission action.
-  const handleFinishDraft = () => {
-    router.push(`/projects/${projectId}`);
+  const handleFinishDraft = async () => {
+    const saved = await flushDraftRef.current?.() ?? true;
+    if (saved) router.push(`/projects/${projectId}`);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -161,7 +179,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
       <StepperIndicator validateCurrentStep={validateCurrentStep} />
 
       <FormProvider {...methods}>
-        <AutoSaveWatcher projectId={projectId} disabled={isReadOnly} />
+        <AutoSaveWatcher projectId={projectId} disabled={isReadOnly} flushRef={flushDraftRef} />
 
         {isReadOnly && (
           <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
@@ -211,7 +229,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
                 <Button
                   key="submit-btn"
                   type="button"
-                  onClick={handleFinishDraft}
+                  onClick={() => void handleFinishDraft()}
                   className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-status-orange hover:bg-[#d65f00] text-white shadow-sm transition-transform active:scale-[0.99]"
                 >
                   <Save className="w-4 h-4 mr-2" />

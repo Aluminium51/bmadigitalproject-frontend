@@ -97,8 +97,12 @@ const RecoveryEmailRequest = z
 const ResetPasswordRequest = z
   .object({ token: z.string().min(1), newPassword: z.string().min(8) })
   .passthrough();
-const postApiv1uploadsdocument_Body = z
-  .object({ file: z.instanceof(File), projectId: z.string().uuid() })
+const UploadDocumentRequest = z
+  .object({
+    file: z.instanceof(File),
+    projectId: z.string().uuid(),
+    docTypeId: z.number().int().gt(0),
+  })
   .passthrough();
 const Project = z
   .object({
@@ -156,6 +160,24 @@ const Project = z
       })
       .passthrough()
       .nullable(),
+    attachments: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid(),
+            projectId: z.string().uuid(),
+            docTypeId: z.number().int(),
+            docTypeName: z.string().nullable(),
+            uploadedBy: z.string().uuid(),
+            fileName: z.string(),
+            fileUrl: z.string().url(),
+            fileType: z.string(),
+            createdAt: z.union([z.string(), z.string()]),
+          })
+          .passthrough()
+      )
+      .optional()
+      .default([]),
   })
   .passthrough();
 const PaginatedProjectResponse = z
@@ -669,7 +691,7 @@ export const schemas = {
   SuccessResponse,
   RecoveryEmailRequest,
   ResetPasswordRequest,
-  postApiv1uploadsdocument_Body,
+  UploadDocumentRequest,
   Project,
   PaginatedProjectResponse,
   CreateProjectRequest,
@@ -1501,10 +1523,91 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: postApiv1uploadsdocument_Body,
+        schema: UploadDocumentRequest,
+      },
+    ],
+    response: z
+      .object({
+        success: z.boolean(),
+        message: z.string(),
+        data: z
+          .object({
+            fileName: z.string(),
+            storedFileName: z.string(),
+            fileSize: z.number(),
+            contentType: z.string(),
+            compressionApplied: z.boolean(),
+            url: z.string().url(),
+          })
+          .passthrough(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Missing file or project ID`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `The authenticated user cannot upload for this project`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Project not found`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Uploads are locked for the current project stage`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 413,
+        description: `File exceeds the supported size limit`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/uploads/files/:fileName",
+    alias: "getApiv1uploadsfilesFileName",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "fileName",
+        type: "Path",
+        schema: z.string().min(1),
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 404,
+        description: `Uploaded file not found`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+    ],
   },
   {
     method: "get",

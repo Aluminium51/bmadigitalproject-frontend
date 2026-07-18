@@ -1,7 +1,7 @@
 // src/features/projects/components/workspace/ProjectHeader.tsx
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { ArrowLeft, Building2, CalendarDays, Send, Briefcase, Target } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,6 @@ interface ProjectHeaderProps {
 export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const router = useRouter();
   const projectId = String(project.id);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const proposalState = useProposalState(projectId);
   const { data: currentDraft, isLoading: isDraftLoading } = useGetDraft(projectId);
   const { mutate: submitProposal, isPending: isSubmitting } = useSubmitProposal(projectId);
@@ -36,15 +35,18 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const statusMeta = getProjectStatusMeta(project.projectStatusId, project.status?.name);
 
   const handleSubmit = () => {
-    setSubmitError(null);
     if (!currentDraft) {
-      setSubmitError("The current draft is still loading. Please try again.");
+      toast.error("Unable to submit project", {
+        description: "The current draft is still loading. Please try again.",
+      });
       return;
     }
 
     submitProposal(currentDraft, {
       onError: (error) => {
-        setSubmitError(error instanceof Error ? error.message : "Unable to submit proposal.");
+        toast.error("Unable to submit project", {
+          description: error instanceof Error ? error.message : "Please try again.",
+        });
       },
     });
   };
@@ -183,7 +185,6 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
                   <Send className="w-4 h-4" />
                   {isSubmitting ? "Submitting..." : "Submit Project"}
                 </Button>
-                {submitError && <p className="max-w-xs text-sm text-red-600">{submitError}</p>}
               </div>
             )}
           </div>

@@ -350,7 +350,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Upload and compress PDF document */
+        /** Upload, optimize, and store a project document */
         post: {
             parameters: {
                 query?: never;
@@ -366,6 +366,8 @@ export interface paths {
                          * @description เอกสาร PDF ที่ต้องการบีบอัด
                          */
                         file: string;
+                        /** Project that owns the uploaded document */
+                        projectId: string;
                     };
                 };
             };

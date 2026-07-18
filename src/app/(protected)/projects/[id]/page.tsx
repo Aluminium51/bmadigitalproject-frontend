@@ -58,7 +58,7 @@ export default function ProjectWorkspacePage() {
         </TabsContent>
 
         <TabsContent value="tab-documents" className="flex-1 mt-6">
-          <DocumentsTabContent />
+          <DocumentsTabContent projectId={projectId} initialAttachments={projectDetail.attachments ?? []} />
         </TabsContent>
 
         <TabsContent value="tab-timeline" className="flex-1 mt-6">
