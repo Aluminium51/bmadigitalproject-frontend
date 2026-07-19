@@ -128,7 +128,7 @@ const Project = z
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
     updatedBy: z.string().uuid().nullable(),
-    deletedAt: z.string().datetime({ offset: true }).nullable(),
+    deletedAt: z.string().datetime({ offset: true }),
     division: z
       .object({
         id: z.number(),

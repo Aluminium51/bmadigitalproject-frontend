@@ -208,7 +208,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
     const saved = await flushDraftRef.current?.() ?? true;
     if (saved) {
       reset(methods.getValues());
-      toast.success("Draft saved");
+      toast.success("บันทึกข้อมูลแล้ว");
     }
     setIsSavingDraft(false);
   };
@@ -239,7 +239,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
 
       <div className="mb-5 flex items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={requestExit} className="-ml-2 text-slate-600">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to project
+          <ArrowLeft className="mr-2 h-4 w-4" /> กลับไปยังโครงการ
         </Button>
         {!isReadOnly && <SaveStatusIndicator />}
       </div>
@@ -316,7 +316,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
             className="fixed bottom-5 right-5 z-40 h-11 rounded-full bg-[#00734b] px-5 font-bold text-white shadow-lg hover:bg-primary-dark"
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSavingDraft ? "Saving..." : "Save Draft"}
+            {isSavingDraft ? "กำลังบันทึก..." : "Save"}
           </Button>
         )}
 

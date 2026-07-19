@@ -7,7 +7,9 @@ import { useAutoSaveDraft } from "./useProposalMutations";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
   ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
-const DEBOUNCE_MS = 1800;
+// Wait until the user has been idle for two seconds before writing. Keeping
+// this value in one place makes the request-rate guarantee explicit.
+const DEBOUNCE_MS = 2000;
 
 function serializeFormValue(value: unknown): unknown {
   if (typeof File !== "undefined" && value instanceof File) return undefined;
@@ -28,6 +30,34 @@ function toDraftRequest(formPayload: Record<string, unknown>) {
   return request;
 }
 
+function getChangedPayload(
+  current: Record<string, unknown>,
+  previous: Record<string, unknown> | null,
+): Record<string, unknown> {
+  // The first successful save establishes the baseline. Until then, the
+  // complete partial form is required to create a useful server snapshot.
+  if (!previous) return current;
+
+  const changed: Record<string, unknown> = {};
+  const keys = new Set([...Object.keys(previous), ...Object.keys(current)]);
+
+  for (const key of keys) {
+    const currentValue = current[key];
+    const previousValue = previous[key];
+
+    // Stringifying each field gives us a deep comparison for nested step
+    // values without introducing another dependency into the form bundle.
+    if (JSON.stringify(currentValue) !== JSON.stringify(previousValue)) {
+      // JSON omits undefined values. Sending null for a cleared field makes
+      // the change explicit to the PATCH endpoint instead of silently
+      // preserving the old server value.
+      changed[key] = currentValue === undefined ? null : currentValue;
+    }
+  }
+
+  return changed;
+}
+
 export type AutoSaveHandle = {
   flush: () => Promise<boolean>;
 };
@@ -40,13 +70,16 @@ export const useAutoSaveForm = (projectId: string | undefined, disabled = false)
   const latestPayloadRef = useRef<Record<string, unknown> | null>(null);
   const latestSerializedRef = useRef("");
   const lastSavedSerializedRef = useRef("");
+  const lastSavedPayloadRef = useRef<Record<string, unknown> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightRef = useRef<Promise<boolean> | null>(null);
   const flushRef = useRef<() => Promise<boolean>>(async () => true);
 
-  latestSaveDraftRef.current = saveDraftAsync;
-
   const flush = useCallback(() => flushRef.current(), []);
+
+  useEffect(() => {
+    latestSaveDraftRef.current = saveDraftAsync;
+  }, [saveDraftAsync]);
 
   useEffect(() => {
     if (disabled || !projectId) {
@@ -78,12 +111,24 @@ export const useAutoSaveForm = (projectId: string | undefined, disabled = false)
         });
       }
 
+      const changedPayload = getChangedPayload(payload, lastSavedPayloadRef.current);
+      if (Object.keys(changedPayload).length === 0) {
+        // Keep both guards synchronized even when a field-level comparison
+        // determines that there is nothing to send.
+        lastSavedSerializedRef.current = serialized;
+        lastSavedPayloadRef.current = payload;
+        return true;
+      }
+
       const request = (async () => {
         try {
-          await latestSaveDraftRef.current(toDraftRequest(payload));
+          // The backend merges draftPayload, so only changed top-level fields
+          // need to cross the network on subsequent autosave requests.
+          await latestSaveDraftRef.current(toDraftRequest(changedPayload));
           // Mark the payload only after the server confirms success. Failed
           // payloads remain eligible for retry instead of being lost.
           lastSavedSerializedRef.current = serialized;
+          lastSavedPayloadRef.current = payload;
           setLastSavedAt(new Date().toISOString());
           return true;
         } catch (error) {
@@ -116,11 +161,14 @@ export const useAutoSaveForm = (projectId: string | undefined, disabled = false)
       const serialized = latestSerializedRef.current;
       if (!payload || !serialized || serialized === lastSavedSerializedRef.current) return;
 
+      const changedPayload = getChangedPayload(payload, lastSavedPayloadRef.current);
+      if (Object.keys(changedPayload).length === 0) return;
+
       void fetch(`${API_BASE}/proposals/projects/${projectId}/draft`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toDraftRequest(payload)),
+        body: JSON.stringify(toDraftRequest(changedPayload)),
         keepalive: true,
       }).catch(() => undefined);
     };
