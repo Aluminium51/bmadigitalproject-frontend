@@ -43,6 +43,7 @@ export function useGetDraft(projectId: string | undefined) {
     queryKey: ["proposals", "draft", projectId],
     queryFn: () => fetchDraft(projectId!),
     enabled: !!projectId,
+    refetchOnMount: "always",
     select: (res) => {
       if (!res.data) return null;
       const draft = res.data as Record<string, unknown> & {
@@ -60,6 +61,7 @@ export function useGetProposal(projectId: string | undefined) {
     queryKey: ["proposals", "submitted", projectId],
     queryFn: () => fetchSubmittedProposal(projectId!),
     enabled: !!projectId,
+    refetchOnMount: "always",
     select: (res) => {
       if (!res.data) return null;
       const proposal = res.data as Record<string, unknown> & {

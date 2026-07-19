@@ -102,6 +102,7 @@ const UploadDocumentRequest = z
     file: z.instanceof(File),
     projectId: z.string().uuid(),
     docTypeId: z.number().int().gt(0),
+    description: z.string().max(2000).optional(),
   })
   .passthrough();
 const Project = z
@@ -127,6 +128,7 @@ const Project = z
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
     updatedBy: z.string().uuid().nullable(),
+    deletedAt: z.string().datetime({ offset: true }).nullable(),
     division: z
       .object({
         id: z.number(),
@@ -172,12 +174,25 @@ const Project = z
             fileName: z.string(),
             fileUrl: z.string().url(),
             fileType: z.string(),
+            description: z.string().nullable(),
+            uploader: z
+              .object({
+                userId: z.string().uuid(),
+                firstName: z.string(),
+                lastName: z.string(),
+              })
+              .passthrough()
+              .nullable(),
             createdAt: z.union([z.string(), z.string()]),
           })
           .passthrough()
       )
       .optional()
       .default([]),
+    permissions: z
+      .object({ canDelete: z.boolean(), canManageAttachments: z.boolean() })
+      .passthrough()
+      .optional(),
   })
   .passthrough();
 const PaginatedProjectResponse = z
@@ -1532,12 +1547,21 @@ const endpoints = makeApi([
         message: z.string(),
         data: z
           .object({
+            attachmentId: z.string().uuid(),
             fileName: z.string(),
             storedFileName: z.string(),
             fileSize: z.number(),
             contentType: z.string(),
             compressionApplied: z.boolean(),
             url: z.string().url(),
+            uploader: z
+              .object({
+                userId: z.string().uuid(),
+                firstName: z.string(),
+                lastName: z.string(),
+              })
+              .passthrough()
+              .nullable(),
           })
           .passthrough(),
       })
@@ -1578,6 +1602,49 @@ const endpoints = makeApi([
       {
         status: 413,
         description: `File exceeds the supported size limit`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/api/v1/uploads/files/:fileId",
+    alias: "deleteApiv1uploadsfilesFileId",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "fileId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z
+      .object({ message: z.string(), error: z.string() })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 403,
+        description: `The authenticated user cannot delete this file`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `File not found`,
+        schema: z
+          .object({ message: z.string(), error: z.string() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `File management is locked for the current project stage`,
         schema: z
           .object({ message: z.string(), error: z.string() })
           .partial()

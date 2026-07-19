@@ -1,8 +1,19 @@
 // src/features/projects/components/workspace/ProjectHeader.tsx
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ArrowLeft, Building2, CalendarDays, Send, Briefcase, Target } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ProjectDetail } from "../../types/workspace";
@@ -12,6 +23,7 @@ import { useFourQuadrants, useDeputyGovernors } from "@/features/lookups/hooks/u
 import { useProposalState } from "@/features/proposals/hooks/useProposalState";
 import { useGetDraft } from "@/features/proposals/hooks/useProposalDraftQuery";
 import { useSubmitProposal } from "@/features/proposals/hooks/useProposalMutations";
+import { useDeleteProject } from "../../hooks/useProjectMutations";
 import {
   getProjectStatusMeta,
   OWNER_EDITABLE_PROJECT_STATUSES,
@@ -28,6 +40,9 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const proposalState = useProposalState(projectId);
   const { data: currentDraft, isLoading: isDraftLoading } = useGetDraft(projectId);
   const { mutate: submitProposal, isPending: isSubmitting } = useSubmitProposal(projectId);
+  const deleteMutation = useDeleteProject(projectId);
+  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const isOwnerEditableStage = OWNER_EDITABLE_PROJECT_STATUSES.includes(
     project.projectStatusId as typeof OWNER_EDITABLE_PROJECT_STATUSES[number],
   );
@@ -41,6 +56,12 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
       });
       return;
     }
+    setSubmitConfirmOpen(true);
+  };
+
+  const confirmSubmit = () => {
+    setSubmitConfirmOpen(false);
+    if (!currentDraft) return;
 
     submitProposal(currentDraft, {
       onError: (error) => {
@@ -175,8 +196,8 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
             </div>
 
             {/* --- Single explicit final-submission action --- */}
-            {proposalState.status === "draft" && isOwnerEditableStage && (
-              <div className="flex flex-col items-stretch gap-2 shrink-0 xl:self-start w-full xl:w-auto">
+            <div className="flex flex-col items-stretch gap-2 shrink-0 xl:self-start w-full xl:w-auto">
+              {proposalState.status === "draft" && isOwnerEditableStage && (
                 <Button
                   disabled={isSubmitDisabled}
                   onClick={handleSubmit}
@@ -185,11 +206,63 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
                   <Send className="w-4 h-4" />
                   {isSubmitting ? "Submitting..." : "Submit Project"}
                 </Button>
-              </div>
-            )}
+              )}
+              {project.permissions?.canDelete && (
+                <Button
+                  variant="outline"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  className="h-10 w-full xl:w-auto border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Delete Project"}
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={submitConfirmOpen} onOpenChange={setSubmitConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Submission finalizes the proposal and sends it into the review workflow. You will not be able to edit it unless it is returned.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSubmit}>Submit Project</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {project.projectStatusId === 1
+                ? "This draft will be permanently deleted together with its draft data and attachments."
+                : "This project will be archived and removed from active views while preserving its historical records."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                deleteMutation.mutate(undefined, {
+                  onError: (error) => toast.error("Unable to delete project", { description: error instanceof Error ? error.message : "Please try again." }),
+                });
+              }}
+            >
+              Delete Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

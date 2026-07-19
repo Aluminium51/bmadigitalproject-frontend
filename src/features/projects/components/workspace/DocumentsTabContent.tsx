@@ -1,9 +1,11 @@
 import { Paperclip } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useProjectDocuments } from "../../hooks/useProjectDocuments";
 import type { DocumentFile } from "../../types/workspace";
-import { FileAttachment, FileUploadField } from "./ui/FileUploadField";
+import { deleteProjectFile, FileAttachment, FileUploadField } from "./ui/FileUploadField";
 
 const EMPTY_ATTACHMENTS: Parameters<typeof useProjectDocuments>[0] = [];
 
@@ -16,8 +18,18 @@ type DocumentField = {
   setFile: (file: DocumentFile | null) => void;
 };
 
-export function DocumentsTabContent({ projectId, initialAttachments = EMPTY_ATTACHMENTS }: { projectId: string; initialAttachments?: Parameters<typeof useProjectDocuments>[0] }) {
+export function DocumentsTabContent({ projectId, initialAttachments = EMPTY_ATTACHMENTS, canManage = true }: { projectId: string; initialAttachments?: Parameters<typeof useProjectDocuments>[0]; canManage?: boolean }) {
   const documents = useProjectDocuments(initialAttachments);
+  const queryClient = useQueryClient();
+  const handleRemoveAdditional = async (id: string) => {
+    try {
+      if (id !== "uploaded") await deleteProjectFile(id);
+      documents.removeAdditionalDoc(id);
+      await queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+    } catch (error) {
+      toast.error("File deletion failed", { description: error instanceof Error ? error.message : "Please try again." });
+    }
+  };
   const mandatory: DocumentField[] = [
     { docTypeId: 5, title: "Presentation", accept: ".ppt,.pptx", file: documents.presentation, setFile: documents.setPresentation, required: true },
     { docTypeId: 9, title: "Quotation", accept: ".pdf", file: documents.quotation, setFile: documents.setQuotation, required: true },
@@ -52,6 +64,8 @@ export function DocumentsTabContent({ projectId, initialAttachments = EMPTY_ATTA
                 accept={field.accept}
                 value={field.file}
                 onChange={(file) => field.setFile(file as DocumentFile | null)}
+                canManage={canManage}
+                showDescription
               />
             ))}
           </CardContent>
@@ -77,6 +91,8 @@ export function DocumentsTabContent({ projectId, initialAttachments = EMPTY_ATTA
                 accept={field.accept}
                 value={field.file}
                 onChange={(file) => field.setFile(file as DocumentFile | null)}
+                canManage={canManage}
+                showDescription
               />
             ))}
           </CardContent>
@@ -95,6 +111,8 @@ export function DocumentsTabContent({ projectId, initialAttachments = EMPTY_ATTA
           accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp"
           value={null}
           onChange={(file) => file && documents.addAdditionalDocument(file as DocumentFile)}
+          canManage={canManage}
+          showDescription
         />
         <Card className="rounded-md border-[#D1CDC7] shadow-sm bg-white">
           <CardContent className="p-4 space-y-3">
@@ -106,7 +124,7 @@ export function DocumentsTabContent({ projectId, initialAttachments = EMPTY_ATTA
             ) : (
               documents.additionalDocs.map((doc) => (
                 <div key={doc.id} className="flex items-center justify-between gap-3 border-b last:border-b-0 pb-3 last:pb-0">
-                  <FileAttachment value={doc} onRemove={() => documents.removeAdditionalDoc(doc.id)} />
+                  <FileAttachment value={doc} canManage={canManage} onRemove={() => handleRemoveAdditional(doc.id)} />
                 </div>
               ))
             )}

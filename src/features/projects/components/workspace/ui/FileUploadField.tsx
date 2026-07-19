@@ -38,6 +38,11 @@ export type SharedFileValue = {
   url?: string;
   file?: File | string;
   description?: string;
+  uploader?: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+  } | null;
 };
 
 type FileUploadFieldProps = {
@@ -51,6 +56,7 @@ type FileUploadFieldProps = {
   showDescription?: boolean;
   descriptionRequired?: boolean;
   descriptionError?: string;
+  canManage?: boolean;
   className?: string;
 };
 
@@ -105,11 +111,12 @@ function matchesAccept(file: File, accept?: string) {
   });
 }
 
-async function uploadProjectFile(file: File, projectId: string, docTypeId: number) {
+async function uploadProjectFile(file: File, projectId: string, docTypeId: number, description?: string) {
   const body = new FormData();
   body.append("file", file);
   body.append("projectId", projectId);
   body.append("docTypeId", String(docTypeId));
+  if (description?.trim()) body.append("description", description.trim());
   const response = await fetch(`${API_BASE}/uploads/document`, {
     method: "POST",
     credentials: "include",
@@ -119,16 +126,34 @@ async function uploadProjectFile(file: File, projectId: string, docTypeId: numbe
   if (!response.ok || !payload.data?.url) {
     throw new Error(payload.message ?? payload.error ?? "File upload failed");
   }
-  return payload.data as { url: string; fileName?: string; fileSize?: number; contentType?: string };
+  return payload.data as {
+    attachmentId?: string;
+    url: string;
+    fileName?: string;
+    fileSize?: number;
+    contentType?: string;
+    uploader?: SharedFileValue["uploader"];
+  };
+}
+
+export async function deleteProjectFile(fileId: string) {
+  const response = await fetch(`${API_BASE}/uploads/files/${encodeURIComponent(fileId)}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.message ?? payload.error ?? "File deletion failed");
 }
 
 export function FileAttachment({
   value,
   onRemove,
+  canManage = true,
   className,
 }: {
   value: SharedFileValue | string;
-  onRemove?: () => void;
+  onRemove?: () => void | Promise<void>;
+  canManage?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -176,12 +201,22 @@ export function FileAttachment({
         </button>
         {!canPreview && previewSource && <Download className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
         {onRemove && (
-          <Button type="button" variant="ghost" size="icon-sm" onClick={onRemove} className="shrink-0 text-muted-foreground hover:text-red-600">
+          <Button type="button" variant="ghost" size="icon-sm" onClick={() => void onRemove()} disabled={!canManage} className="shrink-0 text-muted-foreground hover:text-red-600">
             <X className="w-4 h-4" />
             <span className="sr-only">Remove file</span>
           </Button>
         )}
       </div>
+      {typeof value !== "string" && value.uploader && (
+        <span className="ml-6 text-[11px] text-muted-foreground truncate">
+          Uploaded by {value.uploader.firstName} {value.uploader.lastName}
+        </span>
+      )}
+      {typeof value !== "string" && value.description && (
+        <span className="ml-6 text-[11px] text-muted-foreground truncate" title={value.description}>
+          {value.description}
+        </span>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[min(96vw,1100px)] max-w-none h-[min(92vh,900px)] p-4 flex flex-col">
@@ -214,12 +249,15 @@ export function FileUploadField({
   showDescription = false,
   descriptionRequired = false,
   descriptionError,
+  canManage = true,
   className,
 }: FileUploadFieldProps) {
   const queryClient = useQueryClient();
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const source = getSource(value);
   const current = typeof value === "string" ? { id: "uploaded", name: source.name, url: value, type: source.kind } : value;
@@ -244,6 +282,10 @@ export function FileUploadField({
     }
 
     setError(null);
+    if (showDescription && descriptionRequired && !descriptionDraft.trim()) {
+      setError("Please provide a description for this file.");
+      return;
+    }
     setUploading(true);
     try {
       let uploadFile = file;
@@ -257,17 +299,19 @@ export function FileUploadField({
         });
         uploadFile = new File([compressed], file.name, { type: compressed.type, lastModified: Date.now() });
       }
-      const uploaded = await uploadProjectFile(uploadFile, projectId, docTypeId ?? 8);
+      const uploaded = await uploadProjectFile(uploadFile, projectId, docTypeId ?? 8, descriptionDraft);
       onChange({
-        id: crypto.randomUUID(),
+        id: uploaded.attachmentId ?? crypto.randomUUID(),
         name: file.name,
         type: fileKind(file.name, file.type),
         mimeType: file.type,
         size: formatBytes(uploadFile.size),
         url: uploaded.url,
         file: uploaded.url,
-        description: current?.description || "",
+        description: descriptionDraft.trim(),
+        uploader: uploaded.uploader ?? null,
       });
+      setDescriptionDraft("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
@@ -283,6 +327,27 @@ export function FileUploadField({
     }
   };
 
+  const handleRemove = async () => {
+    if (!current || isDeleting) return;
+    setError(null);
+    setIsDeleting(true);
+    try {
+      const persistedAttachmentId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(current.id);
+      if (persistedAttachmentId) await deleteProjectFile(current.id);
+      onChange(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
+      ]);
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : "File deletion failed.";
+      setError(message);
+      toast.error("File deletion failed", { description: message });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
@@ -294,11 +359,11 @@ export function FileUploadField({
     <div className={cn("flex flex-col gap-2 px-3 py-2 border border-border rounded-lg bg-surface", className)}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-semibold text-foreground truncate">{title}</span>
-        {current && <FileAttachment value={current} onRemove={() => onChange(null)} className="max-w-[70%]" />}
+        {current && <FileAttachment value={current} onRemove={handleRemove} canManage={canManage && !isDeleting} className="max-w-[70%]" />}
       </div>
 
       {!current && (
-        <div
+        canManage ? <div
           className={cn("flex items-center gap-2 rounded-md border border-dashed px-2 py-1.5 transition-colors", isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50", isUploading && "pointer-events-none opacity-60")}
           onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -310,16 +375,28 @@ export function FileUploadField({
             {isUploading ? "Uploading" : "Choose file"}
           </Button>
           <span className="text-[11px] text-muted-foreground truncate">or drag here · {accept || "supported file"}</span>
-        </div>
+        </div> : <p className="text-xs text-muted-foreground">Attachments are read-only at this project stage.</p>
       )}
 
-      {current && showDescription && (
+      {!current && showDescription && canManage && (
         <Input
-          value={current.description || ""}
-          onChange={(event) => onChange({ ...current, description: event.target.value })}
-          placeholder={descriptionRequired ? "Description is required" : "Description"}
+          value={descriptionDraft}
+          onChange={(event) => setDescriptionDraft(event.target.value)}
+          placeholder={descriptionRequired ? "Description is required" : "Description (optional)"}
           className={cn("h-8 text-sm", descriptionError && "border-red-500")}
         />
+      )}
+      {current && showDescription && (
+        current.description ? (
+          <p className="text-xs text-muted-foreground truncate" title={current.description}>Description: {current.description}</p>
+        ) : descriptionRequired && canManage ? (
+          <Input
+            value={current.description || ""}
+            onChange={(event) => onChange({ ...current, description: event.target.value })}
+            placeholder="Description is required"
+            className={cn("h-8 text-sm", descriptionError && "border-red-500")}
+          />
+        ) : null
       )}
       {(error || descriptionError) && <p className="text-xs text-red-600 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{error || descriptionError}</p>}
     </div>

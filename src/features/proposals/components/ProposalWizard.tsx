@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   proposalFormSchema,
@@ -29,6 +30,16 @@ import { ProposalStep4 } from "./ProposalStep4";
 import { ProposalStep5 } from "./ProposalStep5";
 import { SaveStatusIndicator } from "./SaveStatusIndicator";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useProjectWorkspace } from "@/features/projects/hooks/useProjectWorkspace";
 import { OWNER_LOCKED_PROJECT_STATUSES } from "@/features/projects/utils/projectStatus";
 
@@ -86,6 +97,18 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
   });
 
   const { reset } = methods;
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  useEffect(() => {
+    if (!methods.formState.isDirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [methods.formState.isDirty]);
 
   // ── On mount: hydrate form from draft or initialize a blank draft ──────────
   useEffect(() => {
@@ -110,12 +133,15 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
           (typeof current === "string" ? current : undefined) ??
           current?.url ??
           (typeof current?.file === "string" ? current.file : undefined);
-        if (url && !current?.file) {
+        if (url) {
+          const matchingAttachment = projectDetail?.attachments?.find((attachment) => attachment.fileUrl === url);
           hydratedDraft[fileKey] = {
-            id: `${field}-server`,
+            ...(current && typeof current === "object" ? current : {}),
+            id: matchingAttachment?.id ?? `${field}-server`,
             file: url,
             url,
-            description: "",
+            description: current?.description ?? matchingAttachment?.description ?? "",
+            uploader: matchingAttachment?.uploader ?? null,
           };
         }
       }
@@ -169,12 +195,54 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
   // owns the explicit final-submission action.
   const handleFinishDraft = async () => {
     const saved = await flushDraftRef.current?.() ?? true;
-    if (saved) router.push(`/projects/${projectId}`);
+    if (saved) {
+      reset(methods.getValues());
+      router.push(`/projects/${projectId}`);
+      router.refresh();
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (isSavingDraft || isReadOnly) return;
+    setIsSavingDraft(true);
+    const saved = await flushDraftRef.current?.() ?? true;
+    if (saved) {
+      reset(methods.getValues());
+      toast.success("Draft saved");
+    }
+    setIsSavingDraft(false);
+  };
+
+  const requestExit = () => {
+    if (methods.formState.isDirty) {
+      setExitConfirmOpen(true);
+      return;
+    }
+    router.push(`/projects/${projectId}`);
+  };
+
+  const saveAndExit = async () => {
+    setIsSavingDraft(true);
+    const saved = await flushDraftRef.current?.() ?? true;
+    setIsSavingDraft(false);
+    if (saved) {
+      reset(methods.getValues());
+      setExitConfirmOpen(false);
+      router.push(`/projects/${projectId}`);
+      router.refresh();
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="mx-auto w-full rounded-container border border-[#D1CDC7] bg-white p-6 sm:p-10 shadow-sm overflow-hidden">
+
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <Button type="button" variant="ghost" onClick={requestExit} className="-ml-2 text-slate-600">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to project
+        </Button>
+        {!isReadOnly && <SaveStatusIndicator />}
+      </div>
 
       <StepperIndicator validateCurrentStep={validateCurrentStep} />
 
@@ -239,6 +307,45 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
             </div>
           </div>
         </form>
+
+        {!isReadOnly && (
+          <Button
+            type="button"
+            onClick={() => void handleSaveDraft()}
+            disabled={isSavingDraft}
+            className="fixed bottom-5 right-5 z-40 h-11 rounded-full bg-[#00734b] px-5 font-bold text-white shadow-lg hover:bg-primary-dark"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            {isSavingDraft ? "Saving..." : "Save Draft"}
+          </Button>
+        )}
+
+        <AlertDialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Leave proposal form?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved changes. Choose whether to save them before leaving, discard them, or continue editing.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isSavingDraft}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={isSavingDraft}
+                onClick={() => {
+                  reset();
+                  router.push(`/projects/${projectId}`);
+                }}
+              >
+                Discard Changes
+              </AlertDialogAction>
+              <Button type="button" onClick={() => void saveAndExit()} disabled={isSavingDraft}>
+                {isSavingDraft ? "Saving..." : "Save and Exit"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </FormProvider>
     </div>
   );

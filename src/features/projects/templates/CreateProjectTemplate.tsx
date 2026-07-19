@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller } from "react-hook-form";
 import { AlertCircle, Save, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,6 +53,7 @@ type CreateProjectValues = z.infer<typeof createProjectSchema>;
 
 export function CreateProjectTemplate() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { data: quadrantsRes, isLoading: isLoadingQuadrants } =
     useFourQuadrants();
@@ -95,10 +97,13 @@ export function CreateProjectTemplate() {
 
     // Toast notification for success or error
     if (response.success) {
+      // Mark every project-list variant stale before returning to the list.
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success("สร้างโครงการสำเร็จ", {
         description: "ระบบได้ทำการบันทึกร่างโครงการของคุณเรียบร้อยแล้ว",
       });
       router.push("/projects");
+      router.refresh();
     } else {
       toast.error("สร้างโครงการไม่สำเร็จ", {
         description:

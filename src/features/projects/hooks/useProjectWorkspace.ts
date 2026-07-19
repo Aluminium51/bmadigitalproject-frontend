@@ -8,6 +8,7 @@ export function useProjectWorkspace(projectId: string) {
     queryKey: ["project", projectId],
     queryFn: () => getProjectByIdAction(projectId),
     enabled: !!projectId,
+    refetchOnMount: "always",
   });
 
   // นำข้อมูลจาก Backend มาประกอบร่างกับ hasProposal ให้ตรงกับ Type ProjectDetail

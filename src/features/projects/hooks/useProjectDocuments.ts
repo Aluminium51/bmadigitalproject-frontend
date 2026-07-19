@@ -8,6 +8,8 @@ export type ProjectAttachment = {
   fileName: string;
   fileUrl: string;
   fileType: string;
+  description?: string | null;
+  uploader?: { userId: string; firstName: string; lastName: string } | null;
   createdAt?: string | Date;
 };
 
@@ -29,6 +31,8 @@ function mapAttachment(attachment: ProjectAttachment): DocumentFile {
     mimeType: attachment.fileType,
     url: attachment.fileUrl,
     file: attachment.fileUrl,
+    description: attachment.description ?? undefined,
+    uploader: attachment.uploader,
   };
 }
 

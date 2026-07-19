@@ -177,6 +177,7 @@ export function useInitializeDraft(projectId: string | undefined) {
 // ---------------------------------------------------------------------------
 export function useAutoSaveDraft(projectId: string | undefined) {
   const { setSaveStatus } = useProposalFormStore();
+  const qc = useQueryClient();
 
   return useMutation({
     mutationFn: (payload: Record<string, unknown>) =>
@@ -187,8 +188,23 @@ export function useAutoSaveDraft(projectId: string | undefined) {
     onMutate: () => {
       setSaveStatus("saving");
     },
-    onSuccess: () => {
+    onSuccess: async (response) => {
       setSaveStatus("saved");
+
+      if (!projectId) return;
+
+      // Keep the selected draft query in sync immediately so returning to the
+      // wizard never renders the previous cached payload while a refetch runs.
+      if (response?.data) {
+        qc.setQueryData(["proposals", "draft", projectId], { data: response.data });
+      }
+
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
+        qc.invalidateQueries({ queryKey: ["proposals", "submitted", projectId] }),
+        qc.invalidateQueries({ queryKey: ["project", projectId] }),
+        qc.invalidateQueries({ queryKey: ["proposals"] }),
+      ]);
     },
     onError: (error) => {
       console.warn("[useAutoSaveDraft] Auto-save failed:", error);

@@ -8,6 +8,10 @@ export type ProjectResponse = z.infer<typeof schemas.Project>;
 // 2. ขยาย Type เพื่อเพิ่มสถานะที่ใช้เฉพาะระบบหน้าบ้าน (UI State)
 export interface ProjectDetail extends ProjectResponse {
   hasProposal: boolean;
+  permissions?: {
+    canDelete: boolean;
+    canManageAttachments: boolean;
+  };
 }
 
 export type ProjectAttachment = ProjectResponse["attachments"][number];
@@ -20,6 +24,12 @@ export type DocumentFile = {
   size?: string;
   url?: string;
   file?: File | string;
+  description?: string;
+  uploader?: {
+    userId: string;
+    firstName: string;
+    lastName: string;
+  } | null;
 };
 
 export type WorkspaceTab = "tab-proposal" | "tab-documents" | "tab-timeline";
