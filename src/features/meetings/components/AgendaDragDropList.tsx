@@ -12,8 +12,10 @@ import {
   Briefcase,
   FileText,
   MessageSquare,
+  GitBranch,
   MoreHorizontal,
   Banknote,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +25,6 @@ import {
   type GroupedAgendas,
   type Project,
   AgendaType,
-  AGENDA_TYPE_LABELS,
 } from "../types";
 import { ProjectSelectorModal } from "./ProjectSelectorModal";
 
@@ -34,6 +35,7 @@ interface AgendaDragDropListProps {
   onMoveDown: (agendaId: string) => void;
   onLinkProject: (agendaId: string, projectId: string) => void;
   onUnlinkProject: (agendaId: string) => void;
+  onDelete: (agendaId: string) => void;
   isFirstInGroup: (agendaId: string) => boolean;
   isLastInGroup: (agendaId: string) => boolean;
 }
@@ -41,6 +43,7 @@ interface AgendaDragDropListProps {
 const AGENDA_TYPE_ICONS: Record<AgendaType, React.ReactNode> = {
   [AgendaType.FOR_INFORMATION]: <FileText className="w-4 h-4" />,
   [AgendaType.APPROVE_MINUTES]: <MessageSquare className="w-4 h-4" />,
+  [AgendaType.FOLLOW_UP]: <GitBranch className="w-4 h-4" />,
   [AgendaType.FOR_CONSIDERATION]: <Briefcase className="w-4 h-4" />,
   [AgendaType.OTHER]: <MoreHorizontal className="w-4 h-4" />,
 };
@@ -58,6 +61,11 @@ const AGENDA_TYPE_STYLES: Record<
     headerBg: "bg-violet-50",
     headerText: "text-violet-700",
     accentBorder: "border-l-violet-400",
+  },
+  [AgendaType.FOLLOW_UP]: {
+    headerBg: "bg-cyan-50",
+    headerText: "text-cyan-700",
+    accentBorder: "border-l-cyan-400",
   },
   [AgendaType.FOR_CONSIDERATION]: {
     headerBg: "bg-amber-50",
@@ -78,6 +86,7 @@ export function AgendaDragDropList({
   onMoveDown,
   onLinkProject,
   onUnlinkProject,
+  onDelete,
   isFirstInGroup,
   isLastInGroup,
 }: AgendaDragDropListProps) {
@@ -143,6 +152,7 @@ export function AgendaDragDropList({
                       handleOpenProjectModal(agenda.agenda_id)
                     }
                     onUnlinkProject={() => onUnlinkProject(agenda.agenda_id)}
+                    onDelete={() => onDelete(agenda.agenda_id)}
                     formatBudget={formatBudget}
                   />
                 ))}
@@ -188,6 +198,7 @@ interface AgendaCardProps {
   onMoveDown: () => void;
   onLinkProject: () => void;
   onUnlinkProject: () => void;
+  onDelete: () => void;
   formatBudget: (amount: number) => string;
 }
 
@@ -200,9 +211,10 @@ function AgendaCard({
   onMoveDown,
   onLinkProject,
   onUnlinkProject,
+  onDelete,
   formatBudget,
 }: AgendaCardProps) {
-  const showProjectLinker =
+  const showProjectLinker = agenda.agenda_type === AgendaType.FOLLOW_UP ||
     agenda.agenda_type === AgendaType.FOR_CONSIDERATION;
 
   return (
@@ -242,6 +254,21 @@ function AgendaCard({
           <TooltipContent side="left">เลื่อนลง</TooltipContent>
         </Tooltip>
       </div>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-7 w-7 shrink-0 rounded-md text-red-500 hover:bg-red-50 hover:text-red-700"
+            onClick={onDelete}
+            aria-label="ลบวาระ"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>ลบวาระ</TooltipContent>
+      </Tooltip>
 
       {/* Content */}
       <div className="flex-1 min-w-0 space-y-2">

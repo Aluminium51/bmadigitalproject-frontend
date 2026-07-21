@@ -1,139 +1,110 @@
-"use client";
 // src/app/(protected)/meetings/[id]/agendas/page.tsx
-// หน้าจัดการวาระการประชุม — Agenda Management for a specific meeting
+"use client";
 
-import { use } from "react";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  CalendarDays,
-  MapPin,
-  Users,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { use, useState } from "react";
+import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { AgendaDragDropList } from "@/features/meetings/components/AgendaDragDropList";
-import { useAgendas } from "@/features/meetings/hooks/useAgendas";
-import { useMeetings } from "@/features/meetings/hooks/useMeetings";
-import {
-  MEETING_STATUS_LABELS,
-  MEETING_STATUS_COLORS,
-} from "@/features/meetings/types";
+import { CreateAgendaDialog } from "@/features/meetings/components/CreateAgendaDialog";
+import { MeetingWorkspaceHeader } from "@/features/meetings/components/MeetingWorkspaceHeader";
+import { useAgendas, useDeleteAgenda } from "@/features/meetings/hooks/useAgendas";
+import { useMeeting } from "@/features/meetings/hooks/useMeetings";
 
-export default function AgendasPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function AgendasPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { getMeetingById } = useMeetings();
-  const {
-    groupedAgendas,
-    availableProjects,
-    moveAgendaUp,
-    moveAgendaDown,
-    linkProject,
-    unlinkProject,
-    isFirstInGroup,
-    isLastInGroup,
-  } = useAgendas(id);
+  const meetingQuery = useMeeting(id);
+  const agendas = useAgendas(id);
+  const deleteAgenda = useDeleteAgenda(id);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [deleteAgendaId, setDeleteAgendaId] = useState<string | null>(null);
 
-  const meeting = getMeetingById(id);
+  const confirmDeleteAgenda = () => {
+    if (!deleteAgendaId) return;
 
-  if (!meeting) {
+    const agendaId = deleteAgendaId;
+    setDeleteAgendaId(null);
+    deleteAgenda.mutate(agendaId, {
+      onSuccess: () => toast.success("Agenda deleted successfully"),
+      onError: (error) => toast.error("Unable to delete agenda", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      }),
+    });
+  };
+
+  if (meetingQuery.isLoading || agendas.isLoading) {
     return (
-      <div className="max-w-4xl mx-auto py-16 text-center">
-        <CalendarDays className="w-16 h-16 mx-auto mb-4 text-slate-200" />
-        <h2 className="text-xl font-bold text-slate-500">
-          ไม่พบข้อมูลการประชุม
-        </h2>
-        <p className="text-sm text-slate-400 mt-2">
-          การประชุมที่คุณกำลังค้นหาอาจถูกลบหรือไม่มีอยู่ในระบบ
-        </p>
-        <Link href="/meetings">
-          <Button variant="outline" className="mt-6 gap-1.5 rounded-xl">
-            <ArrowLeft className="w-4 h-4" />
-            กลับไปรายการประชุม
-          </Button>
-        </Link>
+      <div className="flex min-h-64 items-center justify-center gap-2 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin text-[#00734b]" />
+        Loading meeting agendas...
       </div>
     );
   }
 
-  const statusColors = MEETING_STATUS_COLORS[meeting.meeting_status];
+  if (meetingQuery.isError || !meetingQuery.data) {
+    return <div className="mx-auto max-w-4xl rounded-md border border-red-200 bg-red-50 p-8 text-center text-red-700">Meeting not found.</div>;
+  }
+
+  if (agendas.isError) {
+    return <div className="mx-auto max-w-4xl rounded-md border border-red-200 bg-red-50 p-8 text-center text-red-700">{agendas.error?.message ?? "Unable to load agendas."}</div>;
+  }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* ── Back + Meeting Header ── */}
-      <div className="space-y-4">
-        <Link
-          href="/meetings"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-[#00734b] transition-colors font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          กลับไปรายการประชุม
-        </Link>
+    <div className="mx-auto flex w-full flex-col gap-6 p-6 lg:p-8">
+      <MeetingWorkspaceHeader meeting={meetingQuery.data} activeTab="agendas" />
 
-        <div className="bg-white rounded-md border border-[#ededf4] shadow-level-1 p-5">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <div>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    ครั้งที่ {meeting.meeting_no}
-                  </p>
-                  <h1 className="text-lg font-bold text-[#191c20] leading-snug">
-                    {meeting.title}
-                  </h1>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <CalendarDays className="w-3 h-3" />
-                  {meeting.meeting_date}
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {meeting.location}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  {meeting.chairman}
-                </span>
-              </div>
-            </div>
-
-            <Badge
-              variant="outline"
-              className={`${statusColors.bg} ${statusColors.text} ${statusColors.border} font-bold text-[11px] px-3 py-1 shrink-0 self-start`}
-            >
-              {MEETING_STATUS_LABELS[meeting.meeting_status]}
-            </Badge>
-          </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-extrabold text-[#191c20]">Manage meeting agendas</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Arrange agendas and link them to projects by agenda type.</p>
         </div>
+        <Button onClick={() => setCreateOpen(true)} className="bg-[#00734b] text-white hover:bg-[#005838] pl-4">
+          <Plus className="mr-2 h-4 w-4" />
+          {/*Add agenda*/}
+          เพิ่มวาระการประชุม
+        </Button>
       </div>
 
-      {/* ── Section Title ── */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-[#191c20]">
-          จัดการวาระการประชุม
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          ใช้ลูกศร ↑ ↓ เพื่อเรียงลำดับวาระภายในกลุ่ม
-        </p>
-      </div>
-
-      {/* ── Agenda List ── */}
       <AgendaDragDropList
-        groupedAgendas={groupedAgendas}
-        availableProjects={availableProjects}
-        onMoveUp={moveAgendaUp}
-        onMoveDown={moveAgendaDown}
-        onLinkProject={linkProject}
-        onUnlinkProject={unlinkProject}
-        isFirstInGroup={isFirstInGroup}
-        isLastInGroup={isLastInGroup}
+        groupedAgendas={agendas.groupedAgendas}
+        availableProjects={agendas.availableProjects}
+        onMoveUp={agendas.moveAgendaUp}
+        onMoveDown={agendas.moveAgendaDown}
+        onLinkProject={agendas.linkProject}
+        onUnlinkProject={agendas.unlinkProject}
+        onDelete={setDeleteAgendaId}
+        isFirstInGroup={agendas.isFirstInGroup}
+        isLastInGroup={agendas.isLastInGroup}
       />
+
+      <CreateAgendaDialog
+        meetingId={id}
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        availableProjects={agendas.availableProjects}
+      />
+
+      <AlertDialog open={Boolean(deleteAgendaId)} onOpenChange={(open) => !open && setDeleteAgendaId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this agenda?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deleting the agenda also deletes its resolution and attachments. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAgenda.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteAgenda}
+              disabled={deleteAgenda.isPending}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {deleteAgenda.isPending ? "Deleting..." : "Delete agenda"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

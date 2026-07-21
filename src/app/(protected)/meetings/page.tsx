@@ -2,7 +2,7 @@
 // src/app/(protected)/meetings/page.tsx
 // หน้ารายการการประชุมทั้งหมด — Meeting Sessions List
 
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { MeetingListTable } from "@/features/meetings/components/MeetingListTable";
 import { useMeetings } from "@/features/meetings/hooks/useMeetings";
@@ -14,6 +14,9 @@ export default function MeetingsPage() {
     filterStatus,
     setSearchQuery,
     setFilterStatus,
+    isLoading,
+    isError,
+    error,
   } = useMeetings();
 
   return (
@@ -36,13 +39,26 @@ export default function MeetingsPage() {
       </div>
 
       {/* --- พื้นที่ตารางหลัก --- */}
-      <MeetingListTable
-        meetings={filteredMeetings}
-        searchQuery={searchQuery}
-        filterStatus={filterStatus}
-        onSearchChange={setSearchQuery}
-        onFilterChange={setFilterStatus}
-      />
+      <div className="flex min-h-0 flex-1 flex-col">
+        {isLoading ? (
+          <div className="flex-1 overflow-hidden rounded-md border border-[#D1CDC7] bg-white shadow-sm">
+            <div className="space-y-4 p-6 sm:p-10">
+              {Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-12 animate-pulse rounded-md bg-slate-100" />)}
+            </div>
+            <div className="flex items-center justify-center gap-2 border-t border-[#ededf4] py-4 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />กำลังโหลดข้อมูลการประชุม...</div>
+          </div>
+        ) : isError ? (
+          <div className="rounded-md border border-red-200 bg-red-50 p-6 text-red-700">{error instanceof Error ? error.message : "ไม่สามารถโหลดข้อมูลการประชุมได้"}</div>
+        ) : (
+          <MeetingListTable
+            meetings={filteredMeetings}
+            searchQuery={searchQuery}
+            filterStatus={filterStatus}
+            onSearchChange={setSearchQuery}
+            onFilterChange={setFilterStatus}
+          />
+        )}
+      </div>
     </div>
   );
 }

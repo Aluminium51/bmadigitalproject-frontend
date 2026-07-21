@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Connect to backend service using the internal Docker network
+        NEXT_PUBLIC_API_URL: http://172.27.15.59:8081/api/v1
     container_name: bma_frontend
     restart: always
     ports:
@@ -10,6 +13,8 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://172.27.15.59:8081/api/v1
+      # Connect across VM boundary to backend service using the VM's IP address
+      - BACKEND_URL=http://172.27.15.59:8081
     # จำกัดทรัพยากร (Optional: ป้องกันไม่ให้ Next.js กินแรมเซิร์ฟเวอร์จนหมด)
     deploy:
       resources:

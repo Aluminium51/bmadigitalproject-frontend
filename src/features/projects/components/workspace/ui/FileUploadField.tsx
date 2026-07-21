@@ -1,22 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import imageCompression from "browser-image-compression";
 import {
   AlertCircle,
+  CheckCircle2,
   Download,
   FileImage,
   FileSpreadsheet,
   FileText,
-  Loader2,
+  Paperclip,
   Presentation,
+  Trash2,
   UploadCloud,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FileUploadModal } from "./FileUploadModal";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +47,7 @@ export type SharedFileValue = {
   } | null;
 };
 
-type FileUploadFieldProps = {
+export type FileUploadFieldProps = {
   projectId: string;
   docTypeId?: number;
   title: string;
@@ -63,6 +65,8 @@ type FileUploadFieldProps = {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
   ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
@@ -77,17 +81,17 @@ function fileKind(fileName: string, mimeType = "") {
   return "other";
 }
 
-function getIcon(kind: string) {
-  if (kind === "image") return FileImage;
-  if (kind === "ppt") return Presentation;
-  if (kind === "spreadsheet") return FileSpreadsheet;
-  return FileText;
+function FileTypeIcon({ kind }: { kind: string }) {
+  if (kind === "image") return <FileImage className="h-4 w-4" aria-hidden="true" />;
+  if (kind === "ppt") return <Presentation className="h-4 w-4" aria-hidden="true" />;
+  if (kind === "spreadsheet") return <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />;
+  return <FileText className="h-4 w-4" aria-hidden="true" />;
 }
 
 function getSource(value: SharedFileValue | string | null | undefined) {
   if (!value) return { name: "", source: "", mimeType: "", kind: "other" };
   if (typeof value === "string") {
-    const name = value.split("/").pop() || "Uploaded file";
+    const name = decodeURIComponent(value.split("/").pop() || "Uploaded file");
     return { name, source: value, mimeType: "", kind: fileKind(name) };
   }
   const name = value.name || "Uploaded file";
@@ -111,12 +115,13 @@ function matchesAccept(file: File, accept?: string) {
   });
 }
 
-async function uploadProjectFile(file: File, projectId: string, docTypeId: number, description?: string) {
+async function uploadProjectFile(file: File, projectId: string, docTypeId: number, description: string) {
   const body = new FormData();
   body.append("file", file);
   body.append("projectId", projectId);
   body.append("docTypeId", String(docTypeId));
-  if (description?.trim()) body.append("description", description.trim());
+  body.append("description", description.trim());
+
   const response = await fetch(`${API_BASE}/uploads/document`, {
     method: "POST",
     credentials: "include",
@@ -129,9 +134,6 @@ async function uploadProjectFile(file: File, projectId: string, docTypeId: numbe
   return payload.data as {
     attachmentId?: string;
     url: string;
-    fileName?: string;
-    fileSize?: number;
-    contentType?: string;
     uploader?: SharedFileValue["uploader"];
   };
 }
@@ -157,30 +159,17 @@ export function FileAttachment({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const source = useMemo(() => getSource(value), [value]);
-  const Icon = getIcon(source.kind);
   const canPreview = source.kind === "image" || source.kind === "pdf";
-  const previewSource = objectUrl || source.source;
-
-  useEffect(() => {
-    if (typeof value === "string" || typeof value.file !== "object" || !value.file) {
-      setObjectUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(value.file);
-    setObjectUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [value]);
 
   const openFile = () => {
-    if (!previewSource) return;
+    if (!source.source) return;
     if (canPreview) {
       setOpen(true);
       return;
     }
     const link = document.createElement("a");
-    link.href = previewSource;
+    link.href = source.source;
     link.download = source.name;
     link.rel = "noopener";
     link.click();
@@ -188,48 +177,76 @@ export function FileAttachment({
 
   return (
     <>
-      <div className={cn("flex items-center gap-2 min-w-0", className)}>
-        <button
-          type="button"
-          onClick={openFile}
-          disabled={!previewSource}
-          className="flex items-center gap-2 min-w-0 text-left hover:text-primary disabled:cursor-default"
-          title={canPreview ? "Preview file" : "Download file"}
-        >
-          <Icon className={cn("w-4 h-4 shrink-0", source.kind === "pdf" ? "text-red-500" : "text-primary")} />
-          <span className="truncate text-sm font-medium underline-offset-2 hover:underline">{source.name}</span>
-        </button>
-        {!canPreview && previewSource && <Download className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-        {onRemove && (
-          <Button type="button" variant="ghost" size="icon-sm" onClick={() => void onRemove()} disabled={!canManage} className="shrink-0 text-muted-foreground hover:text-red-600">
-            <X className="w-4 h-4" />
-            <span className="sr-only">Remove file</span>
-          </Button>
-        )}
+      <div className={cn("flex min-w-0 items-center gap-3 rounded-sm border border-slate-200 bg-white px-3 py-2.5 shadow-sm", className)}>
+        <div className={cn(
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md",
+          source.kind === "pdf" ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700",
+        )}>
+          <FileTypeIcon kind={source.kind} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <button
+            type="button"
+            onClick={openFile}
+            disabled={!source.source}
+            className="block max-w-full truncate text-left text-sm font-semibold text-slate-800 underline-offset-2 hover:text-primary hover:underline disabled:cursor-default disabled:no-underline"
+            title={canPreview ? "Preview file" : "Download file"}
+          >
+            {source.name}
+          </button>
+          <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500">
+            <span>{canPreview ? "Click to preview" : "Click to download"}</span>
+            {typeof value !== "string" && value.uploader && (
+              <span className="truncate">
+                • Uploaded by {value.uploader.firstName} {value.uploader.lastName}
+              </span>
+            )}
+          </div>
+          {typeof value !== "string" && value.description && (
+            <p className="mt-1 truncate text-xs text-slate-600" title={value.description}>
+              {value.description}
+            </p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          {canPreview ? (
+            <span className="hidden rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600 sm:inline-flex">
+              Preview
+            </span>
+          ) : (
+            <Download className="hidden h-4 w-4 text-slate-400 sm:block" aria-label="Download" />
+          )}
+          {onRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => void onRemove()}
+              disabled={!canManage}
+              className="text-slate-400 hover:bg-red-50 hover:text-red-600"
+              aria-label={`Remove ${source.name}`}
+              title={canManage ? "Remove file" : "File removal is disabled"}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
-      {typeof value !== "string" && value.uploader && (
-        <span className="ml-6 text-[11px] text-muted-foreground truncate">
-          Uploaded by {value.uploader.firstName} {value.uploader.lastName}
-        </span>
-      )}
-      {typeof value !== "string" && value.description && (
-        <span className="ml-6 text-[11px] text-muted-foreground truncate" title={value.description}>
-          {value.description}
-        </span>
-      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="w-[min(96vw,1100px)] max-w-none h-[min(92vh,900px)] p-4 flex flex-col">
+        <DialogContent className="flex h-[min(92vh,900px)] w-[min(96vw,1100px)] max-w-none flex-col p-4 sm:p-6">
           <DialogHeader className="shrink-0 pr-10">
             <DialogTitle className="truncate">{source.name}</DialogTitle>
-            <DialogDescription>File preview</DialogDescription>
+            <DialogDescription>{canPreview ? "File preview" : "File download"}</DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center">
+          <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
             {source.kind === "image" ? (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={previewSource} alt={source.name} className="max-w-full max-h-full object-contain" />
+              <img src={source.source} alt={source.name} className="max-h-full max-w-full object-contain" />
             ) : (
-              <iframe src={previewSource} title={source.name} className="w-full h-full border-0" />
+              <iframe src={source.source} title={source.name} className="h-full w-full border-0" />
             )}
           </div>
         </DialogContent>
@@ -253,39 +270,34 @@ export function FileUploadField({
   className,
 }: FileUploadFieldProps) {
   const queryClient = useQueryClient();
-  const [isDragging, setIsDragging] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [descriptionDraft, setDescriptionDraft] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
   const source = getSource(value);
-  const current = typeof value === "string" ? { id: "uploaded", name: source.name, url: value, type: source.kind } : value;
+  const current = typeof value === "string"
+    ? { id: "uploaded", name: source.name, url: value, type: source.kind }
+    : value;
 
   const setUploading = (next: boolean) => {
     setIsUploading(next);
     onUploadingChange?.(next);
   };
 
-  const handleFile = async (file: File) => {
+  const handleUpload = async (file: File, description: string) => {
+    const trimmedDescription = description.trim();
+    if (!trimmedDescription) throw new Error("Please provide a description for this file.");
     if (!matchesAccept(file, accept)) {
-      setError(`Unsupported file type. Allowed: ${accept || "this file type"}.`);
-      return;
+      throw new Error(`Unsupported file type. Allowed: ${accept || "this file type"}.`);
     }
     if (file.type === "application/pdf" && file.size > MAX_PDF_SIZE_BYTES) {
-      setError(`PDF files must be smaller than ${formatBytes(MAX_PDF_SIZE_BYTES)}.`);
-      return;
+      throw new Error(`PDF files must be smaller than ${formatBytes(MAX_PDF_SIZE_BYTES)}.`);
     }
     if (file.type.startsWith("image/") && file.size > MAX_IMAGE_SIZE_BYTES) {
-      setError(`Images must be smaller than ${formatBytes(MAX_IMAGE_SIZE_BYTES)} before compression.`);
-      return;
+      throw new Error(`Images must be smaller than ${formatBytes(MAX_IMAGE_SIZE_BYTES)} before compression.`);
     }
 
     setError(null);
-    if (showDescription && descriptionRequired && !descriptionDraft.trim()) {
-      setError("Please provide a description for this file.");
-      return;
-    }
     setUploading(true);
     try {
       let uploadFile = file;
@@ -297,9 +309,13 @@ export function FileUploadField({
           initialQuality: 0.82,
           fileType: file.type === "image/png" ? "image/png" : "image/jpeg",
         });
-        uploadFile = new File([compressed], file.name, { type: compressed.type, lastModified: Date.now() });
+        uploadFile = new File([compressed], file.name, {
+          type: compressed.type,
+          lastModified: Date.now(),
+        });
       }
-      const uploaded = await uploadProjectFile(uploadFile, projectId, docTypeId ?? 8, descriptionDraft);
+
+      const uploaded = await uploadProjectFile(uploadFile, projectId, docTypeId ?? 8, trimmedDescription);
       onChange({
         id: uploaded.attachmentId ?? crypto.randomUUID(),
         name: file.name,
@@ -308,22 +324,21 @@ export function FileUploadField({
         size: formatBytes(uploadFile.size),
         url: uploaded.url,
         file: uploaded.url,
-        description: descriptionDraft.trim(),
+        description: trimmedDescription,
         uploader: uploaded.uploader ?? null,
       });
-      setDescriptionDraft("");
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
       ]);
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "File upload failed.");
-      toast.error("File upload failed", {
-        description: uploadError instanceof Error ? uploadError.message : "Please try again.",
-      });
+      const message = uploadError instanceof Error ? uploadError.message : "File upload failed.";
+      setError(message);
+      toast.error("File upload failed", { description: message });
+      throw uploadError instanceof Error ? uploadError : new Error(message);
     } finally {
       setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
   };
 
@@ -332,8 +347,7 @@ export function FileUploadField({
     setError(null);
     setIsDeleting(true);
     try {
-      const persistedAttachmentId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(current.id);
-      if (persistedAttachmentId) await deleteProjectFile(current.id);
+      if (UUID_PATTERN.test(current.id)) await deleteProjectFile(current.id);
       onChange(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
@@ -348,57 +362,89 @@ export function FileUploadField({
     }
   };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDragging(false);
-    const file = event.dataTransfer.files[0];
-    if (file && !value) void handleFile(file);
-  };
-
   return (
-    <div className={cn("flex flex-col gap-2 px-3 py-2 border border-border rounded-lg bg-surface", className)}>
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-semibold text-foreground truncate">{title}</span>
-        {current && <FileAttachment value={current} onRemove={handleRemove} canManage={canManage && !isDeleting} className="max-w-[70%]" />}
+    <section className={cn(
+      "rounded-md border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md sm:p-4",
+      className,
+    )}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0">
+              <h3 className="truncate text-sm font-bold text-slate-800">{title}</h3>
+              <p className="truncate text-xs text-slate-500">
+                {current ? "File attached" : accept ? `Accepted: ${accept}` : "No file attached"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {!current && canManage && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setUploadModalOpen(true)}
+            disabled={isUploading}
+            className="w-full shrink-0 border-emerald-200 text-emerald-700 hover:bg-emerald-50 sm:w-auto"
+          >
+            <UploadCloud className="mr-2 h-4 w-4" />
+            Upload file
+          </Button>
+        )}
       </div>
 
-      {!current && (
-        canManage ? <div
-          className={cn("flex items-center gap-2 rounded-md border border-dashed px-2 py-1.5 transition-colors", isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50", isUploading && "pointer-events-none opacity-60")}
-          onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleDrop}
-        >
-          <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFile(file); }} disabled={isUploading} />
-          <Button type="button" size="sm" variant="outline" onClick={() => inputRef.current?.click()} disabled={isUploading} className="h-7 px-2 text-xs">
-            {isUploading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5 mr-1" />}
-            {isUploading ? "Uploading" : "Choose file"}
-          </Button>
-          <span className="text-[11px] text-muted-foreground truncate">or drag here · {accept || "supported file"}</span>
-        </div> : <p className="text-xs text-muted-foreground">Attachments are read-only at this project stage.</p>
-      )}
+      <div className="mt-3">
+        {current ? (
+          <FileAttachment
+            value={current}
+            onRemove={handleRemove}
+            canManage={canManage && !isDeleting}
+          />
+        ) : canManage ? (
+          <div className=" border border-dashed border-slate-300 bg-slate-50/70 px-4 py-3 text-xs text-slate-500">
+            Select a file and add its description to upload it.
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-xs text-slate-500">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            Attachments are read-only at this project stage.
+          </div>
+        )}
+      </div>
 
-      {!current && showDescription && canManage && (
+      {current && showDescription && !current.description && descriptionRequired && canManage && (
         <Input
-          value={descriptionDraft}
-          onChange={(event) => setDescriptionDraft(event.target.value)}
-          placeholder={descriptionRequired ? "Description is required" : "Description (optional)"}
-          className={cn("h-8 text-sm", descriptionError && "border-red-500")}
+          value={current.description || ""}
+          onChange={(event) => onChange({ ...current, description: event.target.value })}
+          placeholder="Description is required"
+          className={cn("mt-3 h-9 text-sm", descriptionError && "border-red-500")}
         />
       )}
-      {current && showDescription && (
-        current.description ? (
-          <p className="text-xs text-muted-foreground truncate" title={current.description}>Description: {current.description}</p>
-        ) : descriptionRequired && canManage ? (
-          <Input
-            value={current.description || ""}
-            onChange={(event) => onChange({ ...current, description: event.target.value })}
-            placeholder="Description is required"
-            className={cn("h-8 text-sm", descriptionError && "border-red-500")}
-          />
-        ) : null
+
+      {(error || descriptionError) && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-red-600" role="alert">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          {error || descriptionError}
+        </p>
       )}
-      {(error || descriptionError) && <p className="text-xs text-red-600 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{error || descriptionError}</p>}
-    </div>
+
+      {current && !error && (
+        <p className="mt-2 flex items-center gap-1 text-[11px] text-emerald-700">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Saved to project attachments
+        </p>
+      )}
+
+      {canManage && (
+        <FileUploadModal
+          open={uploadModalOpen}
+          onOpenChange={setUploadModalOpen}
+          title={title}
+          accept={accept}
+          onUpload={handleUpload}
+        />
+      )}
+    </section>
   );
 }

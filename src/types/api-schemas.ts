@@ -570,12 +570,12 @@ const SubmitProposalRequest = z
   .passthrough();
 const CreateMeeting = z
   .object({
-    meetingNo: z.string().max(100),
-    title: z.string().max(500),
-    meetingTypeId: z.number().int(),
+    meetingNo: z.string().min(1).max(100),
+    title: z.string().min(1).max(500),
+    meetingTypeId: z.number().int().gt(0),
     meetingDate: z.string().datetime({ offset: true }),
-    location: z.string().max(500).optional(),
-    meetingStatusId: z.number().int(),
+    location: z.string().max(500).nullish(),
+    meetingStatusId: z.number().int().gt(0),
   })
   .passthrough();
 const Meeting = z
@@ -591,27 +591,44 @@ const Meeting = z
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
     updatedBy: z.string().uuid().nullish(),
+    meetingType: z
+      .object({ id: z.number().int(), name: z.string() })
+      .passthrough()
+      .nullish(),
+    meetingStatus: z
+      .object({ id: z.number().int(), name: z.string() })
+      .passthrough()
+      .nullish(),
+    creator: z
+      .object({
+        userId: z.string().uuid(),
+        firstName: z.string(),
+        lastName: z.string(),
+      })
+      .passthrough()
+      .nullish(),
   })
   .passthrough();
 const UpdateMeeting = z
   .object({
-    meetingNo: z.string().max(100),
-    title: z.string().max(500),
-    meetingTypeId: z.number().int(),
+    meetingNo: z.string().min(1).max(100),
+    title: z.string().min(1).max(500),
+    meetingTypeId: z.number().int().gt(0),
     meetingDate: z.string().datetime({ offset: true }),
-    location: z.string().max(500),
-    meetingStatusId: z.number().int(),
+    location: z.string().max(500).nullable(),
+    meetingStatusId: z.number().int().gt(0),
   })
   .partial()
   .passthrough();
 const CreateAgenda = z
   .object({
     meetingId: z.string().uuid(),
-    projectId: z.string().uuid().optional(),
-    agendaNumber: z.string().max(50),
-    agendaTypeId: z.number().int(),
-    title: z.string().max(500),
-    description: z.string().optional(),
+    projectId: z.string().uuid().nullish(),
+    agendaNumber: z.string().min(1).max(50),
+    sortOrder: z.number().int().gt(0).optional(),
+    agendaTypeId: z.number().int().gte(1).lte(5),
+    title: z.string().min(1).max(500),
+    description: z.string().max(5000).nullish(),
   })
   .passthrough();
 const Agenda = z
@@ -620,20 +637,31 @@ const Agenda = z
     meetingId: z.string().uuid(),
     projectId: z.string().uuid().nullish(),
     agendaNumber: z.string().max(50),
-    agendaTypeId: z.number().int(),
+    sortOrder: z.number().int(),
+    agendaTypeId: z.number().int().gte(1).lte(5),
     title: z.string().max(500),
     description: z.string().nullish(),
+    project: z
+      .object({
+        id: z.string().uuid(),
+        projectCode: z.string().nullish(),
+        projectName: z.string().nullish(),
+        initialRequestedBudget: z.string().nullish(),
+      })
+      .passthrough()
+      .nullish(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   })
   .passthrough();
 const UpdateAgenda = z
   .object({
-    projectId: z.string().uuid(),
-    agendaNumber: z.string().max(50),
-    agendaTypeId: z.number().int(),
-    title: z.string().max(500),
-    description: z.string(),
+    projectId: z.string().uuid().nullable(),
+    agendaNumber: z.string().min(1).max(50),
+    sortOrder: z.number().int().gt(0),
+    agendaTypeId: z.number().int().gte(1).lte(5),
+    title: z.string().min(1).max(500),
+    description: z.string().max(5000).nullable(),
   })
   .partial()
   .passthrough();

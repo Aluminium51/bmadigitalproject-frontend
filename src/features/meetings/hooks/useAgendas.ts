@@ -1,19 +1,128 @@
 "use client";
-// src/features/meetings/hooks/useAgendas.ts
-// Hook จัดการวาระการประชุม — Agenda ordering, grouping, project linking
 
-import { useState, useMemo, useCallback } from "react";
-import { mockAgendas, mockProjects } from "../data/mock-meetings";
+import { useCallback, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  type Agenda,
-  type Project,
-  type GroupedAgendas,
+  Agenda,
   AgendaType,
   AGENDA_TYPE_LABELS,
   AGENDA_TYPE_ORDER,
+  GroupedAgendas,
+  Project,
 } from "../types";
 
-interface UseAgendasReturn {
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
+  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+
+type ApiAgenda = {
+  id: string;
+  meetingId: string;
+  projectId: string | null;
+  agendaNumber: string;
+  sortOrder: number;
+  agendaTypeId: number;
+  title: string;
+  description: string | null;
+  project?: {
+    id: string;
+    projectCode: string | null;
+    projectName: string | null;
+    initialRequestedBudget: string | null;
+  } | null;
+};
+
+export type CreateAgendaPayload = {
+  meetingId: string;
+  projectId?: string | null;
+  agendaNumber: string;
+  sortOrder?: number;
+  agendaTypeId: AgendaType;
+  title: string;
+  description?: string | null;
+};
+
+export type UpdateAgendaPayload = Partial<Omit<CreateAgendaPayload, "meetingId">>;
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw Object.assign(new Error(payload.message ?? payload.error ?? "Agenda request failed"), {
+      status: response.status,
+      data: payload,
+    });
+  }
+  return payload as T;
+}
+
+function normalizeProject(project: ApiAgenda["project"]): Project | null {
+  if (!project?.id) return null;
+  return {
+    project_id: project.id,
+    project_code: project.projectCode ?? "-",
+    name: project.projectName ?? "Untitled project",
+    agency: "-",
+    budget: Number(project.initialRequestedBudget ?? 0),
+    description: "",
+    objective: "",
+    start_date: "",
+    end_date: "",
+    status: "",
+  };
+}
+
+function normalizeAgenda(agenda: ApiAgenda): Agenda {
+  return {
+    agenda_id: agenda.id,
+    meeting_id: agenda.meetingId,
+    project_id: agenda.projectId,
+    agenda_number: agenda.agendaNumber,
+    sort_order: agenda.sortOrder,
+    agenda_type: agenda.agendaTypeId as AgendaType,
+    title: agenda.title,
+    description: agenda.description ?? "",
+    project: normalizeProject(agenda.project),
+  };
+}
+
+async function fetchAgendas(meetingId: string) {
+  const response = await request<{ data: ApiAgenda[] }>(`/meetings/${meetingId}/agendas`);
+  return response.data.map(normalizeAgenda);
+}
+
+async function fetchProjects() {
+  const response = await request<{ data: Array<{
+    id: string;
+    projectCode?: string | null;
+    projectName?: string | null;
+    initialRequestedBudget?: string | null;
+    division?: { name?: string; departmentName?: string } | null;
+    status?: { name?: string } | null;
+  }> }>("/projects?page=1&limit=100&status=all&ownership=all");
+
+  return response.data.map((project) => ({
+    project_id: project.id,
+    project_code: project.projectCode ?? "-",
+    name: project.projectName ?? "Untitled project",
+    agency: project.division?.departmentName ?? project.division?.name ?? "-",
+    budget: Number(project.initialRequestedBudget ?? 0),
+    description: "",
+    objective: "",
+    start_date: "",
+    end_date: "",
+    status: project.status?.name ?? "",
+  }));
+}
+
+export function useAgendaTypeOptions() {
+  return AGENDA_TYPE_ORDER.map((id) => ({ id, label: AGENDA_TYPE_LABELS[id] }));
+}
+
+export function useAgendas(meetingId: string): {
   agendas: Agenda[];
   groupedAgendas: GroupedAgendas[];
   availableProjects: Project[];
@@ -24,149 +133,136 @@ interface UseAgendasReturn {
   isFirstInGroup: (agendaId: string) => boolean;
   isLastInGroup: (agendaId: string) => boolean;
   meetingId: string;
-}
+  isLoading: boolean;
+  isFetching: boolean;
+  isError: boolean;
+  error: Error | null;
+  isMutating: boolean;
+} {
+  const queryClient = useQueryClient();
+  const agendaQuery = useQuery({
+    queryKey: ["meetings", meetingId, "agendas"],
+    queryFn: () => fetchAgendas(meetingId),
+    enabled: !!meetingId,
+    refetchOnMount: "always",
+  });
+  const projectQuery = useQuery({
+    queryKey: ["meeting-project-options"],
+    queryFn: fetchProjects,
+    staleTime: 30_000,
+  });
 
-export function useAgendas(meetingId: string): UseAgendasReturn {
-  const [agendas, setAgendas] = useState<Agenda[]>(() =>
-    mockAgendas
-      .filter((a) => a.meeting_id === meetingId)
-      .sort((a, b) => a.agenda_number - b.agenda_number)
-  );
+  const invalidate = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
+  }, [meetingId, queryClient]);
 
-  // ── Group agendas by type ──
-  const groupedAgendas = useMemo<GroupedAgendas[]>(() => {
-    return AGENDA_TYPE_ORDER.map((type) => ({
-      type,
-      label: AGENDA_TYPE_LABELS[type],
-      agendas: agendas.filter((a) => a.agenda_type === type),
-    })).filter((group) => group.agendas.length > 0);
-  }, [agendas]);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAgendaPayload }) =>
+      request<{ data: ApiAgenda }>(`/meetings/agendas/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: invalidate,
+  });
 
-  // ── Available projects (not yet linked) ──
+  const reorderMutation = useMutation({
+    mutationFn: async (changes: Array<{ id: string; sortOrder: number }>) => {
+      await Promise.all(changes.map(({ id, sortOrder }) => request(`/meetings/agendas/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ sortOrder }),
+      })));
+    },
+    onSuccess: invalidate,
+  });
+
+  const agendas = useMemo(() => agendaQuery.data ?? [], [agendaQuery.data]);
+  const groupedAgendas = useMemo(() => AGENDA_TYPE_ORDER.map((type) => ({
+    type,
+    label: AGENDA_TYPE_LABELS[type],
+    agendas: agendas.filter((agenda) => agenda.agenda_type === type),
+  })).filter((group) => group.agendas.length > 0), [agendas]);
+
   const availableProjects = useMemo(() => {
-    const linkedProjectIds = new Set(
-      agendas.filter((a) => a.project_id).map((a) => a.project_id)
-    );
-    return mockProjects.filter((p) => !linkedProjectIds.has(p.project_id));
+    const linkedProjectIds = new Set(agendas.map((agenda) => agenda.project_id).filter(Boolean));
+    return (projectQuery.data ?? []).filter((project) => !linkedProjectIds.has(project.project_id));
+  }, [agendas, projectQuery.data]);
+
+  const getGroupAgendas = useCallback((agendaId: string) => {
+    const agenda = agendas.find((item) => item.agenda_id === agendaId);
+    return agenda ? agendas.filter((item) => item.agenda_type === agenda.agenda_type) : [];
   }, [agendas]);
 
-  // ── Reorder within a group ──
-  const getGroupAgendas = useCallback(
-    (agendaId: string): Agenda[] => {
-      const agenda = agendas.find((a) => a.agenda_id === agendaId);
-      if (!agenda) return [];
-      return agendas.filter((a) => a.agenda_type === agenda.agenda_type);
-    },
-    [agendas]
-  );
+  const isFirstInGroup = useCallback((agendaId: string) => {
+    const group = getGroupAgendas(agendaId);
+    return group.length === 0 || group[0].agenda_id === agendaId;
+  }, [getGroupAgendas]);
 
-  const isFirstInGroup = useCallback(
-    (agendaId: string): boolean => {
-      const group = getGroupAgendas(agendaId);
-      return group.length === 0 || group[0].agenda_id === agendaId;
-    },
-    [getGroupAgendas]
-  );
+  const isLastInGroup = useCallback((agendaId: string) => {
+    const group = getGroupAgendas(agendaId);
+    return group.length === 0 || group[group.length - 1].agenda_id === agendaId;
+  }, [getGroupAgendas]);
 
-  const isLastInGroup = useCallback(
-    (agendaId: string): boolean => {
-      const group = getGroupAgendas(agendaId);
-      return group.length === 0 || group[group.length - 1].agenda_id === agendaId;
-    },
-    [getGroupAgendas]
-  );
+  const reorder = useCallback((agendaId: string, direction: -1 | 1) => {
+    const agenda = agendas.find((item) => item.agenda_id === agendaId);
+    if (!agenda) return;
+    const group = getGroupAgendas(agendaId);
+    const index = group.findIndex((item) => item.agenda_id === agendaId);
+    const neighbor = group[index + direction];
+    if (!neighbor) return;
+    const currentSortOrder = agenda.sort_order ?? index + 1;
+    const neighborSortOrder = neighbor.sort_order ?? index + direction + 1;
+    reorderMutation.mutate([
+      { id: agenda.agenda_id, sortOrder: neighborSortOrder },
+      { id: neighbor.agenda_id, sortOrder: currentSortOrder },
+    ]);
+  }, [agendas, getGroupAgendas, reorderMutation]);
 
-  const moveAgendaUp = useCallback(
-    (agendaId: string) => {
-      setAgendas((prev) => {
-        const target = prev.find((a) => a.agenda_id === agendaId);
-        if (!target) return prev;
+  const linkProject = useCallback((agendaId: string, projectId: string) => {
+    updateMutation.mutate({ id: agendaId, payload: { projectId } });
+  }, [updateMutation]);
 
-        const groupItems = prev.filter((a) => a.agenda_type === target.agenda_type);
-        const idxInGroup = groupItems.findIndex((a) => a.agenda_id === agendaId);
-        if (idxInGroup <= 0) return prev; // Already first — no-op
-
-        // Swap agenda_number with the item above
-        const aboveItem = groupItems[idxInGroup - 1];
-        return prev.map((a) => {
-          if (a.agenda_id === agendaId) {
-            return { ...a, agenda_number: aboveItem.agenda_number };
-          }
-          if (a.agenda_id === aboveItem.agenda_id) {
-            return { ...a, agenda_number: target.agenda_number };
-          }
-          return a;
-        }).sort((a, b) => a.agenda_number - b.agenda_number);
-      });
-    },
-    []
-  );
-
-  const moveAgendaDown = useCallback(
-    (agendaId: string) => {
-      setAgendas((prev) => {
-        const target = prev.find((a) => a.agenda_id === agendaId);
-        if (!target) return prev;
-
-        const groupItems = prev.filter((a) => a.agenda_type === target.agenda_type);
-        const idxInGroup = groupItems.findIndex((a) => a.agenda_id === agendaId);
-        if (idxInGroup < 0 || idxInGroup >= groupItems.length - 1) return prev; // Already last
-
-        const belowItem = groupItems[idxInGroup + 1];
-        return prev.map((a) => {
-          if (a.agenda_id === agendaId) {
-            return { ...a, agenda_number: belowItem.agenda_number };
-          }
-          if (a.agenda_id === belowItem.agenda_id) {
-            return { ...a, agenda_number: target.agenda_number };
-          }
-          return a;
-        }).sort((a, b) => a.agenda_number - b.agenda_number);
-      });
-    },
-    []
-  );
-
-  // ── Project linking ──
-  const linkProject = useCallback(
-    (agendaId: string, projectId: string) => {
-      const project = mockProjects.find((p) => p.project_id === projectId);
-      if (!project) return;
-
-      setAgendas((prev) =>
-        prev.map((a) =>
-          a.agenda_id === agendaId
-            ? { ...a, project_id: projectId, project }
-            : a
-        )
-      );
-    },
-    []
-  );
-
-  const unlinkProject = useCallback(
-    (agendaId: string) => {
-      setAgendas((prev) =>
-        prev.map((a) =>
-          a.agenda_id === agendaId
-            ? { ...a, project_id: null, project: null }
-            : a
-        )
-      );
-    },
-    []
-  );
+  const unlinkProject = useCallback((agendaId: string) => {
+    updateMutation.mutate({ id: agendaId, payload: { projectId: null } });
+  }, [updateMutation]);
 
   return {
     agendas,
     groupedAgendas,
     availableProjects,
-    moveAgendaUp,
-    moveAgendaDown,
+    moveAgendaUp: (agendaId) => reorder(agendaId, -1),
+    moveAgendaDown: (agendaId) => reorder(agendaId, 1),
     linkProject,
     unlinkProject,
     isFirstInGroup,
     isLastInGroup,
     meetingId,
+    isLoading: agendaQuery.isLoading || projectQuery.isLoading,
+    isFetching: agendaQuery.isFetching || projectQuery.isFetching,
+    isError: agendaQuery.isError || projectQuery.isError,
+    error: (agendaQuery.error ?? projectQuery.error) as Error | null,
+    isMutating: updateMutation.isPending || reorderMutation.isPending,
   };
+}
+
+export function useCreateAgenda(meetingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Omit<CreateAgendaPayload, "meetingId">) => request<{ data: ApiAgenda }>("/meetings/agendas", {
+      method: "POST",
+      body: JSON.stringify({ ...payload, meetingId }),
+    }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
+    },
+  });
+}
+
+export function useDeleteAgenda(meetingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (agendaId: string) => request(`/meetings/agendas/${agendaId}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
+    },
+  });
 }

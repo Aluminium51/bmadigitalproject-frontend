@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Plus, Trash2, AlertCircle } from "lucide-react";
 import { ProposalStep1Values } from "../types";
+import type { ProjectDetail } from "@/features/projects/types/workspace";
 import { cn } from "@/lib/utils";
 
 import { Input } from "@/components/ui/input";
@@ -16,15 +17,50 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const ProposalStep1 = () => {
+export type ProposalStep1ContextValues = Pick<
+  ProposalStep1Values,
+  "projectName" | "agencyName" | "projectManager"
+>;
+
+export function getProposalStep1ContextValues(project: ProjectDetail): ProposalStep1ContextValues {
+  const agencyName = [project.division?.departmentName, project.division?.name]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(" - ");
+  const projectManager = project.owner
+    ? `${project.owner.firstName} ${project.owner.lastName}`.trim()
+    : "";
+
+  return {
+    projectName: project.projectName?.trim() ?? "",
+    agencyName,
+    projectManager,
+  };
+}
+
+interface ProposalStep1Props {
+  project?: ProjectDetail | null;
+}
+
+const readOnlyContextClass = "mt-1.5 cursor-not-allowed bg-slate-100 text-slate-500";
+
+export const ProposalStep1 = ({ project }: ProposalStep1Props) => {
   const { register, control, watch, setValue, formState: { errors } } = useFormContext<ProposalStep1Values>();
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "budgetsByYear",  
+    name: "budgetsByYear",
   });
 
   const watchedBudgets = watch("budgetsByYear") || [];
   const calculatedTotal = watchedBudgets.reduce((sum, item) => sum + (Number(item?.amount) || 0), 0);
+
+  useEffect(() => {
+    if (!project) return;
+
+    const contextValues = getProposalStep1ContextValues(project);
+    setValue("projectName", contextValues.projectName, { shouldDirty: false, shouldValidate: false });
+    setValue("agencyName", contextValues.agencyName, { shouldDirty: false, shouldValidate: false });
+    setValue("projectManager", contextValues.projectManager, { shouldDirty: false, shouldValidate: false });
+  }, [project, setValue]);
 
   // คอยส่งค่าผลรวมกลับเข้าไปอัปเดตในระบบฟอร์มเบื้องหลัง เพื่อให้ Zod เอาไป Validate ได้ตามปกติ
   useEffect(() => {
@@ -32,11 +68,14 @@ export const ProposalStep1 = () => {
   }, [calculatedTotal, setValue]);
 
   // ตัวแปรช่วยดึง Error ของตาราง (ป้องกัน TypeScript บ่นตอน map)
-  const budgetErrors = (errors.budgetsByYear as any) || [];
+  const budgetErrors = (errors.budgetsByYear ?? []) as Array<{
+    year?: { message?: string };
+    amount?: { message?: string };
+  }>;
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full min-w-0">
-      
+
       {/* --- ส่วนที่ 1: ข้อมูลโครงการ (Project Info) --- */}
       <div>
         <h2 className="text-2xl font-bold text-foreground border-b border-border pb-2 mb-8">1. ข้อมูลทั่วไป</h2>
@@ -44,17 +83,16 @@ export const ProposalStep1 = () => {
           <Label htmlFor="projectName" className="text-sm font-medium text-foreground">
             ชื่อโครงการ <span className="text-status-orange">*</span>
           </Label>
-          <Input 
+          <Input
             id="projectName"
-            {...register("projectName")} 
+            {...register("projectName")}
             placeholder="ระบุชื่อโครงการ"
-            className={cn("mt-1.5", errors.projectName && "border-status-orange focus-visible:ring-status-orange")}
+            readOnly
+            tabIndex={-1}
+            onMouseDown={(event) => event.preventDefault()}
+            aria-readonly="true"
+            className={readOnlyContextClass}
           />
-          {errors.projectName && (
-            <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" /> {errors.projectName.message}
-            </p>
-          )}
         </div>
       </div>
 
@@ -66,24 +104,23 @@ export const ProposalStep1 = () => {
             <Label htmlFor="agencyName" className="text-sm font-medium text-foreground">
               ชื่อหน่วยงาน <span className="text-status-orange">*</span>
             </Label>
-            <Input 
+            <Input
               id="agencyName"
-              {...register("agencyName")} 
-              className={cn("mt-1.5", errors.agencyName && "border-status-orange focus-visible:ring-status-orange")}
+              {...register("agencyName")}
+              readOnly
+              tabIndex={-1}
+              onMouseDown={(event) => event.preventDefault()}
+              aria-readonly="true"
+              className={readOnlyContextClass}
             />
-            {errors.agencyName && (
-              <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {errors.agencyName.message}
-              </p>
-            )}
           </div>
           <div>
             <Label htmlFor="headOfAgency" className="text-sm font-medium text-foreground">
               หัวหน้าส่วนราชการ <span className="text-status-orange">*</span>
             </Label>
-            <Input 
+            <Input
               id="headOfAgency"
-              {...register("headOfAgency")} 
+              {...register("headOfAgency")}
               className={cn("mt-1.5", errors.headOfAgency && "border-status-orange focus-visible:ring-status-orange")}
               placeholder="ex. นายสมชาย ใจดี"
             />
@@ -97,9 +134,9 @@ export const ProposalStep1 = () => {
             <Label htmlFor="dcioName" className="text-sm font-medium text-foreground">
               ผู้บริหารเทคโนโลยีสารสนเทศระดับสูง (DCIO) <span className="text-status-orange">*</span>
             </Label>
-            <Input 
+            <Input
               id="dcioName"
-              {...register("dcioName")} 
+              {...register("dcioName")}
               className={cn("mt-1.5", errors.dcioName && "border-status-orange focus-visible:ring-status-orange")}
               placeholder="ex. นายสมชาย ใจดี"
             />
@@ -113,17 +150,16 @@ export const ProposalStep1 = () => {
             <Label htmlFor="projectManager" className="text-sm font-medium text-foreground">
               ผู้รับผิดชอบโครงการ <span className="text-status-orange">*</span>
             </Label>
-            <Input 
+            <Input
               id="projectManager"
-              {...register("projectManager")} 
-              className={cn("mt-1.5", errors.projectManager && "border-status-orange focus-visible:ring-status-orange")}
+              {...register("projectManager")}
+              readOnly
+              tabIndex={-1}
+              onMouseDown={(event) => event.preventDefault()}
+              aria-readonly="true"
+              className={readOnlyContextClass}
               placeholder="ex. นายสมชาย ใจดี"
             />
-            {errors.projectManager && (
-              <p className="mt-1 text-sm text-status-orange flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {errors.projectManager.message}
-              </p>
-            )}
           </div>
         </div>
       </div>
@@ -134,17 +170,17 @@ export const ProposalStep1 = () => {
       <div>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-4">
           <h3 className="text-lg font-bold text-foreground">งบประมาณรายปี</h3>
-          <Button 
-            type="button" 
-            variant="default" 
+          <Button
+            type="button"
+            variant="default"
             size="sm"
-            onClick={() => append({ year: 0, amount: 0 as any, budgetType: "งบประมาณรายจ่ายประจำปี" })}
+            onClick={() => append({ year: 0, amount: 0, budgetType: "งบประมาณรายจ่ายประจำปี" })}
             className="rounded-full gap-2 pl-2.5"
           >
             <Plus className="w-4 h-4" /> เพิ่มปีงบประมาณ
           </Button>
         </div>
-        
+
         {/* รายการงบประมาณ */}
         <div className="space-y-2.5">
           {fields.map((field, index) => {
@@ -154,10 +190,10 @@ export const ProposalStep1 = () => {
               <div key={field.id} className="flex flex-wrap sm:flex-nowrap gap-3 items-start bg-surface p-4 rounded-lg border border-border shadow-sm">
                 <div className="w-full sm:w-1/4">
                   <Label className="text-xs text-slate-gray mb-1 block">ปี พ.ศ. <span className="text-status-orange">*</span></Label>
-                  <Input 
+                  <Input
                     type="number"
                     {...register(`budgetsByYear.${index}.year`, { valueAsNumber: true })}
-                    placeholder="เช่น 2567" 
+                    placeholder="เช่น 2567"
                     // เปลี่ยนขอบแดงถ้าลืมกรอก หรือกรอกปีผิด
                     className={cn(rowErr.year && "border-status-orange bg-orange-50/50 focus-visible:ring-status-orange")}
                   />
@@ -165,16 +201,16 @@ export const ProposalStep1 = () => {
                 </div>
                 <div className="w-full sm:flex-1">
                   <Label className="text-xs text-slate-gray mb-1 block">จำนวนเงิน (บาท) <span className="text-status-orange">*</span></Label>
-                  <Input 
-                    type="number" 
-                    {...register(`budgetsByYear.${index}.amount`, { valueAsNumber: true })} 
-                    placeholder="0.00" 
+                  <Input
+                    type="number"
+                    {...register(`budgetsByYear.${index}.amount`, { valueAsNumber: true })}
+                    placeholder="0.00"
                     // เปลี่ยนขอบแดงถ้าลืมกรอกจำนวนเงิน
                     className={cn(rowErr.amount && "border-status-orange bg-orange-50/50 focus-visible:ring-status-orange")}
                   />
                   {rowErr.amount && <span className="text-[10px] text-status-orange mt-1 block">{rowErr.amount.message}</span>}
                 </div>
-                
+
                 <div className="w-full sm:flex-1">
                   <Label className="text-xs text-slate-gray mb-1 block">ประเภทงบประมาณ</Label>
                   <Controller
@@ -199,9 +235,9 @@ export const ProposalStep1 = () => {
                 </div>
 
                 <div className="w-full my-auto md:ml-6 sm:w-auto flex flex-col items-center justify-center pt-5">
-                  <Button 
-                    type="button" 
-                    variant="destructive" 
+                  <Button
+                    type="button"
+                    variant="destructive"
                     size="icon"
                     className="w-full sm:w-10 rounded-md h-10"
                     onClick={() => remove(index)}
@@ -213,9 +249,9 @@ export const ProposalStep1 = () => {
             );
           })}
         </div>
-        
+
         {/* ส่วนสรุปรวมงบประมาณที่ปรับปรุงใหม่ (Read-only + จัดฟอร์แมตข้อความแบบใหม่) */}
-        <div className={`mt-6 p-5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors duration-300
+        <div className={`mt-6 p-5 rounded-md border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors duration-300
           ${errors.totalBudget ? 'bg-orange-50/50 border-status-orange' : 'bg-primary-container/20 border-primary/20'}
         `}>
           <div className="text-md font-bold text-foreground">
@@ -225,7 +261,7 @@ export const ProposalStep1 = () => {
             </span>{" "}
             บาท
           </div>
-          
+
           {errors.totalBudget && (
             <div className="text-status-orange text-sm font-medium flex items-center gap-1.5 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4" />

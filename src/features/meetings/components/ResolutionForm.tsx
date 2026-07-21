@@ -39,7 +39,6 @@ import { Separator } from "@/components/ui/separator";
 import {
   type Agenda,
   type Resolution,
-  AgendaType,
   ResolutionStatus,
   RESOLUTION_STATUS_LABELS,
   RESOLUTION_STATUS_COLORS,

@@ -1,67 +1,175 @@
 "use client";
-// src/features/meetings/hooks/useMeetings.ts
-// Hook จัดการข้อมูลการประชุม — Meeting list state, filtering, sorting
 
-import { useState, useMemo, useCallback } from "react";
-import { mockMeetings } from "../data/mock-meetings";
-import { type Meeting, MeetingStatus } from "../types";
+import { useCallback, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Meeting, MeetingStatus } from "../types";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
+  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+
+type ApiMeeting = {
+  id: string;
+  meetingNo: string;
+  title: string;
+  meetingTypeId: number;
+  meetingDate: string;
+  location?: string | null;
+  meetingStatusId: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy?: string | null;
+  creator?: { userId: string; firstName: string; lastName: string } | null;
+  meetingStatus?: { id: number; name: string } | null;
+};
+
+export type CreateMeetingPayload = {
+  meetingNo: string;
+  title: string;
+  meetingTypeId: number;
+  meetingDate: string;
+  location?: string | null;
+  meetingStatusId: number;
+};
+
+export type UpdateMeetingPayload = Partial<CreateMeetingPayload>;
 export type MeetingFilterStatus = MeetingStatus | "ALL";
 
-interface UseMeetingsReturn {
-  meetings: Meeting[];
-  filteredMeetings: Meeting[];
-  searchQuery: string;
-  filterStatus: MeetingFilterStatus;
-  setSearchQuery: (query: string) => void;
-  setFilterStatus: (status: MeetingFilterStatus) => void;
-  getMeetingById: (id: string) => Meeting | undefined;
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(options?.headers ?? {}) },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw Object.assign(new Error(payload.message ?? payload.error ?? "Meeting request failed"), {
+      status: response.status,
+      data: payload,
+    });
+  }
+  return payload as T;
 }
 
-export function useMeetings(): UseMeetingsReturn {
-  const [meetings] = useState<Meeting[]>(mockMeetings);
+function statusFromId(id: number): MeetingStatus {
+  switch (id) {
+    case 1: return MeetingStatus.SCHEDULED;
+    case 2: return MeetingStatus.IN_PROGRESS;
+    case 3: return MeetingStatus.COMPLETED;
+    case 4: return MeetingStatus.CANCELLED;
+    default: return MeetingStatus.DRAFT;
+  }
+}
+
+export function normalizeMeeting(meeting: ApiMeeting): Meeting {
+  const creatorName = meeting.creator
+    ? `${meeting.creator.firstName} ${meeting.creator.lastName}`.trim()
+    : "-";
+
+  return {
+    meeting_id: meeting.id,
+    meeting_no: meeting.meetingNo,
+    title: meeting.title,
+    meeting_date: meeting.meetingDate,
+    location: meeting.location ?? "-",
+    chairman: creatorName || "-",
+    meeting_status: statusFromId(meeting.meetingStatusId),
+    meeting_status_id: meeting.meetingStatusId,
+    meeting_type_id: meeting.meetingTypeId,
+    created_by: meeting.createdBy,
+  };
+}
+
+async function fetchMeetings() {
+  const response = await request<{ data: ApiMeeting[] }>("/meetings");
+  return response.data.map(normalizeMeeting);
+}
+
+async function fetchMeeting(id: string) {
+  const response = await request<{ data: ApiMeeting }>(`/meetings/${id}`);
+  return normalizeMeeting(response.data);
+}
+
+export function useMeetings() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<MeetingFilterStatus>("ALL");
+  const query = useQuery({
+    queryKey: ["meetings"],
+    queryFn: fetchMeetings,
+    staleTime: 30_000,
+    refetchOnMount: "always",
+  });
 
-  // ── Filter & Search ──
   const filteredMeetings = useMemo(() => {
-    let result = [...meetings];
+    const search = searchQuery.trim().toLowerCase();
+    return (query.data ?? []).filter((meeting) => {
+      const matchesStatus = filterStatus === "ALL" || meeting.meeting_status === filterStatus;
+      const matchesSearch = !search || [meeting.title, meeting.meeting_no, meeting.chairman]
+        .some((value) => value.toLowerCase().includes(search));
+      return matchesStatus && matchesSearch;
+    });
+  }, [filterStatus, query.data, searchQuery]);
 
-    // Filter by status
-    if (filterStatus !== "ALL") {
-      result = result.filter((m) => m.meeting_status === filterStatus);
-    }
-
-    // Search by title or meeting number
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      result = result.filter(
-        (m) =>
-          m.title.toLowerCase().includes(q) ||
-          m.meeting_no.toLowerCase().includes(q) ||
-          m.chairman.toLowerCase().includes(q)
-      );
-    }
-
-    // Sort: newest first by date
-    result.sort((a, b) => b.meeting_date.localeCompare(a.meeting_date));
-
-    return result;
-  }, [meetings, searchQuery, filterStatus]);
-
-  // ── Lookup ──
   const getMeetingById = useCallback(
-    (id: string) => meetings.find((m) => m.meeting_id === id),
-    [meetings]
+    (id: string) => (query.data ?? []).find((meeting) => meeting.meeting_id === id),
+    [query.data],
   );
 
   return {
-    meetings,
+    meetings: query.data ?? [],
     filteredMeetings,
     searchQuery,
     filterStatus,
     setSearchQuery,
     setFilterStatus,
     getMeetingById,
+    ...query,
   };
+}
+
+export function useMeeting(id: string | undefined) {
+  return useQuery({
+    queryKey: ["meetings", id],
+    queryFn: () => fetchMeeting(id!),
+    enabled: !!id,
+    staleTime: 30_000,
+    refetchOnMount: "always",
+  });
+}
+
+export function useCreateMeeting() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: CreateMeetingPayload) =>
+      request<{ data: ApiMeeting }>("/meetings", { method: "POST", body: JSON.stringify(payload) }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["meetings"] });
+    },
+  });
+}
+
+export function useUpdateMeeting(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: UpdateMeetingPayload) =>
+      request<{ data: ApiMeeting }>(`/meetings/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+    onSuccess: async (response) => {
+      queryClient.setQueryData(["meetings", id], normalizeMeeting(response.data));
+      await queryClient.invalidateQueries({ queryKey: ["meetings"] });
+    },
+  });
+}
+
+export function useDeleteMeeting(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => request(`/meetings/${id}`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings"] }),
+        queryClient.removeQueries({ queryKey: ["meetings", id] }),
+        queryClient.removeQueries({ queryKey: ["meetings", id, "agendas"] }),
+      ]);
+    },
+  });
 }

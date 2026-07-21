@@ -23,7 +23,7 @@ import { useGetDraft } from "../hooks/useProposalDraftQuery";
 import { useInitializeDraft } from "../hooks/useProposalMutations";
 
 import { StepperIndicator } from "./StepperIndicator";
-import { ProposalStep1 } from "./ProposalStep1";
+import { getProposalStep1ContextValues, ProposalStep1 } from "./ProposalStep1";
 import { ProposalStep2 } from "./ProposalStep2";
 import { ProposalStep3 } from "./ProposalStep3";
 import { ProposalStep4 } from "./ProposalStep4";
@@ -91,14 +91,15 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
 
   // ── RHF setup ─────────────────────────────────────────────────────────────
   const methods = useForm<ProposalFormValues>({
-    resolver: zodResolver(proposalFormSchema as any) as unknown as Resolver<ProposalFormValues>,
-    defaultValues: {} as ProposalFormValues,
+    resolver: zodResolver(proposalFormSchema) as unknown as Resolver<ProposalFormValues>,
+    defaultValues: {},
     mode: "all",
   });
 
   const { reset } = methods;
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const hasHydratedRef = useRef(false);
 
   useEffect(() => {
     if (!methods.formState.isDirty) return;
@@ -112,47 +113,75 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
 
   // ── On mount: hydrate form from draft or initialize a blank draft ──────────
   useEffect(() => {
-    if (isDraftLoading) return;
+    // The draft payload and project attachments are separate server records.
+    // Wait for both before hydrating so a Project Detail upload can populate
+    // an otherwise empty Step 3 field.
+    if (isProjectLoading || isDraftLoading || !projectDetail || hasHydratedRef.current) return;
 
-    if (existingDraft && Object.keys(existingDraft).length > 0) {
-      const hydratedDraft = { ...existingDraft } as Record<string, any>;
-      const fileFields = [
-        "systemDiagram",
-        "networkDiagram",
-        "useCaseDiagram",
-        "securityDiagram",
-      ];
+    const hydratedDraft: Record<string, unknown> = existingDraft
+      ? { ...existingDraft }
+      : {};
+    Object.assign(hydratedDraft, getProposalStep1ContextValues(projectDetail));
 
-      // Recreate the small UI descriptor from the server URL so the diagram
-      // controls can render an already-uploaded attachment after refresh.
-      for (const field of fileFields) {
-        const fileKey = `${field}File`;
-        const urlKey = `${field}Url`;
-        const current = hydratedDraft[fileKey];
-        const url = hydratedDraft[urlKey] ??
-          (typeof current === "string" ? current : undefined) ??
-          current?.url ??
-          (typeof current?.file === "string" ? current.file : undefined);
-        if (url) {
-          const matchingAttachment = projectDetail?.attachments?.find((attachment) => attachment.fileUrl === url);
-          hydratedDraft[fileKey] = {
-            ...(current && typeof current === "object" ? current : {}),
-            id: matchingAttachment?.id ?? `${field}-server`,
-            file: url,
-            url,
-            description: current?.description ?? matchingAttachment?.description ?? "",
-            uploader: matchingAttachment?.uploader ?? null,
-          };
-        }
-      }
+    const fileFields = [
+      { field: "systemDiagram", docTypeId: 1 },
+      { field: "networkDiagram", docTypeId: 2 },
+      { field: "useCaseDiagram", docTypeId: 3 },
+      { field: "securityDiagram", docTypeId: 4 },
+    ] as const;
 
-      reset(hydratedDraft as Partial<ProposalFormValues>);
-    } else if (!isReadOnly) {
-      // No draft yet — create one so we have a record to PATCH against
+    // Recreate the UI descriptor from either the saved draft URL or the
+    // latest project attachment. Project Detail uploads are stored in
+    // project_attachments and may not yet exist in draftPayload.
+    for (const { field, docTypeId } of fileFields) {
+      const fileKey = `${field}File`;
+      const urlKey = `${field}Url`;
+      const current = hydratedDraft[fileKey];
+      const currentRecord = current && typeof current === "object"
+        ? current as Record<string, unknown>
+        : undefined;
+      const draftUrl = hydratedDraft[urlKey] ??
+        (typeof current === "string" ? current : undefined) ??
+        currentRecord?.url ??
+        (typeof currentRecord?.file === "string" ? currentRecord.file : undefined);
+
+      const matchingAttachment = projectDetail.attachments
+        ?.filter((attachment) => draftUrl
+          ? attachment.fileUrl === draftUrl
+          : attachment.docTypeId === docTypeId)
+        .sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        )[0];
+      const resolvedUrl = typeof draftUrl === "string" && draftUrl.length > 0
+        ? draftUrl
+        : matchingAttachment?.fileUrl;
+
+      if (!resolvedUrl) continue;
+
+      hydratedDraft[urlKey] = resolvedUrl;
+      hydratedDraft[fileKey] = {
+        ...(currentRecord ?? {}),
+        id: matchingAttachment?.id ?? `${field}-server`,
+        name: matchingAttachment?.fileName ?? `${field} image`,
+        file: resolvedUrl,
+        url: resolvedUrl,
+        type: matchingAttachment?.fileType ?? "image/*",
+        mimeType: matchingAttachment?.fileType ?? "image/*",
+        description: typeof currentRecord?.description === "string"
+          ? currentRecord.description
+          : matchingAttachment?.description ?? "",
+        uploader: matchingAttachment?.uploader ?? null,
+      };
+    }
+
+    reset(hydratedDraft as Partial<ProposalFormValues>);
+    if (!existingDraft && !isReadOnly) {
+      // No draft yet — create one so we have a record to PATCH against.
       initDraft();
     }
+    hasHydratedRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDraftLoading, isReadOnly]);
+  }, [isProjectLoading, isDraftLoading, isReadOnly]);
 
   // ── Step validation helper ─────────────────────────────────────────────────
   const getCurrentSchema = (step: number) => {
@@ -168,7 +197,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
 
   const validateCurrentStep = async (): Promise<boolean> => {
     const currentSchema = getCurrentSchema(currentStep);
-    const fieldsInStep = Object.keys(currentSchema.shape) as any;
+    const fieldsInStep = Object.keys(currentSchema.shape) as Array<keyof ProposalFormValues>;
     const isValid = await methods.trigger(fieldsInStep);
     if (isValid) {
       removeStepError(currentStep);
@@ -258,7 +287,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
         <form onSubmit={(event) => event.preventDefault()} className="mt-8">
 
           <fieldset disabled={isReadOnly} className="min-h-100">
-            {currentStep === 1 && <ProposalStep1 />}
+            {currentStep === 1 && <ProposalStep1 project={projectDetail} />}
             {currentStep === 2 && <ProposalStep2 />}
             {currentStep === 3 && <ProposalStep3 projectId={projectId} />}
             {currentStep === 4 && <ProposalStep4 />}

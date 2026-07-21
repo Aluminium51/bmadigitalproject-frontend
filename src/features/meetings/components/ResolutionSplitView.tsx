@@ -10,6 +10,7 @@ import {
   Briefcase,
   FileText,
   MessageSquare,
+  GitBranch,
   MoreHorizontal,
   FolderOpen,
 } from "lucide-react";
@@ -18,7 +19,6 @@ import {
   type Agenda,
   type Resolution,
   AgendaType,
-  AGENDA_TYPE_LABELS,
   RESOLUTION_STATUS_LABELS,
   RESOLUTION_STATUS_COLORS,
   ResolutionStatus,
@@ -43,6 +43,7 @@ interface ResolutionSplitViewProps {
 const AGENDA_TYPE_ICONS: Record<AgendaType, React.ReactNode> = {
   [AgendaType.FOR_INFORMATION]: <FileText className="w-3.5 h-3.5" />,
   [AgendaType.APPROVE_MINUTES]: <MessageSquare className="w-3.5 h-3.5" />,
+  [AgendaType.FOLLOW_UP]: <GitBranch className="w-3.5 h-3.5" />,
   [AgendaType.FOR_CONSIDERATION]: <Briefcase className="w-3.5 h-3.5" />,
   [AgendaType.OTHER]: <MoreHorizontal className="w-3.5 h-3.5" />,
 };
@@ -82,7 +83,7 @@ export function ResolutionSplitView({
   return (
     <div className="flex flex-col lg:flex-row gap-4 lg:gap-0 min-h-0">
       {/* ── Left Panel: Agenda List ── */}
-      <div className="lg:w-[380px] lg:shrink-0 bg-white rounded-xl lg:rounded-r-none border border-[#ededf4] shadow-[0px_4px_24px_rgba(0,0,0,0.04)] flex flex-col overflow-hidden">
+      <div className="lg:w-[380px] lg:shrink-0 bg-white rounded-md lg:rounded-r-none border border-[#ededf4] shadow-[0px_4px_24px_rgba(0,0,0,0.04)] flex flex-col overflow-hidden">
         {/* Panel Header */}
         <div className="p-4 border-b border-[#ededf4] bg-[#f9f9ff] shrink-0 space-y-2">
           <div className="flex items-center justify-between">
@@ -112,7 +113,8 @@ export function ResolutionSplitView({
             const isSelected = selectedAgendaId === agenda.agenda_id;
             const isRecorded = isAgendaRecorded(agenda.agenda_id);
             const res = getResolutionForAgenda(agenda.agenda_id);
-            const isConsideration = agenda.agenda_type === AgendaType.FOR_CONSIDERATION;
+            const isConsideration = agenda.agenda_type === AgendaType.FOLLOW_UP ||
+              agenda.agenda_type === AgendaType.FOR_CONSIDERATION;
 
             return (
               <button
@@ -182,7 +184,7 @@ export function ResolutionSplitView({
       </div>
 
       {/* ── Right Panel: Resolution Form ── */}
-      <div className="flex-1 bg-white rounded-xl lg:rounded-l-none border border-[#ededf4] lg:border-l-0 shadow-[0px_4px_24px_rgba(0,0,0,0.04)] flex flex-col min-h-[500px] lg:min-h-0 overflow-hidden">
+      <div className="flex-1 bg-white rounded-md lg:rounded-l-none border border-[#ededf4] lg:border-l-0 shadow-[0px_4px_24px_rgba(0,0,0,0.04)] flex flex-col min-h-[500px] lg:min-h-0 overflow-hidden">
         <ResolutionForm
           agenda={selectedAgenda}
           resolution={resolution}

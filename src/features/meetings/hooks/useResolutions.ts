@@ -1,15 +1,8 @@
 "use client";
-// src/features/meetings/hooks/useResolutions.ts
-// Hook จัดการมติที่ประชุม — Resolution form state, selection, save
 
-import { useState, useMemo, useCallback } from "react";
-import { mockAgendas, mockResolutions } from "../data/mock-meetings";
-import {
-  type Agenda,
-  type Resolution,
-  AgendaType,
-  ResolutionStatus,
-} from "../types";
+import { useCallback, useMemo, useState } from "react";
+import { useAgendas } from "./useAgendas";
+import { Agenda, AgendaType, Resolution, ResolutionStatus } from "../types";
 
 interface UseResolutionsReturn {
   agendas: Agenda[];
@@ -25,124 +18,84 @@ interface UseResolutionsReturn {
   getResolutionForAgenda: (agendaId: string) => Resolution | null;
   isConsiderationAgenda: (agenda: Agenda) => boolean;
   meetingId: string;
+  isLoading: boolean;
+  isError: boolean;
 }
 
 export function useResolutions(meetingId: string): UseResolutionsReturn {
-  // ── Agendas for this meeting ──
-  const agendas = useMemo<Agenda[]>(
-    () =>
-      mockAgendas
-        .filter((a) => a.meeting_id === meetingId)
-        .sort((a, b) => a.agenda_number - b.agenda_number),
-    [meetingId]
-  );
+  const { agendas, isLoading, isError } = useAgendas(meetingId);
+  const [resolutions, setResolutions] = useState<Record<string, Resolution>>({});
+  const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // ── Resolutions state (keyed by agenda_id) ──
-  const [resolutions, setResolutions] = useState<Record<string, Resolution>>(
-    () => {
-      const map: Record<string, Resolution> = {};
-      mockResolutions
-        .filter((r) => agendas.some((a) => a.agenda_id === r.agenda_id))
-        .forEach((r) => {
-          map[r.agenda_id] = { ...r };
-        });
-      return map;
-    }
-  );
-
-  // ── Selection ──
-  const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(
-    agendas[0]?.agenda_id ?? null
-  );
-
-  const selectedAgenda = useMemo(
-    () => agendas.find((a) => a.agenda_id === selectedAgendaId) ?? null,
-    [agendas, selectedAgendaId]
-  );
+  const effectiveSelectedAgendaId = useMemo(() => {
+    if (selectedAgendaId && agendas.some((agenda) => agenda.agenda_id === selectedAgendaId)) return selectedAgendaId;
+    return agendas[0]?.agenda_id ?? null;
+  }, [agendas, selectedAgendaId]);
+  const selectedAgenda = agendas.find((agenda) => agenda.agenda_id === effectiveSelectedAgendaId) ?? null;
+  const resolution = effectiveSelectedAgendaId ? resolutions[effectiveSelectedAgendaId] ?? null : null;
 
   const selectAgenda = useCallback((agendaId: string) => {
     setSelectedAgendaId(agendaId);
   }, []);
 
-  // ── Current resolution for selected agenda ──
-  const resolution = useMemo(
-    () =>
-      selectedAgendaId ? resolutions[selectedAgendaId] ?? null : null,
-    [selectedAgendaId, resolutions]
-  );
+  const updateResolutionStatus = useCallback((status: ResolutionStatus | null) => {
+    if (!effectiveSelectedAgendaId) return;
+    setResolutions((previous) => {
+      const existing = previous[effectiveSelectedAgendaId];
+      return {
+        ...previous,
+        [effectiveSelectedAgendaId]: {
+          resolution_id: existing?.resolution_id ?? `RES-NEW-${Date.now()}`,
+          agenda_id: effectiveSelectedAgendaId,
+          resolution_status: status,
+          comment: existing?.comment ?? "",
+        },
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, [effectiveSelectedAgendaId]);
 
-  // ── Track unsaved changes ──
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // ── Mutations ──
-  const updateResolutionStatus = useCallback(
-    (status: ResolutionStatus | null) => {
-      if (!selectedAgendaId) return;
-
-      setResolutions((prev) => {
-        const existing = prev[selectedAgendaId];
-        return {
-          ...prev,
-          [selectedAgendaId]: {
-            resolution_id: existing?.resolution_id ?? `RES-NEW-${Date.now()}`,
-            agenda_id: selectedAgendaId,
-            resolution_status: status,
-            comment: existing?.comment ?? "",
-          },
-        };
-      });
-      setHasUnsavedChanges(true);
-    },
-    [selectedAgendaId]
-  );
-
-  const updateResolutionComment = useCallback(
-    (comment: string) => {
-      if (!selectedAgendaId) return;
-
-      setResolutions((prev) => {
-        const existing = prev[selectedAgendaId];
-        return {
-          ...prev,
-          [selectedAgendaId]: {
-            resolution_id: existing?.resolution_id ?? `RES-NEW-${Date.now()}`,
-            agenda_id: selectedAgendaId,
-            resolution_status: existing?.resolution_status ?? null,
-            comment,
-          },
-        };
-      });
-      setHasUnsavedChanges(true);
-    },
-    [selectedAgendaId]
-  );
+  const updateResolutionComment = useCallback((comment: string) => {
+    if (!effectiveSelectedAgendaId) return;
+    setResolutions((previous) => {
+      const existing = previous[effectiveSelectedAgendaId];
+      return {
+        ...previous,
+        [effectiveSelectedAgendaId]: {
+          resolution_id: existing?.resolution_id ?? `RES-NEW-${Date.now()}`,
+          agenda_id: effectiveSelectedAgendaId,
+          resolution_status: existing?.resolution_status ?? null,
+          comment,
+        },
+      };
+    });
+    setHasUnsavedChanges(true);
+  }, [effectiveSelectedAgendaId]);
 
   const saveResolution = useCallback(() => {
-    if (!selectedAgendaId) return;
+    if (!effectiveSelectedAgendaId) return;
     setIsSaving(true);
-
-    // Simulate save delay
-    setTimeout(() => {
+    window.setTimeout(() => {
       setIsSaving(false);
       setHasUnsavedChanges(false);
     }, 600);
-  }, [selectedAgendaId]);
+  }, [effectiveSelectedAgendaId]);
 
-  // ── Helpers ──
   const getResolutionForAgenda = useCallback(
     (agendaId: string) => resolutions[agendaId] ?? null,
-    [resolutions]
+    [resolutions],
   );
 
   const isConsiderationAgenda = useCallback(
-    (agenda: Agenda) => agenda.agenda_type === AgendaType.FOR_CONSIDERATION,
-    []
+    (agenda: Agenda) => agenda.agenda_type === AgendaType.FOLLOW_UP || agenda.agenda_type === AgendaType.FOR_CONSIDERATION,
+    [],
   );
 
   return {
     agendas,
-    selectedAgendaId,
+    selectedAgendaId: effectiveSelectedAgendaId,
     selectedAgenda,
     selectAgenda,
     resolution,
@@ -154,5 +107,7 @@ export function useResolutions(meetingId: string): UseResolutionsReturn {
     getResolutionForAgenda,
     isConsiderationAgenda,
     meetingId,
+    isLoading,
+    isError,
   };
 }

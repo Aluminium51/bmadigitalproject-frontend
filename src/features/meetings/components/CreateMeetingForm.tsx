@@ -1,222 +1,129 @@
 // src/features/meetings/components/CreateMeetingForm.tsx
 "use client";
-import { useForm, Controller } from "react-hook-form";
-import { AlertCircle, Save, X, Calendar as CalendarIcon, MapPin } from "lucide-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 
-import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { CalendarDays, Loader2, MapPin, Save, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useCreateMeeting } from "../hooks/useMeetings";
 
-// --- 1. Zod Schema ---
-// อ้างอิงจาก CreateMeetingSchema ฝั่ง Backend
 const createMeetingSchema = z.object({
-  meetingNo: z.string().min(1, { message: "กรุณาระบุครั้งที่การประชุม" }).max(100),
-  title: z.string().min(5, { message: "กรุณาระบุหัวข้อการประชุมอย่างน้อย 5 ตัวอักษร" }).max(500),
-  meetingTypeId: z.string({ message: "กรุณาเลือกประเภทการประชุม" }).min(1, { message: "กรุณาเลือกประเภทการประชุม" }),
-  meetingDate: z.string({ message: "กรุณาระบุวันที่และเวลา" }).min(1, { message: "กรุณาระบุวันที่และเวลา" }),
+  meetingNo: z.string().trim().min(1, "กรุณาระบุครั้งที่ประชุม").max(100),
+  title: z.string().trim().min(5, "กรุณาระบุหัวข้ออย่างน้อย 5 ตัวอักษร").max(500),
+  meetingTypeId: z.string().min(1, "กรุณาเลือกประเภทการประชุม"),
+  meetingDate: z.string().min(1, "กรุณาระบุวันและเวลา"),
   location: z.string().max(500).optional(),
 });
 
 type CreateMeetingValues = z.infer<typeof createMeetingSchema>;
 
-// --- 2. Mock Data สำหรับ Dropdown ---
 const MEETING_TYPES = [
-  { id: 1, name: "Type 1" },
-  { id: 2, name: "Type 2" },
-  { id: 3, name: "Type 3" },
+  { id: 1, label: "คกก. กลั่นกรอง" },
+  { id: 2, label: "คกก. นโยบาย" },
 ];
 
-export const CreateMeetingForm = () => {
-  // --- 3. Mock Context (เตรียมไว้ส่งเป็นคนสร้าง - createdBy) ---
-  const mockContext = {
-    userId: "018f3a3b-1b2c-7d3e-8f4g-5h6i7j8k9l0m",
-  };
-
+export function CreateMeetingForm() {
+  const router = useRouter();
+  const createMeeting = useCreateMeeting();
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CreateMeetingValues>({
     resolver: zodResolver(createMeetingSchema),
-    defaultValues: {
-      meetingNo: "",
-      title: "",
-      meetingTypeId: "",
-      meetingDate: "",
-      location: "",
-    },
+    defaultValues: { meetingNo: "", title: "", meetingTypeId: "", meetingDate: "", location: "" },
   });
 
-  const onSubmit = async (data: CreateMeetingValues) => {
-    // แปลง String เป็น Number และจัดการ Payload ส่ง Backend
-    const payload = {
-      ...data,
-      meetingTypeId: Number(data.meetingTypeId),
-      // สมมติว่าสร้างใหม่ สถานะคือ 1 (เช่น รอการประชุม / ร่าง)
-      meetingStatusId: 1,
-      createdBy: mockContext.userId,
-      // แปลง ISO String จาก datetime-local ให้มีวินาทีและ Timezone
-      meetingDate: new Date(data.meetingDate).toISOString(),
-    };
-
-    console.log("Submitting Meeting Payload:", payload);
-    // TODO: ส่ง payload นี้ไปที่ API / Controller
-
-    // จำลองการโหลด
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    alert("สร้างการประชุมสำเร็จ! ดู Payload ได้ใน Console");
+  const onSubmit = async (values: CreateMeetingValues) => {
+    try {
+      await createMeeting.mutateAsync({
+        meetingNo: values.meetingNo,
+        title: values.title,
+        meetingTypeId: Number(values.meetingTypeId),
+        meetingDate: new Date(values.meetingDate).toISOString(),
+        location: values.location?.trim() || null,
+        meetingStatusId: 1,
+      });
+      toast.success("สร้างการประชุมสำเร็จ");
+      router.push("/meetings");
+    } catch (error) {
+      toast.error("ไม่สามารถสร้างการประชุมได้", {
+        description: error instanceof Error ? error.message : "กรุณาลองใหม่อีกครั้ง",
+      });
+    }
   };
 
   return (
-    <div className="mx-auto flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl">
-
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-foreground border-b border-border pb-2">
-          สร้างการประชุมใหม่
-        </h2>
-        <p className="text-sm text-slate-gray mt-2">
-          กรอกข้อมูลเพื่อกำหนดวาระและตารางการประชุม
-        </p>
-      </div>
-
-      {/* Form เนื้อหาหลัก */}
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-
-        {/* หัวข้อการประชุม (Title) */}
-        <div className="w-full">
-          <Label htmlFor="title" className="text-sm font-medium text-foreground mb-1.5 block">
-            หัวข้อการประชุม <span className="text-status-orange">*</span>
-          </Label>
-          <Textarea
-            id="title"
-            {...register("title")}
-            rows={2}
-            placeholder="ระบุหัวข้อหรือเรื่องที่จะพิจารณา..."
-            className={cn(
-              "resize-none bg-surface text-base",
-              errors.title && "border-status-orange focus-visible:ring-status-orange bg-orange-50/50"
-            )}
-          />
-          {errors.title && (
-            <p className="mt-1.5 text-sm text-status-orange flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" /> {errors.title.message}
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          {/* ครั้งที่การประชุม */}
-          <div className="w-full">
-            <Label htmlFor="meetingNo" className="text-sm font-medium text-foreground mb-1.5 block">
-              ครั้งที่การประชุม <span className="text-status-orange">*</span>
-            </Label>
-            <Input
-              id="meetingNo"
-              {...register("meetingNo")}
-              placeholder="เช่น 1/2567"
-              className={cn(
-                "bg-surface",
-                errors.meetingNo && "border-status-orange focus-visible:ring-status-orange bg-orange-50/50"
-              )}
-            />
-            {errors.meetingNo && (
-              <p className="mt-1.5 text-sm text-status-orange flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {errors.meetingNo.message}
-              </p>
-            )}
+    <Card className="mx-auto w-full max-w-3xl rounded-md border-[#D1CDC7] shadow-sm">
+      <CardHeader className="border-b border-[#ededf4] px-6 py-5 sm:px-8">
+        <CardTitle className="text-xl font-extrabold text-[#191c20]">สร้างการประชุมใหม่</CardTitle>
+        <p className="text-sm text-[#3f4942]">กำหนดรายละเอียดพื้นฐานก่อนเพิ่มวาระการประชุม</p>
+      </CardHeader>
+      <CardContent className="p-6 sm:p-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="meetingNo">ครั้งที่ประชุม</Label>
+              <Input id="meetingNo" {...register("meetingNo")} placeholder="เช่น 1/2569" />
+              {errors.meetingNo && <p className="text-xs text-red-600">{errors.meetingNo.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="meetingTypeId">ประเภทการประชุม</Label>
+              <Controller
+                name="meetingTypeId"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="meetingTypeId"><SelectValue placeholder="เลือกประเภท" /></SelectTrigger>
+                    <SelectContent>
+                      {MEETING_TYPES.map((type) => <SelectItem key={type.id} value={String(type.id)}>{type.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.meetingTypeId && <p className="text-xs text-red-600">{errors.meetingTypeId.message}</p>}
+            </div>
           </div>
 
-          {/* ประเภทการประชุม */}
-          <div className="w-full">
-            <Label className="text-sm font-medium text-foreground mb-1.5 block">
-              ประเภทการประชุม <span className="text-status-orange">*</span>
-            </Label>
-            <Controller
-              control={control}
-              name="meetingTypeId"
-              render={({ field: { onChange, value } }) => (
-                <Select onValueChange={onChange} value={value}>
-                  <SelectTrigger className={cn("bg-surface", errors.meetingTypeId && "border-status-orange ring-1 ring-status-orange bg-orange-50/50")}>
-                    <SelectValue placeholder="เลือกประเภท..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEETING_TYPES.map((type) => (
-                      <SelectItem key={type.id} value={type.id.toString()}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.meetingTypeId && (
-              <p className="mt-1.5 text-sm text-status-orange flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {errors.meetingTypeId.message}
-              </p>
-            )}
+          <div className="space-y-2">
+            <Label htmlFor="title">หัวข้อการประชุม</Label>
+            <Textarea id="title" {...register("title")} rows={3} placeholder="ระบุหัวข้อหรือเรื่องที่จะพิจารณา" />
+            {errors.title && <p className="text-xs text-red-600">{errors.title.message}</p>}
           </div>
 
-          {/* วันที่และเวลา */}
-          <div className="w-full">
-            <Label htmlFor="meetingDate" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-              <CalendarIcon className="w-4 h-4 text-slate-gray" />
-              วันที่และเวลา <span className="text-status-orange">*</span>
-            </Label>
-            <Input
-              id="meetingDate"
-              type="datetime-local"
-              {...register("meetingDate")}
-              className={cn(
-                "bg-surface",
-                errors.meetingDate && "border-status-orange focus-visible:ring-status-orange bg-orange-50/50"
-              )}
-            />
-            {errors.meetingDate && (
-              <p className="mt-1.5 text-sm text-status-orange flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" /> {errors.meetingDate.message}
-              </p>
-            )}
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="meetingDate" className="flex items-center gap-2"><CalendarDays className="h-4 w-4" />วันและเวลา</Label>
+              <Input id="meetingDate" type="datetime-local" {...register("meetingDate")} />
+              {errors.meetingDate && <p className="text-xs text-red-600">{errors.meetingDate.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location" className="flex items-center gap-2"><MapPin className="h-4 w-4" />สถานที่</Label>
+              <Input id="location" {...register("location")} placeholder="ระบุสถานที่หรือห้องประชุม" />
+              {errors.location && <p className="text-xs text-red-600">{errors.location.message}</p>}
+            </div>
           </div>
 
-          {/* สถานที่ */}
-          <div className="w-full">
-            <Label htmlFor="location" className="flex items-center gap-1.5 text-sm font-medium text-foreground mb-1.5">
-              <MapPin className="w-4 h-4 text-slate-gray" />
-              สถานที่ <span className="text-slate-gray font-normal">(ถ้ามี)</span>
-            </Label>
-            <Input
-              id="location"
-              {...register("location")}
-              placeholder="เช่น ห้องประชุม 1 ศาลาว่าการ กทม. หรือ Link Zoom"
-              className="bg-surface"
-            />
+          <div className="flex flex-col-reverse gap-3 border-t border-[#ededf4] pt-6 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => router.push("/meetings")} disabled={createMeeting.isPending}>
+              <X className="mr-2 h-4 w-4" />ยกเลิก
+            </Button>
+            <Button type="submit" disabled={createMeeting.isPending} className="bg-[#00734b] text-white hover:bg-[#005838]">
+              {createMeeting.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {createMeeting.isPending ? "กำลังบันทึก..." : "บันทึกการประชุม"}
+            </Button>
           </div>
-
-        </div>
-
-        <div className="border-t border-border mt-2" />
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-4 mt-4">
-          <Button type="button" variant="outline" className="rounded-full" onClick={() => window.history.back()}>
-            <X className="w-4 h-4 mr-2" />
-            ยกเลิก
-          </Button>
-          <Button type="submit" disabled={isSubmitting} className="rounded-full bg-primary hover:bg-primary/90 text-white">
-            <Save className="w-4 h-4 mr-2" />
-            {isSubmitting ? "กำลังบันทึก..." : "บันทึกและสร้างการประชุม"}
-          </Button>
-        </div>
-
-      </form>
-    </div>
+        </form>
+      </CardContent>
+    </Card>
   );
-};
+}

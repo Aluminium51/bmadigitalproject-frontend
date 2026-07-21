@@ -79,7 +79,8 @@ export async function loginUserAction(data: LoginRequestDTO): Promise<AuthRespon
     });
 
     return { success: true, message: successData.message };
-  } catch {
+  } catch (error) {
+    console.error("Login Fetch Error:", error);
     return { success: false, message: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' };
   }
 }
