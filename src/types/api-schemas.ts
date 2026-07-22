@@ -73,6 +73,19 @@ const CreateUserRequest = z
     roleIds: z.array(z.number()).optional().default([1]),
   })
   .passthrough();
+const UpdateUserRolesRequest = z.object({
+  roleIds: z.array(z.number().int().gt(0)).min(1).max(20),
+});
+const UpdateUserStatusRequest = z.object({ isActive: z.boolean() });
+const UpdateOwnProfileRequest = z
+  .object({
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    mobilePhone: z.string().min(6).max(20).nullable(),
+    officePhone: z.string().min(6).max(20).nullable(),
+    internalExtension: z.string().min(1).max(10).nullable(),
+  })
+  .partial();
 const LoginRequest = z
   .object({ username: z.string().min(1), password: z.string().min(1) })
   .passthrough();
@@ -729,6 +742,9 @@ export const schemas = {
   PaginatedUserResponse,
   ErrorResponse,
   CreateUserRequest,
+  UpdateUserRolesRequest,
+  UpdateUserStatusRequest,
+  UpdateOwnProfileRequest,
   LoginRequest,
   LoginResponse,
   SuccessResponse,
@@ -1814,6 +1830,99 @@ const endpoints = makeApi([
       {
         status: 500,
         description: `ข้อผิดพลาดทางเซิร์ฟเวอร์`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/users/:userId/roles",
+    alias: "patchApiv1users_userIdroles",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: UpdateUserRolesRequest,
+      },
+      {
+        name: "userId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: UserProfileResponse,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid role assignment`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 404,
+        description: `User not found`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/users/:userId/status",
+    alias: "patchApiv1users_userIdstatus",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ isActive: z.boolean() }),
+      },
+      {
+        name: "userId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: UserProfileResponse,
+    errors: [
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 404,
+        description: `User not found`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/users/me",
+    alias: "patchApiv1usersme",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: UpdateOwnProfileRequest,
+      },
+    ],
+    response: UserProfileResponse,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid profile update`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 401,
+        description: `Unauthorized`,
         schema: ErrorResponse,
       },
     ],

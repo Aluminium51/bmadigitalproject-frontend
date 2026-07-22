@@ -7,6 +7,7 @@ import { z } from "zod";
 
 // ใช้ Type ที่ Generate มาจาก Backend Schema
 type UserProfileResponse = z.infer<typeof schemas.UserProfileResponse>;
+type UpdateOwnProfileRequest = z.infer<typeof schemas.UpdateOwnProfileRequest>;
 
 export async function getUserProfileAction(userId: string): Promise<UserProfileResponse> {
   try {
@@ -29,4 +30,25 @@ export async function getUserProfileAction(userId: string): Promise<UserProfileR
     const errorMessage = error instanceof Error ? error.message : "เกิดข้อผิดพลาดในการติดต่อเซิร์ฟเวอร์";
     throw new Error(errorMessage);
   }
+}
+
+export async function updateUserRolesAction(userId: string, roleIds: number[]) {
+  return serverFetch<UserProfileResponse>(`/api/v1/users/${userId}/roles`, {
+    method: "PATCH",
+    body: JSON.stringify({ roleIds }),
+  });
+}
+
+export async function updateUserStatusAction(userId: string, isActive: boolean) {
+  return serverFetch<UserProfileResponse>(`/api/v1/users/${userId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ isActive }),
+  });
+}
+
+export async function updateOwnProfileAction(data: UpdateOwnProfileRequest) {
+  return serverFetch<UserProfileResponse>("/api/v1/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }

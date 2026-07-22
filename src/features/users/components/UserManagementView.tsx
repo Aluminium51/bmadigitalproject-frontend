@@ -28,6 +28,9 @@ export const UserManagementView = () => {
     isPasswordModalOpen, setIsPasswordModalOpen,
     tempPassword, setTempPassword,
     handleToggleActive,
+    handleSaveRoles,
+    isUpdatingStatus,
+    isUpdatingRoles,
     openRoleModal,
     openPasswordModal,
     sortField,
@@ -57,6 +60,7 @@ export const UserManagementView = () => {
         users={users}
         isLoading={isLoading}
         onToggleActive={handleToggleActive}
+        isUpdatingStatus={isUpdatingStatus}
         onOpenRoleModal={openRoleModal}
         onOpenPasswordModal={openPasswordModal}
         sortField={sortField}
@@ -79,9 +83,12 @@ export const UserManagementView = () => {
       />
 
       <RoleModal 
+        key={`${selectedUser?.user_id ?? "none"}-${isRoleModalOpen ? "open" : "closed"}`}
         isOpen={isRoleModalOpen} 
         onClose={() => setIsRoleModalOpen(false)} 
-        user={selectedUser} 
+        user={selectedUser}
+        onSave={handleSaveRoles}
+        isSaving={isUpdatingRoles}
       />
       
       <PasswordModal 

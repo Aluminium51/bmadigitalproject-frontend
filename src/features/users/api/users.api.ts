@@ -46,7 +46,7 @@ export type ApiUser = {
     divisionName?: string;
     departmentName?: string;
   } | null;
-  roles?: Array<{ roleName?: string }> | string[];
+  roles?: Array<{ roleId?: number; roleName?: string }> | string[];
 };
 
 export interface ApiUsersResponse {
@@ -69,6 +69,10 @@ function mapApiUser(user: ApiUser): User {
     roles: (user.roles ?? []).map((role) =>
       typeof role === "string" ? role : role.roleName ?? "USER",
     ),
+    role_ids: (user.roles ?? [])
+      .filter((role): role is { roleId?: number; roleName?: string } => typeof role !== "string")
+      .map((role) => role.roleId)
+      .filter((roleId): roleId is number => typeof roleId === "number"),
     is_active: user.isActive,
     last_login: lastLogin && !Number.isNaN(lastLogin.getTime())
       ? lastLogin.toLocaleString("th-TH")

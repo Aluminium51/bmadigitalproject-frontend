@@ -20,7 +20,6 @@ services:
       resources:
         limits:
           memory: 1G
-    # ปรับแต่งระบบ Logging ไม่ให้ไฟล์ Log บวมจนเต็มเซิร์ฟเวอร์
     logging:
       driver: "json-file"
       options:

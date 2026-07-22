@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useGetUsers } from "./useGetUsers";
 import type { User } from "../types";
 import type { UserSortField, UserSortOrder } from "../api/users.api";
+import { updateUserRolesAction, updateUserStatusAction } from "../actions/user.actions";
 
 export type SortField = UserSortField;
 export type SortDirection = UserSortOrder;
@@ -17,7 +20,7 @@ export const useUserManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [activeOverrides, setActiveOverrides] = useState<Record<string, boolean>>({});
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -38,31 +41,56 @@ export const useUserManagement = () => {
     order: sortDirection,
   });
 
-  useEffect(() => {
+  const updateSearch = useCallback((value: string) => {
+    setSearch(value);
     setCurrentPage(1);
-  }, [search, deptFilter, roleFilter, activeOnly]);
+  }, []);
+  const updateDeptFilter = useCallback((value: string) => {
+    setDeptFilter(value);
+    setCurrentPage(1);
+  }, []);
+  const updateRoleFilter = useCallback((value: string) => {
+    setRoleFilter(value);
+    setCurrentPage(1);
+  }, []);
+  const updateActiveOnly = useCallback((value: boolean) => {
+    setActiveOnly(value);
+    setCurrentPage(1);
+  }, []);
 
-  const users = useMemo(
-    () => (usersQuery.data?.data ?? []).map((user) => ({
-      ...user,
-      is_active: activeOverrides[String(user.user_id)] ?? user.is_active,
-    })),
-    [activeOverrides, usersQuery.data?.data],
-  );
+  const users = useMemo(() => usersQuery.data?.data ?? [], [usersQuery.data?.data]);
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
 
+  const statusMutation = useMutation({
+    mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+      updateUserStatusAction(userId, isActive),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User status updated");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to update user status"),
+  });
+
+  const rolesMutation = useMutation({
+    mutationFn: ({ userId, roleIds }: { userId: string; roleIds: number[] }) =>
+      updateUserRolesAction(userId, roleIds),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User roles updated");
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to update user roles"),
+  });
+
   const handleToggleActive = useCallback((userId: string | number) => {
     const id = String(userId);
     const currentUser = users.find((user) => String(user.user_id) === id);
-    setActiveOverrides((previous) => ({
-      ...previous,
-      [id]: !(previous[id] ?? currentUser?.is_active ?? false),
-    }));
-  }, [users]);
+    if (!currentUser || statusMutation.isPending) return;
+    void statusMutation.mutateAsync({ userId: id, isActive: !currentUser.is_active });
+  }, [statusMutation, users]);
 
   const openRoleModal = useCallback((user: User) => {
     setSelectedUser(user);
@@ -74,6 +102,12 @@ export const useUserManagement = () => {
     setTempPassword(null);
     setIsPasswordModalOpen(true);
   }, []);
+
+  const handleSaveRoles = useCallback(async (roleIds: number[]) => {
+    if (!selectedUser) return;
+    await rolesMutation.mutateAsync({ userId: String(selectedUser.user_id), roleIds });
+    setIsRoleModalOpen(false);
+  }, [rolesMutation, selectedUser]);
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -87,13 +121,13 @@ export const useUserManagement = () => {
   return {
     users,
     search,
-    setSearch,
+    setSearch: updateSearch,
     deptFilter,
-    setDeptFilter,
+    setDeptFilter: updateDeptFilter,
     roleFilter,
-    setRoleFilter,
+    setRoleFilter: updateRoleFilter,
     activeOnly,
-    setActiveOnly,
+    setActiveOnly: updateActiveOnly,
     currentPage,
     setCurrentPage,
     pagination: usersQuery.data?.pagination ?? {
@@ -117,6 +151,9 @@ export const useUserManagement = () => {
     tempPassword,
     setTempPassword,
     handleToggleActive,
+    handleSaveRoles,
+    isUpdatingStatus: statusMutation.isPending,
+    isUpdatingRoles: rolesMutation.isPending,
     openRoleModal,
     openPasswordModal,
   };

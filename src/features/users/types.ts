@@ -9,6 +9,7 @@ export interface User {
   department_name: string;
   division_name: string;
   roles: string[]; // 1 user can have multiple roles
+  role_ids?: number[];
   mobile_phone?: string;
   office_phone?: string;
   internal_extension?: string;

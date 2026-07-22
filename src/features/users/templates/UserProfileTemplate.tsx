@@ -1,200 +1,225 @@
-// src/features/users/templates/UserProfileTemplate.tsx
 "use client";
 
+import { memo } from "react";
 import {
-  User,
-  Mail,
-  Phone,
   Building2,
   Briefcase,
-  ShieldCheck,
   CalendarDays,
-  Smartphone,
-  PhoneCall,
-  Fingerprint,
   CheckCircle2,
   Clock,
+  Copy,
+  Fingerprint,
   History,
-  Loader2,
-  type LucideIcon
+  Mail,
+  Phone,
+  PhoneCall,
+  RefreshCw,
+  ShieldCheck,
+  Smartphone,
+  User,
+  type LucideIcon,
 } from "lucide-react";
-
+import Link from "next/link";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useUserProfile } from "../hooks/useUserProfile"; // นำเข้า Custom Hook
-
-// ==========================================
-// Sub-Components
-// ==========================================
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { useUserProfile } from "../hooks/useUserProfile";
 
 interface InfoRowProps {
   icon: LucideIcon;
   label: string;
   value: string | number | null | undefined;
   isVerified?: boolean;
+  copyable?: boolean;
 }
 
-const InfoRow = ({ icon: Icon, label, value, isVerified = false }: InfoRowProps) => (
-  <div className="flex items-start gap-4 p-3 transition-all rounded-2xl hover:bg-muted/50">
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-      <Icon className="h-5 w-5" />
-    </div>
-    <div className="flex flex-col">
-      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-      <div className="flex items-center gap-2 mt-0.5">
-        <span className="text-base font-semibold text-foreground">{value || "-"}</span>
-        {isVerified && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+const InfoRow = memo(function InfoRow({ icon: Icon, label, value, isVerified = false, copyable = false }: InfoRowProps) {
+  const displayValue = value || "-";
+
+  const copyValue = async () => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(String(value));
+      toast.success(`คัดลอก${label}แล้ว`);
+    } catch {
+      toast.error("ไม่สามารถคัดลอกข้อมูลได้");
+    }
+  };
+
+  return (
+    <div className="group flex min-w-0 items-start gap-3 rounded-2xl p-3 transition-colors hover:bg-muted/50">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <span className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+        <div className="mt-0.5 flex min-w-0 items-start gap-2">
+          <span
+            title={String(displayValue)}
+            className={cn(
+              "min-w-0 flex-1 break-words [overflow-wrap:anywhere] text-base font-semibold text-foreground",
+              copyable && "font-mono text-sm",
+            )}
+          >
+            {displayValue}
+          </span>
+          {isVerified && <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-label="ยืนยันแล้ว" />}
+          {copyable && value && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={`คัดลอก${label}`}
+              title={`คัดลอก${label}`}
+              className="shrink-0 opacity-70 transition-opacity hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              onClick={copyValue}
+            >
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+});
 
-// ==========================================
-// Main Component
-// ==========================================
+function ProfileSkeleton() {
+  return (
+    <div className="container mx-auto max-w-6xl px-4 py-6 sm:py-10">
+      <div className="mb-8 space-y-3">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-4 w-full max-w-xl" />
+      </div>
+      <div className="grid gap-6 lg:grid-cols-12 lg:gap-8">
+        <Skeleton className="h-[30rem] rounded-3xl lg:col-span-4" />
+        <div className="space-y-6 lg:col-span-8">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-64 rounded-3xl" />
+            <Skeleton className="h-64 rounded-3xl" />
+          </div>
+          <Skeleton className="h-64 rounded-3xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-// สมมติว่า Template นี้รับ userId มาจาก Page Component (ซึ่งได้จาก Context หรือ Token)
 export function UserProfileTemplate({ currentUserId }: { currentUserId: string }) {
-  // ดึงข้อมูลจริงจาก Backend ผ่าน React Query
-  const { data, isLoading, isError } = useUserProfile(currentUserId);
+  const { data, isLoading, isError, refetch, isFetching } = useUserProfile(currentUserId);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-muted-foreground">
-        <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
-        <p className="font-medium">กำลังโหลดข้อมูลโปรไฟล์...</p>
-      </div>
-    );
-  }
+  if (isLoading) return <ProfileSkeleton />;
 
   if (isError || !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-destructive">
-        <ShieldCheck className="w-12 h-12 mb-4" />
-        <h2 className="text-xl font-bold">ไม่พบข้อมูลโปรไฟล์</h2>
-        <p className="text-muted-foreground">กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ</p>
+      <div className="container mx-auto flex min-h-[55vh] max-w-lg flex-col items-center justify-center px-4 text-center">
+        <ShieldCheck className="mb-4 h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-bold">ไม่สามารถโหลดข้อมูลโปรไฟล์ได้</h2>
+        <p className="mt-2 text-sm text-muted-foreground">กรุณาลองใหม่อีกครั้ง หากยังพบปัญหาโปรดติดต่อผู้ดูแลระบบ</p>
+        <Button className="mt-6 gap-2" onClick={() => void refetch()} disabled={isFetching}>
+          <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+          {isFetching ? "กำลังลองใหม่..." : "ลองใหม่อีกครั้ง"}
+        </Button>
       </div>
     );
   }
 
-  // จัดรูปแบบข้อมูลให้แสดงผลง่ายขึ้น
   const displayDivision = data.division
     ? `${data.division.divisionName} (${data.division.departmentName})`
     : "-";
-
-  // แปลง roles Array Object ให้เป็น Array ข้อความเพื่อการแสดงผล
-  const displayRoles = data.roles?.map(r => r.roleName) || [];
+  const displayRoles = data.roles?.map((role) => role.roleName) ?? [];
+  const initials = `${data.firstName?.charAt(0) ?? ""}${data.lastName?.charAt(0) ?? ""}`;
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-6xl animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">โปรไฟล์ส่วนตัว</h1>
-          <p className="text-muted-foreground mt-1">ข้อมูลบัญชีและการตั้งค่าความปลอดภัยของระบบ</p>
+    <main className="container mx-auto max-w-full px-4 py-6 sm:py-10">
+      <header className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p className="mb-2 text-sm font-semibold text-primary">สรุปข้อมูลบัญชี</p>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">โปรไฟล์ส่วนตัว</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base">ดูข้อมูลบัญชี ข้อมูลติดต่อ หน่วยงาน และสิทธิ์การใช้งานของคุณ</p>
         </div>
-        <div className="text-right hidden md:block">
-            <p className="text-xs text-muted-foreground flex items-center justify-end gap-1.5">
-                <History className="w-3.5 h-3.5" /> อัปเดตล่าสุด: {data.updatedAt ? new Date(data.updatedAt).toLocaleString('th-TH') : '-'}
-            </p>
-        </div>
-      </div>
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground sm:justify-end">
+          <History className="h-3.5 w-3.5 shrink-0" />
+          อัปเดตล่าสุด {data.updatedAt ? new Date(data.updatedAt).toLocaleString("th-TH") : "-"}
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* --- Left Column: Identity Card --- */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="relative overflow-hidden rounded-3xl bg-card border shadow-xl p-8 text-center">
-            {/* Background Decor */}
-            <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/20 to-transparent -z-10" />
-
-            <Avatar className="w-32 h-32 mx-auto mb-6 border-4 border-background shadow-xl">
-              <AvatarImage src="" />
-              <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                {data.firstName?.charAt(0)}{data.lastName?.charAt(0)}
-              </AvatarFallback>
+      <div className="grid min-w-0 gap-6 lg:grid-cols-12 lg:gap-8">
+        <section className="min-w-0 lg:col-span-4">
+          <div className="relative overflow-hidden rounded-md border bg-card p-5 text-center shadow-xl sm:p-8">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-24" />
+            <Avatar className="relative mx-auto mb-5 h-28 w-28 border-4 border-background shadow-xl sm:mb-6 sm:h-32 sm:w-32">
+              <AvatarImage src="" alt={`${data.firstName} ${data.lastName}`} />
+              <AvatarFallback className="bg-primary text-3xl text-primary-foreground">{initials}</AvatarFallback>
             </Avatar>
+            <h2 className="break-words text-2xl font-bold">{data.firstName} {data.lastName}</h2>
+            <p className="mb-4 mt-1 break-words text-sm font-medium text-muted-foreground">{data.position || "-"}</p>
 
-            <h2 className="text-2xl font-bold">{data.firstName} {data.lastName}</h2>
-            <p className="text-sm text-muted-foreground font-medium mt-1 mb-4">{data.position || "-"}</p>
-
-            {/* Badges Stack */}
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
+            <div className="mb-6 flex flex-wrap justify-center gap-2 sm:mb-8">
               <Badge variant={data.isActive ? "default" : "destructive"} className="rounded-md">
-                {data.isActive ? "Active" : "Inactive"}
+                {data.isActive ? "ใช้งานอยู่" : "ระงับการใช้งาน"}
               </Badge>
               {displayRoles.map((role) => (
-                <Badge key={role} variant="secondary" className="rounded-md font-mono text-[10px]">
-                  {role}
+                <Badge key={role} variant="secondary" className="max-w-full rounded-md font-mono text-[10px]">
+                  <span className="break-words [overflow-wrap:anywhere]">{role}</span>
                 </Badge>
               ))}
             </div>
 
             <Separator className="mb-6" />
-
-            <div className="grid gap-3">
-              <Button className="w-full rounded-xl h-11">แก้ไขโปรไฟล์</Button>
-              <Button variant="outline" className="w-full rounded-xl h-11">เปลี่ยนรหัสผ่าน</Button>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <Button asChild className="h-11 w-full rounded-xl"><Link href="/profile/edit"><span className="text-white">แก้ไขข้อมูลส่วนตัว</span></Link></Button>
+              <Button variant="outline" className="h-11 w-full rounded-xl">เปลี่ยนรหัสผ่าน</Button>
             </div>
 
-            {/* Security Log */}
-            <div className="mt-8 pt-6 border-t">
-               <p className="text-[11px] text-muted-foreground flex items-center justify-center gap-1.5 uppercase tracking-tighter">
-                  <Clock className="w-3 h-3" /> เข้าสู่ระบบล่าสุด: {data.lastLogin ? new Date(data.lastLogin).toLocaleString('th-TH') : 'ไม่พบข้อมูล'}
-               </p>
+            <div className="mt-7 border-t pt-5">
+              <p className="flex items-center justify-center gap-1.5 text-[11px] uppercase tracking-tight text-muted-foreground">
+                <Clock className="h-3 w-3 shrink-0" />
+                เข้าใช้งานล่าสุด: {data.lastLogin ? new Date(data.lastLogin).toLocaleString("th-TH") : "ยังไม่มีข้อมูล"}
+              </p>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* --- Right Column: Details Group --- */}
-        <div className="lg:col-span-8 space-y-6">
-
-          {/* Section: Contact & Organization */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 rounded-3xl bg-card border shadow-sm space-y-6">
-                <h3 className="flex items-center gap-2 font-bold text-primary">
-                    <Mail className="w-4 h-4" /> ข้อมูลการติดต่อ
-                </h3>
-                <div className="space-y-1">
-                    <InfoRow icon={Mail} label="อีเมลหน่วยงาน" value={data.email} isVerified={data.isVerified} />
-                    <InfoRow icon={Smartphone} label="เบอร์โทรศัพท์มือถือ" value={data.mobilePhone} />
-                    <InfoRow icon={Phone} label="โทรศัพท์สำนักงาน" value={data.officePhone} />
-                    <InfoRow icon={PhoneCall} label="เบอร์ภายใน" value={data.internalExtension} />
-                </div>
+        <section className="min-w-0 space-y-6 lg:col-span-8">
+          <div className="grid min-w-0 gap-6 md:grid-cols-2">
+            <div className="min-w-0 rounded-md border bg-card p-5 shadow-sm sm:p-6">
+              <h3 className="mb-4 flex items-center gap-2 font-bold text-primary"><Mail className="h-4 w-4" /> ข้อมูลการติดต่อ</h3>
+              <div className="space-y-1">
+                <InfoRow icon={Mail} label="อีเมลหน่วยงาน" value={data.email} isVerified={data.isVerified} />
+                <InfoRow icon={Smartphone} label="โทรศัพท์มือถือ" value={data.mobilePhone} />
+                <InfoRow icon={Phone} label="โทรศัพท์สำนักงาน" value={data.officePhone} />
+                <InfoRow icon={PhoneCall} label="หมายเลขภายใน" value={data.internalExtension} />
+              </div>
             </div>
 
-            <div className="p-6 rounded-3xl bg-card border shadow-sm space-y-6">
-                <h3 className="flex items-center gap-2 font-bold text-primary">
-                    <Building2 className="w-4 h-4" /> ข้อมูลสังกัด
-                </h3>
-                <div className="space-y-1">
-                    <InfoRow icon={Building2} label="ฝ่าย/กอง (Division)" value={displayDivision} />
-                    <InfoRow icon={Briefcase} label="ตำแหน่งงาน" value={data.position} />
-                </div>
+            <div className="min-w-0 rounded-md border bg-card p-5 shadow-sm sm:p-6">
+              <h3 className="mb-4 flex items-center gap-2 font-bold text-primary"><Building2 className="h-4 w-4" /> ข้อมูลหน่วยงาน</h3>
+              <div className="space-y-1">
+                <InfoRow icon={Building2} label="ฝ่าย / หน่วยงาน" value={displayDivision} />
+                <InfoRow icon={Briefcase} label="ตำแหน่งงาน" value={data.position} />
+              </div>
             </div>
           </div>
 
-          {/* Section: Account Information */}
-          <div className="p-8 rounded-3xl bg-card border shadow-sm space-y-6">
-            <h3 className="flex items-center gap-2 font-bold text-primary">
-                <ShieldCheck className="w-4 h-4" /> ข้อมูลบัญชีผู้ใช้ระบบ
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
-                <InfoRow icon={User} label="ชื่อผู้ใช้งาน (Username)" value={data.username} />
-                <InfoRow icon={Fingerprint} label="User UUID" value={data.userId} />
-                <InfoRow
-                    icon={CalendarDays}
-                    label="วันที่ลงทะเบียน"
-                    value={data.createdAt ? new Date(data.createdAt).toLocaleDateString('th-TH', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                    }) : "-"}
-                />
-                <InfoRow icon={ShieldCheck} label="ระดับการเข้าถึง" value={displayRoles.join(", ")} />
+          <div className="min-w-0 rounded-md border bg-card p-5 shadow-sm sm:p-8">
+            <h3 className="mb-4 flex items-center gap-2 font-bold text-primary"><ShieldCheck className="h-4 w-4" /> ข้อมูลบัญชีผู้ใช้</h3>
+            <div className="grid min-w-0 gap-1 sm:grid-cols-2 sm:gap-x-6">
+              <InfoRow icon={User} label="ชื่อผู้ใช้" value={data.username} />
+              <InfoRow icon={Fingerprint} label="รหัสผู้ใช้" value={data.userId} copyable />
+              <InfoRow
+                icon={CalendarDays}
+                label="วันที่สร้างบัญชี"
+                value={data.createdAt ? new Date(data.createdAt).toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" }) : "-"}
+              />
+              <InfoRow icon={ShieldCheck} label="สิทธิ์การใช้งาน" value={displayRoles.join(", ")} />
             </div>
           </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,47 +12,43 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useRoles } from "@/features/lookups/hooks/useLookups";
 import { User } from "../../types";
+
+interface RoleOption {
+  id: number;
+  name: string;
+}
 
 interface RoleModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
+  onSave: (roleIds: number[]) => Promise<void>;
+  isSaving?: boolean;
 }
 
-export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
-  // ใช้ Lazy Initial State เพื่อดึงค่าเริ่มต้นจาก user ได้เลย โดยไม่เกิด Cascading Render
-  const [selectedRoles, setSelectedRoles] = useState<string[]>(() =>
-    user ? [...user.roles] : []
-  );
+const formatRoleName = (name: string) =>
+  name.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
 
-  // ควบคุมการ Reset ค่าผ่าน Callback ของการเปิด/ปิด Dialog โดยตรง แทนการใช้ useEffect
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setSelectedRoles([]);
-      onClose();
-    } else if (user) {
-      setSelectedRoles([...user.roles]);
-    }
+export const RoleModal = ({ isOpen, onClose, user, onSave, isSaving = false }: RoleModalProps) => {
+  const { data, isLoading } = useRoles();
+  const roles = useMemo(() => (data?.data ?? []) as RoleOption[], [data?.data]);
+  const [selectedRoles, setSelectedRoles] = useState<number[]>(() => user?.role_ids ?? []);
+
+  const handleRoleToggle = (roleId: number, checked: boolean) => {
+    setSelectedRoles((current) => checked
+      ? [...new Set([...current, roleId])]
+      : current.filter((id) => id !== roleId));
   };
 
-  // ฟังก์ชันสลับเลือก/ยกเลิกสิทธิ์
-  const handleRoleToggle = (role: string, isChecked: boolean) => {
-    if (isChecked) {
-      setSelectedRoles(prev => [...prev, role]);
-    } else {
-      setSelectedRoles(prev => prev.filter(r => r !== role));
-    }
-  };
-
-  // ฟังก์ชันก่อนกดปิดเพื่อ Clear State
-  const handleCancel = () => {
-    setSelectedRoles([]);
-    onClose();
+  const handleSave = async () => {
+    if (selectedRoles.length === 0) return;
+    await onSave(selectedRoles);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>ปรับเปลี่ยนสิทธิ์ผู้ใช้งาน</DialogTitle>
@@ -61,55 +57,33 @@ export const RoleModal = ({ isOpen, onClose, user }: RoleModalProps) => {
           </DialogDescription>
         </DialogHeader>
 
-        {user && (
-          <div className="space-y-4 py-2">
-            <div className="space-y-3">
-              <label className="text-sm font-bold text-slate-700">กำหนดบทบาทและสิทธิ์ (Roles)</label>
-              <div className="border border-border rounded-lg p-1 bg-slate-50/50">
-                <div className="flex items-center space-x-3 p-3 hover:bg-slate-100 rounded-md transition-colors">
-                  <Checkbox
-                    id="role-admin"
-                    checked={selectedRoles.includes("ADMIN")}
-                    onCheckedChange={(c) => handleRoleToggle("ADMIN", c as boolean)}
-                  />
-                  <div className="flex flex-col">
-                    <label htmlFor="role-admin" className="text-sm font-bold text-slate-800 cursor-pointer">Admin</label>
-                    <span className="text-xs text-slate-500">ผู้ดูแลระบบ จัดการตารางข้อมูลอ้างอิงและตั้งค่าระบบได้ทั้งหมด</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-3 hover:bg-slate-100 rounded-md transition-colors border-t border-slate-100">
-                  <Checkbox
-                    id="role-analyst"
-                    checked={selectedRoles.includes("ANALYST")}
-                    onCheckedChange={(c) => handleRoleToggle("ANALYST", c as boolean)}
-                  />
-                  <div className="flex flex-col">
-                    <label htmlFor="role-analyst" className="text-sm font-bold text-slate-800 cursor-pointer">Analyst</label>
-                    <span className="text-xs text-slate-500">ผู้วิเคราะห์ รับมอบหมายให้ตรวจและบันทึกมติโครงการได้</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-3 hover:bg-slate-100 rounded-md transition-colors border-t border-slate-100">
-                  <Checkbox
-                    id="role-user"
-                    checked={selectedRoles.includes("GENERAL_USER")}
-                    onCheckedChange={(c) => handleRoleToggle("GENERAL_USER", c as boolean)}
-                  />
-                  <div className="flex flex-col">
-                    <label htmlFor="role-user" className="text-sm font-bold text-slate-800 cursor-pointer">General User</label>
-                    <span className="text-xs text-slate-500">ผู้ยื่นข้อเสนอ สามารถสร้าง แก้ไข และดูสถานะโครงการของตนได้</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="space-y-3 py-2">
+          <label className="text-sm font-bold text-slate-700">กำหนดบทบาท (เลือกได้หลายรายการ)</label>
+          <div className="border border-border rounded-lg p-1 bg-slate-50/50">
+            {isLoading ? (
+              <p className="p-3 text-sm text-muted-foreground">Loading roles...</p>
+            ) : roles.length === 0 ? (
+              <p className="p-3 text-sm text-muted-foreground">No roles available</p>
+            ) : roles.map((role) => (
+              <label key={role.id} className="flex items-center gap-3 p-3 hover:bg-slate-100 rounded-md cursor-pointer">
+                <Checkbox
+                  checked={selectedRoles.includes(role.id)}
+                  onCheckedChange={(checked) => handleRoleToggle(role.id, checked === true)}
+                  disabled={isSaving}
+                />
+                <span className="text-sm font-bold text-slate-800">{formatRoleName(role.name)}</span>
+              </label>
+            ))}
           </div>
-        )}
+          {selectedRoles.length === 0 && (
+            <p className="text-xs text-destructive">At least one role is required.</p>
+          )}
+        </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>ยกเลิก</Button>
-          <Button onClick={onClose} className="gap-2">
-            <Check className="w-4 h-4" /> บันทึกสิทธิ์ใหม่
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>ยกเลิก</Button>
+          <Button onClick={handleSave} disabled={isSaving || selectedRoles.length === 0} className="gap-2">
+            <Check className="w-4 h-4" /> {isSaving ? "กำลังบันทึก..." : "บันทึกสิทธิ์"}
           </Button>
         </DialogFooter>
       </DialogContent>

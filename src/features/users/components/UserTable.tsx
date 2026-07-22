@@ -38,6 +38,7 @@ interface UserTableProps {
   users: User[];
   isLoading?: boolean;
   onToggleActive: (id: string | number) => void;
+  isUpdatingStatus?: boolean;
   onOpenRoleModal: (user: User) => void;
   onOpenPasswordModal: (user: User) => void;
   sortField: string;
@@ -45,16 +46,17 @@ interface UserTableProps {
   onSort: (field: SortField) => void;
 }
 
-export const UserTable = memo(({ 
+export const UserTable = memo(function UserTable({
   users,
   isLoading = false,
   onToggleActive,
+  isUpdatingStatus = false,
   onOpenRoleModal,
   onOpenPasswordModal,
   sortField,
   sortDirection,
   onSort,
-}: UserTableProps) => {
+}: UserTableProps) {
   // ฟังก์ชันสร้าง Badge รองรับการเรียกซ้ำ
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -213,6 +215,7 @@ export const UserTable = memo(({
                   <div className="flex items-center justify-center gap-2">
                     <Switch
                       checked={user.is_active}
+                      disabled={isUpdatingStatus}
                       onCheckedChange={() => onToggleActive(user.user_id)}
                       className="data-[state=checked]:bg-emerald-500"
                     />
