@@ -11,6 +11,7 @@ import { schemas } from "@/types/api-schemas";
 // ใช้ชื่ออ้างอิงตามที่ Backend กำหนดไว้ใน .openapi('LoginRequest') หรือ Path ของมัน
 type LoginRequestDTO = z.infer<typeof schemas.LoginRequest>;
 type LoginResponseDTO = z.infer<typeof schemas.LoginResponse>;
+type RefreshSessionResponseDTO = z.infer<typeof schemas.RefreshSessionResponse>;
 
 // สำหรับหน้า Register (เปลี่ยนชื่อ schemas.postApiv1users_Body ให้ตรงกับ Path ของ API คุณจริงๆ)
 // สมมติว่าใน Backend API เป็น POST /users
@@ -133,6 +134,41 @@ export async function requestPasswordResetAction(email: string) {
 
 export async function resetPasswordAction(token: string, newPassword: string) {
   return postAuthRecovery("reset-password", { token, newPassword });
+}
+
+export async function refreshSessionAction(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    const result = await serverFetch<RefreshSessionResponseDTO>(
+      "/api/v1/auth/refresh",
+      { method: "POST" },
+    );
+
+    if (!result.token) {
+      return { success: false, message: "Unable to refresh the session." };
+    }
+
+    const cookieStore = await cookies();
+    cookieStore.set("token", result.token, {
+      httpOnly: true,
+      secure:
+        process.env.NODE_ENV === "production" &&
+        process.env.ALLOW_HTTP_COOKIE !== "true",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return { success: true, message: "Session refreshed." };
+  } catch (error) {
+    console.error("Session refresh error:", error);
+    return {
+      success: false,
+      message: "Your role was updated. Please log out and log back in to apply it.",
+    };
+  }
 }
 
 export async function logoutAction() {

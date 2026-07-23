@@ -110,6 +110,7 @@ const RecoveryEmailRequest = z
 const ResetPasswordRequest = z
   .object({ token: z.string().min(1), newPassword: z.string().min(8) })
   .passthrough();
+const RefreshSessionResponse = z.object({ token: z.string() }).passthrough();
 const UploadDocumentRequest = z
   .object({
     file: z.instanceof(File),
@@ -203,9 +204,34 @@ const Project = z
       .optional()
       .default([]),
     permissions: z
-      .object({ canDelete: z.boolean(), canManageAttachments: z.boolean() })
+      .object({
+        canDelete: z.boolean(),
+        canManageAttachments: z.boolean(),
+        canUpdateProject: z.boolean(),
+        canEditProposal: z.boolean(),
+        canSubmitProposal: z.boolean(),
+      })
       .passthrough()
       .optional(),
+    latestReturnFeedback: z
+      .object({
+        remark: z.string(),
+        reviewer: z
+          .object({
+            userId: z.string().uuid(),
+            firstName: z.string(),
+            lastName: z.string(),
+          })
+          .passthrough()
+          .nullable(),
+        reviewerRole: z.string(),
+        createdAt: z.union([z.string(), z.string()]),
+        oldStatusId: z.number().int(),
+        newStatusId: z.number().int(),
+      })
+      .passthrough()
+      .nullish()
+      .default(null),
   })
   .passthrough();
 const PaginatedProjectResponse = z
@@ -282,6 +308,310 @@ const DraftProposalRequest = z
     projectName: z.string(),
     objective: z.string(),
     totalBudget: z.number().nullable(),
+  })
+  .partial()
+  .passthrough();
+const SubmittedProposalPatchRequest = z
+  .object({
+    projectName: z.string().min(5),
+    agencyName: z.string().min(2),
+    headOfAgency: z.string().min(2),
+    dcioName: z.string().min(2),
+    projectManager: z.string().min(2),
+    totalBudget: z.number().gte(1),
+    budgetsByYear: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            year: z.number().int().gte(2500).lte(2600),
+            amount: z.number().gte(1),
+            budgetType: z.string().min(1),
+          })
+          .passthrough()
+      )
+      .default([]),
+    background: z.string().min(10),
+    objective: z.string().min(10),
+    target: z.string().min(10),
+    scope: z.string().min(10),
+    projectType: z.enum(["NEW", "REPLACEMENT", "CONTINUOUS"]),
+    currentSystemStatus: z.string().min(5),
+    currentProblems: z.string().min(5),
+    relatedProjects: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            projectName: z.string().min(1),
+            agency: z.string().min(1),
+            fiscalYear: z.string().min(4),
+            relationType: z.string().min(1),
+            remark: z.string().optional(),
+          })
+          .passthrough()
+      )
+      .default([]),
+    manpower: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            agencyPart: z.string().min(1),
+            positionLimit: z.number().nullable(),
+            occupied: z.number().nullable(),
+            vacant: z.number().nullable(),
+          })
+          .passthrough()
+      )
+      .default([]),
+    existingEquipment: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            itemName: z.string().min(1),
+            ageYears: z.number().nullable(),
+            quantity: z.number().nullable(),
+            user: z.string().min(1),
+            location: z.string().min(1),
+            remark: z.string().optional(),
+          })
+          .passthrough()
+      )
+      .default([]),
+    isBmaPlan: z.boolean().default(false),
+    isAgencyPlan: z.boolean().default(false),
+    agencyStrategy: z.string(),
+    agencyIssue: z.string(),
+    agencyKpi: z.string(),
+    isGovernorPolicy: z.boolean().default(false),
+    governorPolicyCode: z.string(),
+    governorPolicyName: z.string(),
+    obstacleLaws: z.string(),
+    appArchitecture: z.string().min(5),
+    dataOwner: z.string().min(2),
+    dataExchangePlan: z.string().min(5),
+    hardwareCosts: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            itemName: z.string().min(1),
+            quantity: z.number().gte(1),
+            unitPrice: z.number().gte(0).nullable(),
+            referenceType: z.enum(["MDES", "MARKET", "PREVIOUS", "OTHER"]),
+            mdesMonth: z.string().optional(),
+            mdesYear: z.string().optional(),
+            mdesItemNo: z.string().optional(),
+            marketCount: z.number().nullish(),
+            marketCompany: z.string().optional(),
+            prevProject: z.string().optional(),
+            prevYear: z.string().optional(),
+            otherDetail: z.string().optional(),
+          })
+          .passthrough()
+      )
+      .default([]),
+    softwareCosts: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            itemName: z.string().min(1),
+            quantity: z.number().gte(1),
+            unitPrice: z.number().gte(0).nullable(),
+            referenceType: z.enum(["MDES", "MARKET", "PREVIOUS", "OTHER"]),
+            mdesMonth: z.string().optional(),
+            mdesYear: z.string().optional(),
+            mdesItemNo: z.string().optional(),
+            marketCount: z.number().nullish(),
+            marketCompany: z.string().optional(),
+            prevProject: z.string().optional(),
+            prevYear: z.string().optional(),
+            otherDetail: z.string().optional(),
+          })
+          .passthrough()
+      )
+      .default([]),
+    personnelCoreCosts: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
+            position: z.string().min(1),
+            degree: z.string().min(1),
+            fieldOfStudy: z.string().optional(),
+            experienceYears: z.number().gte(0).nullable(),
+            baseSalary: z.number().gte(1),
+            multiplier: z.number().nullish(),
+            personCount: z.number().gte(1),
+            durationMonths: z.number().gte(1),
+          })
+          .passthrough()
+      )
+      .default([]),
+    personnelAsstCosts: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
+            position: z.string().min(1),
+            degree: z.string().min(1),
+            fieldOfStudy: z.string().optional(),
+            experienceYears: z.number().gte(0).nullable(),
+            baseSalary: z.number().gte(1),
+            multiplier: z.number().nullish(),
+            personCount: z.number().gte(1),
+            durationMonths: z.number().gte(1),
+          })
+          .passthrough()
+      )
+      .default([]),
+    personnelSuppCosts: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
+            position: z.string().min(1),
+            degree: z.string().min(1),
+            fieldOfStudy: z.string().optional(),
+            experienceYears: z.number().gte(0).nullable(),
+            baseSalary: z.number().gte(1),
+            multiplier: z.number().nullish(),
+            personCount: z.number().gte(1),
+            durationMonths: z.number().gte(1),
+          })
+          .passthrough()
+      )
+      .default([]),
+    personnelResponsibilities: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            position: z.string(),
+            responsibility: z.string().min(1),
+          })
+          .passthrough()
+      )
+      .default([]),
+    trainingCourses: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            courseName: z.string().min(1),
+            trainingMethod: z.string().min(1),
+            locationType: z.enum(["GOVERNMENT", "PRIVATE"]),
+            hasSpeakerCost: z.boolean().optional().default(false),
+            speakerReason: z.string().optional(),
+            speakerCosts: z
+              .array(
+                z
+                  .object({
+                    id: z.string().uuid().optional(),
+                    itemName: z.string().min(1),
+                    hours: z.number().gte(1),
+                    ratePerHour: z.number().gte(0).nullable(),
+                    days: z.number().gte(1),
+                  })
+                  .passthrough()
+              )
+              .optional()
+              .default([]),
+            foodCosts: z
+              .array(
+                z
+                  .object({
+                    id: z.string().uuid().optional(),
+                    itemName: z.enum([
+                      "PARTIAL_MEAL",
+                      "FULL_MEAL",
+                      "SNACK",
+                      "OTHER",
+                    ]),
+                    mealsCount: z.number().gte(0).nullable(),
+                    ratePerMeal: z.number().gte(0).nullable(),
+                    traineesCount: z.number().gte(0).nullable(),
+                    days: z.number().gte(0).nullable(),
+                  })
+                  .passthrough()
+              )
+              .optional()
+              .default([]),
+          })
+          .passthrough()
+      )
+      .default([]),
+    otherCosts: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            itemName: z.string().min(1),
+            quantity: z.number().gte(1),
+            unitPrice: z.number().gte(0).nullable(),
+            remark: z.string().optional(),
+            costType: z.enum(["IT", "NON_IT"]),
+          })
+          .passthrough()
+      )
+      .default([]),
+    durationDays: z.number().gte(1),
+    ictPersonnel: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            position: z.string().min(1),
+            level: z.string().min(1),
+            count: z.number().gte(1),
+          })
+          .passthrough()
+      )
+      .default([]),
+    cloudRequests: z
+      .array(
+        z
+          .object({
+            id: z.string().uuid().optional(),
+            systemName: z.string().min(1),
+            requestedServiceDate: z
+              .string()
+              .datetime({ offset: true })
+              .nullable(),
+            recordedRequestDate: z
+              .string()
+              .datetime({ offset: true })
+              .nullable(),
+            vms: z
+              .array(
+                z
+                  .object({
+                    id: z.string().uuid().optional(),
+                    vmDescription: z.string().min(1),
+                    osDatabase: z.string().min(1),
+                    vcpu: z.number().gte(0).nullable(),
+                    ramGb: z.number().gte(0).nullable(),
+                    gpuGb: z.number().gte(0).nullable(),
+                    storageGb: z.number().gte(0).nullable(),
+                    price: z.number().gte(0).nullable(),
+                  })
+                  .passthrough()
+              )
+              .optional()
+              .default([]),
+          })
+          .passthrough()
+      )
+      .default([]),
+    otherReadiness: z.string(),
+    expectedBenefits: z.string().min(1),
+    isInRoadmap: z.boolean(),
   })
   .partial()
   .passthrough();
@@ -771,6 +1101,7 @@ export const schemas = {
   SuccessResponse,
   RecoveryEmailRequest,
   ResetPasswordRequest,
+  RefreshSessionResponse,
   UploadDocumentRequest,
   Project,
   PaginatedProjectResponse,
@@ -782,6 +1113,7 @@ export const schemas = {
   UpdateProjectTypeRequest,
   AssignProjectRequest,
   DraftProposalRequest,
+  SubmittedProposalPatchRequest,
   SubmitProposalRequest,
   CreateMeeting,
   Meeting,
@@ -884,6 +1216,20 @@ const endpoints = makeApi([
       {
         status: 500,
         description: `เกิดข้อผิดพลาดที่เซิร์ฟเวอร์`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/auth/refresh",
+    alias: "postApiv1authrefresh",
+    requestFormat: "json",
+    response: z.object({ token: z.string() }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthorized`,
         schema: ErrorResponse,
       },
     ],
@@ -1524,6 +1870,39 @@ const endpoints = makeApi([
       })
       .partial()
       .passthrough(),
+  },
+  {
+    method: "patch",
+    path: "/api/v1/proposals/projects/:projectId",
+    alias: "patchApiv1proposalsprojectsProjectId",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: SubmittedProposalPatchRequest,
+      },
+      {
+        name: "projectId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z
+      .object({
+        data: z.unknown().nullable(),
+        message: z.string(),
+        success: z.boolean(),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: "get",

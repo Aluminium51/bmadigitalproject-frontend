@@ -690,6 +690,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh the current user's session claims */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Session refreshed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RefreshSessionResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -1077,7 +1122,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get all projects waiting for Secretary review */
+        /** ดึงรายชื่อโครงการที่รอการตรวจสอบจากเลขานุการ */
         get: {
             parameters: {
                 query?: {
@@ -1671,7 +1716,48 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Project UUID */
+                    projectId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SubmittedProposalPatchRequest"];
+                };
+            };
+            responses: {
+                /** @description Updated submitted proposal */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                            message?: string;
+                            success?: boolean;
+                        };
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/proposals/projects/{projectId}/submit": {
@@ -2648,6 +2734,9 @@ export interface components {
             token: string;
             newPassword: string;
         };
+        RefreshSessionResponse: {
+            token: string;
+        };
         UploadDocumentRequest: {
             /**
              * Format: binary
@@ -2796,7 +2885,24 @@ export interface components {
             permissions?: {
                 canDelete: boolean;
                 canManageAttachments: boolean;
+                canUpdateProject: boolean;
+                canEditProposal: boolean;
+                canSubmitProposal: boolean;
             };
+            /** @default null */
+            latestReturnFeedback: {
+                remark: string;
+                reviewer: {
+                    /** Format: uuid */
+                    userId: string;
+                    firstName: string;
+                    lastName: string;
+                } | null;
+                reviewerRole: string;
+                createdAt: string;
+                oldStatusId: number;
+                newStatusId: number;
+            } | null;
         };
         CreateProjectRequest: {
             /** @example โครงการพัฒนาระบบให้บริการประชาชน */
@@ -2865,6 +2971,241 @@ export interface components {
              * @description UUID ของนักวิเคราะห์
              */
             analystId: string;
+        };
+        /** @description Partial update for a submitted proposal by an authorized Secretary */
+        SubmittedProposalPatchRequest: {
+            projectName?: string;
+            agencyName?: string;
+            headOfAgency?: string;
+            dcioName?: string;
+            projectManager?: string;
+            totalBudget?: number;
+            /** @default [] */
+            budgetsByYear: {
+                /** Format: uuid */
+                id?: string;
+                year: number;
+                amount: number;
+                budgetType: string;
+            }[];
+            background?: string;
+            objective?: string;
+            target?: string;
+            scope?: string;
+            /** @enum {string} */
+            projectType?: "NEW" | "REPLACEMENT" | "CONTINUOUS";
+            currentSystemStatus?: string;
+            currentProblems?: string;
+            /** @default [] */
+            relatedProjects: {
+                /** Format: uuid */
+                id?: string;
+                projectName: string;
+                agency: string;
+                fiscalYear: string;
+                relationType: string;
+                remark?: string;
+            }[];
+            /** @default [] */
+            manpower: {
+                /** Format: uuid */
+                id?: string;
+                agencyPart: string;
+                positionLimit: number | null;
+                occupied: number | null;
+                vacant: number | null;
+            }[];
+            /** @default [] */
+            existingEquipment: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                ageYears: number | null;
+                quantity: number | null;
+                user: string;
+                location: string;
+                remark?: string;
+            }[];
+            /** @default false */
+            isBmaPlan: boolean;
+            /** @default false */
+            isAgencyPlan: boolean;
+            agencyStrategy?: string;
+            agencyIssue?: string;
+            agencyKpi?: string;
+            /** @default false */
+            isGovernorPolicy: boolean;
+            governorPolicyCode?: string;
+            governorPolicyName?: string;
+            obstacleLaws?: string;
+            appArchitecture?: string;
+            dataOwner?: string;
+            dataExchangePlan?: string;
+            /** @default [] */
+            hardwareCosts: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                quantity: number;
+                unitPrice: number | null;
+                /** @enum {string} */
+                referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
+                mdesMonth?: string;
+                mdesYear?: string;
+                mdesItemNo?: string;
+                marketCount?: number | null;
+                marketCompany?: string;
+                prevProject?: string;
+                prevYear?: string;
+                otherDetail?: string;
+            }[];
+            /** @default [] */
+            softwareCosts: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                quantity: number;
+                unitPrice: number | null;
+                /** @enum {string} */
+                referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
+                mdesMonth?: string;
+                mdesYear?: string;
+                mdesItemNo?: string;
+                marketCount?: number | null;
+                marketCompany?: string;
+                prevProject?: string;
+                prevYear?: string;
+                otherDetail?: string;
+            }[];
+            /** @default [] */
+            personnelCoreCosts: {
+                /** Format: uuid */
+                id?: string;
+                /** @enum {string} */
+                personnelType: "CORE" | "ASST" | "SUPP";
+                position: string;
+                degree: string;
+                fieldOfStudy?: string;
+                experienceYears: number | null;
+                baseSalary: number;
+                multiplier?: number | null;
+                personCount: number;
+                durationMonths: number;
+            }[];
+            /** @default [] */
+            personnelAsstCosts: {
+                /** Format: uuid */
+                id?: string;
+                /** @enum {string} */
+                personnelType: "CORE" | "ASST" | "SUPP";
+                position: string;
+                degree: string;
+                fieldOfStudy?: string;
+                experienceYears: number | null;
+                baseSalary: number;
+                multiplier?: number | null;
+                personCount: number;
+                durationMonths: number;
+            }[];
+            /** @default [] */
+            personnelSuppCosts: {
+                /** Format: uuid */
+                id?: string;
+                /** @enum {string} */
+                personnelType: "CORE" | "ASST" | "SUPP";
+                position: string;
+                degree: string;
+                fieldOfStudy?: string;
+                experienceYears: number | null;
+                baseSalary: number;
+                multiplier?: number | null;
+                personCount: number;
+                durationMonths: number;
+            }[];
+            /** @default [] */
+            personnelResponsibilities: {
+                /** Format: uuid */
+                id?: string;
+                position: string;
+                responsibility: string;
+            }[];
+            /** @default [] */
+            trainingCourses: {
+                /** Format: uuid */
+                id?: string;
+                courseName: string;
+                trainingMethod: string;
+                /** @enum {string} */
+                locationType: "GOVERNMENT" | "PRIVATE";
+                /** @default false */
+                hasSpeakerCost: boolean;
+                speakerReason?: string;
+                /** @default [] */
+                speakerCosts: {
+                    /** Format: uuid */
+                    id?: string;
+                    itemName: string;
+                    hours: number;
+                    ratePerHour: number | null;
+                    days: number;
+                }[];
+                /** @default [] */
+                foodCosts: {
+                    /** Format: uuid */
+                    id?: string;
+                    /** @enum {string} */
+                    itemName: "PARTIAL_MEAL" | "FULL_MEAL" | "SNACK" | "OTHER";
+                    mealsCount: number | null;
+                    ratePerMeal: number | null;
+                    traineesCount: number | null;
+                    days: number | null;
+                }[];
+            }[];
+            /** @default [] */
+            otherCosts: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                quantity: number;
+                unitPrice: number | null;
+                remark?: string;
+                /** @enum {string} */
+                costType: "IT" | "NON_IT";
+            }[];
+            durationDays?: number;
+            /** @default [] */
+            ictPersonnel: {
+                /** Format: uuid */
+                id?: string;
+                position: string;
+                level: string;
+                count: number;
+            }[];
+            /** @default [] */
+            cloudRequests: {
+                /** Format: uuid */
+                id?: string;
+                systemName: string;
+                /** Format: date-time */
+                requestedServiceDate: string | null;
+                /** Format: date-time */
+                recordedRequestDate: string | null;
+                /** @default [] */
+                vms: {
+                    /** Format: uuid */
+                    id?: string;
+                    vmDescription: string;
+                    osDatabase: string;
+                    vcpu: number | null;
+                    ramGb: number | null;
+                    gpuGb: number | null;
+                    storageGb: number | null;
+                    price: number | null;
+                }[];
+            }[];
+            otherReadiness?: string;
+            expectedBenefits?: string;
+            isInRoadmap?: boolean;
         };
         /** @description Schema สำหรับข้อมูลแบบร่างโครงการ (Auto-Save) */
         DraftProposalRequest: {

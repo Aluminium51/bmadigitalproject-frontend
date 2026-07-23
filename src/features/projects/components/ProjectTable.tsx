@@ -1,166 +1,102 @@
-// src/features/projects/components/ProjectTable.tsx
+"use client";
+
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { FileSpreadsheet, FileText, MoreVertical } from "lucide-react";
+import { z } from "zod";
+import { schemas } from "@/types/api-schemas";
+import { Button } from "@/components/ui/button";
 import {
-  MoreVertical,
-  FileSpreadsheet,
-  FileText,
-} from "lucide-react";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { TabType } from "../hooks/useProjects";
 import { getProjectStatusMeta } from "../utils/projectStatus";
 
-interface ProjectTableProps {
-  data: any[];
-  activeTab: TabType;
-}
-
-const getProjectStatusBadge = (statusId: number | null | undefined, statusName: string) => {
-  const meta = getProjectStatusMeta(statusId, statusName);
-  return (
-    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border w-fit ${meta.className}`}>
-      {meta.label}
-    </span>
-  );
+type Project = z.infer<typeof schemas.Project>;
+type ProjectRow = Project & {
+  formProgress?: string;
+  docProgress?: string;
 };
 
-export function ProjectTable({ data, activeTab }: ProjectTableProps) {
+interface ProjectTableProps {
+  data: ProjectRow[];
+  activeTab: TabType;
+  emptyMessage?: string;
+  onRowClick?: (project: ProjectRow) => void;
+  renderActions?: (project: ProjectRow) => ReactNode;
+}
+
+function StatusBadge({ statusId, statusName }: { statusId?: number | null; statusName?: string | null }) {
+  const meta = getProjectStatusMeta(statusId, statusName);
+  return <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-[11px] font-bold ${meta.className}`}>{meta.label}</span>;
+}
+
+export function ProjectTable({ data, activeTab, emptyMessage, onRowClick, renderActions }: ProjectTableProps) {
   const router = useRouter();
+  const navigate = (project: ProjectRow) => {
+    if (onRowClick) onRowClick(project);
+    else router.push(`/projects/${project.id}`);
+  };
 
   if (data.length === 0) {
-    return (
-      <div className="p-16 text-center text-muted-foreground font-medium">
-        {activeTab === "drafts"
-          ? "ยอดเยี่ยม! คุณไม่มีแบบร่างค้างทำเลย"
-          : "ยังไม่มีข้อมูลโครงการในหมวดหมู่นี้"}
-      </div>
-    );
+    return <div className="p-16 text-center font-medium text-muted-foreground">{emptyMessage ?? (activeTab === "drafts" ? "No draft projects" : "No projects found")}</div>;
   }
 
   return (
     <div className="flex-1 overflow-auto">
-      <table className="w-full text-left text-sm whitespace-nowrap">
-        <thead className="bg-white sticky top-0 text-slate-400 font-bold z-10 border-b border-[#ededf4] text-[13px] uppercase tracking-wide">
-          <tr>
-            <th className="px-6 sm:px-10 py-4">วันที่นำเข้าโครงการ</th>
-            <th className="px-6 sm:px-10 py-4 w-full">ชื่อโครงการ</th>
-            <th className="px-6 sm:px-10 py-4">หน่วยงาน (Division)</th>
-            <th className="px-6 sm:px-10 py-4">ส่วนราชการ (Department)</th>
-            <th className="px-6 sm:px-10 py-4">ประเภทโครงการ</th>
-            <th className="px-6 sm:px-10 py-4">ปีงบที่เริ่มต้น</th>
-            <th className="px-6 sm:px-10 py-4">งบประมาณที่ขอจัดสรร</th>
-            <th className="px-6 sm:px-10 py-4">ผู้วิเคราะห์</th>
-            <th className="px-6 sm:px-10 py-4 min-w-50">
-              {activeTab === "drafts" ? "ความคืบหน้า" : "สถานะโครงการ"}
-            </th>
-            <th className="px-6 sm:px-10 py-4 text-center">จัดการ</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-[#ededf4]">
+      <Table>
+        <TableHeader className="sticky top-0 z-10 bg-white">
+          <TableRow>
+            <TableHead className="px-6 py-4 sm:px-10">วันที่นำเข้า</TableHead>
+            <TableHead className="w-full px-6 py-4 sm:px-10">ชื่อโครงการ</TableHead>
+            <TableHead className="px-6 py-4 sm:px-10">หน่วยงาน (Division)</TableHead>
+            <TableHead className="px-6 py-4 sm:px-10">ส่วนราชการ (Department)</TableHead>
+            <TableHead className="px-6 py-4 sm:px-10">ประเภทโครงการ</TableHead>
+            <TableHead className="px-6 py-4 sm:px-10">งบประมาณ</TableHead>
+            <TableHead className="px-6 py-4 sm:px-10">ผู้วิเคราะห์</TableHead>
+            <TableHead className="min-w-50 px-6 py-4 sm:px-10">{activeTab === "drafts" ? "ความคืบหน้า" : "สถานะโครงการ"}</TableHead>
+            <TableHead className="px-6 py-4 text-center">จัดการ</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {data.map((project) => {
-            // เช็คสถานะ "ต้องแก้ไข" จาก Status ID (สมมติว่า ID 4 คือ Need Revision)
             const isReturned = [3, 7, 10, 13].includes(project.status?.id ?? -1);
-            const rowClass =
-              isReturned && activeTab !== "drafts"
-                ? "bg-red-50/40 hover:bg-red-50/70 cursor-pointer transition-colors group"
-                : "hover:bg-surface-variant/40 cursor-pointer transition-colors group";
-
-            // ฟอร์แมตวันที่ให้สวยงาม
-            const importDate = project.createdAt
-              ? new Date(project.createdAt).toLocaleDateString("th-TH")
-              : "-";
-
+            const date = project.createdAt ? new Intl.DateTimeFormat("th-TH").format(new Date(project.createdAt)) : "-";
             return (
-              <tr
-                key={project.id}
-                className={rowClass}
-                onClick={() => router.push(`/projects/${project.id}`)}
-              >
-                {/* วันที่นำเข้า */}
-                <td className="px-6 sm:px-10 py-5 text-xs text-muted-foreground">
-                  {importDate}
-                </td>
-
-                {/* ชื่อโครงการ */}
-                <td
-                  className={`px-6 sm:px-10 py-5 font-bold flex flex-col ${isReturned && activeTab !== "drafts" ? "text-red-700" : "text-[#191c20] group-hover:text-[#00734b]"}`}
-                >
-                  <span className="font-mono text-[10px] text-muted-foreground font-normal mb-0.5">
-                    {isReturned && activeTab !== "drafts" && (
-                      <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-2 animate-pulse" />
-                    )}
-                    {project.projectCode || "-"}
-                  </span>
-                  <span>{project.projectName || "-"}</span>
-                </td>
-
-                {/* หน่วยงาน (Division Name) */}
-                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">
-                  {project.division?.name || "-"}
-                </td>
-
-                {/* ส่วนราชการ (Department Name) */}
-                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">
-                  {project.division?.departmentName || "-"}
-                </td>
-
-                {/* ประเภทงบประมาณ (Project Type) */}
-                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">
-                  {project.projectType?.name || "-"}
-                </td>
-
-                {/* ปีงบที่เริ่มต้น */}
-                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">-</td>
-
-                {/* งบประมาณที่ขอจัดสรร */}
-                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">
-                  {project.initialRequestedBudget
-                    ? parseFloat(project.initialRequestedBudget).toLocaleString(
-                        "th-TH",
-                      )
-                    : "-"}
-                </td>
-
-                {/* ผู้วิเคราะห์ */}
-                <td className="px-6 sm:px-10 py-5 text-[#3f4942]">
-                  {project.analyst
-                    ? `${project.analyst.firstName} ${project.analyst.lastName}`
-                    : "-"}
-                </td>
-
-                {/* สถานะโครงการ / ความคืบหน้า */}
-                <td className="px-6 sm:px-10 py-5">
+              <TableRow key={project.id} className={isReturned && activeTab !== "drafts" ? "cursor-pointer bg-red-50/40 hover:bg-red-50/70" : "cursor-pointer hover:bg-surface-variant/40"} onClick={() => navigate(project)}>
+                <TableCell className="px-6 py-5 text-xs text-muted-foreground sm:px-10">{date}</TableCell>
+                <TableCell className="px-6 py-5 sm:px-10">
+                  <div className={`flex flex-col font-bold ${isReturned && activeTab !== "drafts" ? "text-red-700" : "text-[#191c20]"}`}>
+                    <span className="mb-0.5 font-mono text-[10px] font-normal text-muted-foreground">{project.projectCode || "-"}</span>
+                    <span>{project.projectName || "-"}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.division?.name || "-"}</TableCell>
+                <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.division?.departmentName || "-"}</TableCell>
+                <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.projectType?.name || "-"}</TableCell>
+                <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.initialRequestedBudget ? Number(project.initialRequestedBudget).toLocaleString("th-TH") : "-"}</TableCell>
+                <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.analyst ? `${project.analyst.firstName} ${project.analyst.lastName}` : "-"}</TableCell>
+                <TableCell className="px-6 py-5 sm:px-10">
                   {activeTab === "drafts" ? (
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${project.formProgress === "5/5" ? "text-[#00734b] bg-[#00734b]/10 border-[#00734b]/20" : "text-status-orange bg-orange-100 border-status-orange/20"}`}
-                      >
-                        <FileSpreadsheet className="w-3 h-3" /> ฟอร์ม{" "}
-                        {project.formProgress || "-"}
-                      </span>
-                      <span
-                        className={`text-[11px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${project.docProgress === "4/4" ? "text-[#00734b] bg-[#00734b]/10 border-[#00734b]/20" : "text-red-600 bg-red-50 border-red-200"}`}
-                      >
-                        <FileText className="w-3 h-3" /> เอกสาร{" "}
-                        {project.docProgress || "-"}
-                      </span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#00734b]/20 bg-[#00734b]/10 px-2.5 py-1 text-[11px] font-bold text-[#00734b]"><FileSpreadsheet className="h-3 w-3" /> Form {project.formProgress || "-"}</span>
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-600"><FileText className="h-3 w-3" /> Documents {project.docProgress || "-"}</span>
                     </div>
-                  ) : (
-                    getProjectStatusBadge(project.status?.id, project.status?.name || "")
-                  )}
-                </td>
-
-                <td
-                  className="px-6 sm:px-10 py-5 text-center"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button className="p-2 rounded-full text-muted-foreground hover:text-[#191c20] hover:bg-slate-200 transition-all">
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
-                </td>
-              </tr>
+                  ) : <StatusBadge statusId={project.status?.id} statusName={project.status?.name} />}
+                </TableCell>
+                <TableCell className="px-6 py-5 text-center" onClick={(event) => event.stopPropagation()}>
+                  {renderActions ? renderActions(project) : <Button variant="ghost" size="icon" aria-label="Project actions"><MoreVertical className="h-5 w-5" /></Button>}
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

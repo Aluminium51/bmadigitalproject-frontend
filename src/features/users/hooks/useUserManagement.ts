@@ -5,13 +5,15 @@ import { useGetUsers } from "./useGetUsers";
 import type { User } from "../types";
 import type { UserSortField, UserSortOrder } from "../api/users.api";
 import { updateUserRolesAction, updateUserStatusAction } from "../actions/user.actions";
+import { refreshSessionAction } from "@/features/auth/actions/auth.actions";
 
 export type SortField = UserSortField;
 export type SortDirection = UserSortOrder;
 
 const PAGE_SIZE = 20;
 
-export const useUserManagement = () => {
+export const useUserManagement = (options: { currentUserId?: string | null } = {}) => {
+  const { currentUserId } = options;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("ALL");
@@ -78,8 +80,23 @@ export const useUserManagement = () => {
   const rolesMutation = useMutation({
     mutationFn: ({ userId, roleIds }: { userId: string; roleIds: number[] }) =>
       updateUserRolesAction(userId, roleIds),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["users"] });
+    onSuccess: async (_data, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["users"] }),
+        queryClient.invalidateQueries({ queryKey: ["profile"] }),
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] }),
+      ]);
+
+      if (currentUserId && currentUserId === variables.userId) {
+        const refreshedSession = await refreshSessionAction();
+        if (refreshedSession.success) {
+          toast.success("Your roles were updated and your session was refreshed.");
+        } else {
+          toast.warning(refreshedSession.message);
+        }
+        return;
+      }
+
       toast.success("User roles updated");
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to update user roles"),

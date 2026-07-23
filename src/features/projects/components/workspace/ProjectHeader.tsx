@@ -26,8 +26,8 @@ import { useSubmitProposal } from "@/features/proposals/hooks/useProposalMutatio
 import { useDeleteProject } from "../../hooks/useProjectMutations";
 import {
   getProjectStatusMeta,
-  OWNER_EDITABLE_PROJECT_STATUSES,
 } from "../../utils/projectStatus";
+import { ReturnedFeedbackBanner } from "./ReturnedFeedbackBanner";
 
 interface ProjectHeaderProps {
   project: ProjectDetail;
@@ -43,10 +43,8 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const deleteMutation = useDeleteProject(projectId);
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const isOwnerEditableStage = OWNER_EDITABLE_PROJECT_STATUSES.includes(
-    project.projectStatusId as typeof OWNER_EDITABLE_PROJECT_STATUSES[number],
-  );
-  const isSubmitDisabled = isDraftLoading || isSubmitting || !currentDraft || !isOwnerEditableStage;
+  const canSubmitProposal = project.permissions?.canSubmitProposal === true;
+  const isSubmitDisabled = isDraftLoading || isSubmitting || !currentDraft || !canSubmitProposal;
   const statusMeta = getProjectStatusMeta(project.projectStatusId, project.status?.name);
 
   const handleSubmit = () => {
@@ -198,7 +196,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
 
             {/* --- Single explicit final-submission action --- */}
             <div className="flex flex-col items-stretch gap-2 shrink-0 xl:self-start w-full xl:w-auto">
-              {proposalState.status === "draft" && isOwnerEditableStage && (
+              {proposalState.status === "draft" && canSubmitProposal && (
                 <Button
                   disabled={isSubmitDisabled}
                   onClick={handleSubmit}
@@ -222,6 +220,8 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
           </div>
         </CardContent>
       </Card>
+
+      <ReturnedFeedbackBanner project={project} />
 
       <AlertDialog open={submitConfirmOpen} onOpenChange={setSubmitConfirmOpen}>
         <AlertDialogContent>

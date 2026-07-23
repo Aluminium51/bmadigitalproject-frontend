@@ -7,6 +7,7 @@ import {
   type GetUsersParams,
 } from "@/features/users/api/users.api";
 import { serverFetch } from "@/lib/server-fetch";
+import { getUserSession } from "@/lib/session";
 
 const INITIAL_PARAMS = {
   page: 1,
@@ -18,6 +19,7 @@ const INITIAL_PARAMS = {
 
 export default async function UsersManagementPage() {
   const queryClient = new QueryClient();
+  const session = await getUserSession();
   const query = new URLSearchParams({
     page: String(INITIAL_PARAMS.page),
     limit: String(INITIAL_PARAMS.limit),
@@ -39,7 +41,7 @@ export default async function UsersManagementPage() {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="flex flex-col h-full p-6 lg:p-8 animate-in fade-in duration-500 mx-auto w-full">
-        <UserManagementView />
+        <UserManagementView currentUserId={session?.userId ?? null} />
       </div>
     </HydrationBoundary>
   );

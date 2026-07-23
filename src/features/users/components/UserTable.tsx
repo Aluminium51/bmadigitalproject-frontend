@@ -10,6 +10,7 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { memo } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -44,6 +45,7 @@ interface UserTableProps {
   sortField: string;
   sortDirection: "asc" | "desc";
   onSort: (field: SortField) => void;
+  className?: string;
 }
 
 export const UserTable = memo(function UserTable({
@@ -56,38 +58,31 @@ export const UserTable = memo(function UserTable({
   sortField,
   sortDirection,
   onSort,
+  className,
 }: UserTableProps) {
   // ฟังก์ชันสร้าง Badge รองรับการเรียกซ้ำ
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "ADMIN":
-        return (
-          <Badge
-            key={role}
-            className="bg-red-50 text-red-700 border-red-200 hover:bg-red-50 shadow-none"
-          >
-            Admin
-          </Badge>
-        );
-      case "ANALYST":
-        return (
-          <Badge
-            key={role}
-            className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50 shadow-none"
-          >
-            Analyst
-          </Badge>
-        );
-      default:
-        return (
-          <Badge
-            key={role}
-            className="bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-100 shadow-none"
-          >
-            User
-          </Badge>
-        );
-    }
+  const getRoleBadge = (role: string, index: number) => {
+    const normalizedRole = role.trim().toLowerCase();
+    const roleStyles: Record<string, { label: string; className: string }> = {
+      super_admin: { label: "Super Admin", className: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-50" },
+      admin: { label: "Admin", className: "bg-red-50 text-red-700 border-red-200 hover:bg-red-50" },
+      secretary: { label: "Secretary", className: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50" },
+      analyst: { label: "Analyst", className: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50" },
+      user: { label: "User", className: "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-100" },
+    };
+    const fallbackLabel = normalizedRole
+      ? normalizedRole.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ")
+      : "Unknown role";
+    const style = roleStyles[normalizedRole] ?? {
+      label: fallbackLabel,
+      className: "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-100",
+    };
+
+    return (
+      <Badge key={`${normalizedRole}-${index}`} className={cn(style.className, "shadow-none")}>
+        {style.label}
+      </Badge>
+    );
   };
 
   // ฟังก์ชันสร้างไอคอนเรียงลำดับ
@@ -99,7 +94,7 @@ export const UserTable = memo(function UserTable({
   };
 
   return (
-    <div className="border border-border rounded-md bg-white overflow-hidden shadow-sm">
+    <div className={cn("h-full min-h-full border border-border rounded-md bg-white overflow-hidden shadow-sm", className)}>
       <Table>
         <TableHeader className="bg-slate-50/70">
           <TableRow>
@@ -203,7 +198,9 @@ export const UserTable = memo(function UserTable({
                 {/* 3. บทบาทสิทธิ์ (เรียง Badge เป็น Array) */}
                 <TableCell>
                   <div className="flex flex-wrap gap-1.5">
-                    {user.roles.map((role) => getRoleBadge(role))}
+                    {user.roles.length > 0
+                      ? user.roles.map((role, index) => getRoleBadge(role, index))
+                      : <span className="text-sm text-slate-400">-</span>}
                   </div>
                 </TableCell>
 

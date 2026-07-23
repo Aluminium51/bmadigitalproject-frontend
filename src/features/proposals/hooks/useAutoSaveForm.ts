@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { toast } from "sonner";
 import { ProposalDraftValues } from "../types";
 import { useProposalFormStore } from "../stores/useProposalFormStore";
-import { useAutoSaveDraft } from "./useProposalMutations";
+import { useAutoSaveDraft, useUpdateSubmittedProposal } from "./useProposalMutations";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
   ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
@@ -62,11 +62,17 @@ export type AutoSaveHandle = {
   flush: () => Promise<boolean>;
 };
 
-export const useAutoSaveForm = (projectId: string | undefined, disabled = false): AutoSaveHandle => {
+export const useAutoSaveForm = (
+  projectId: string | undefined,
+  disabled = false,
+  mode: "draft" | "submitted" = "draft",
+): AutoSaveHandle => {
   const { watch } = useFormContext<ProposalDraftValues>();
   const { setLastSavedAt } = useProposalFormStore();
   const { mutateAsync: saveDraftAsync } = useAutoSaveDraft(projectId);
-  const latestSaveDraftRef = useRef(saveDraftAsync);
+  const { mutateAsync: saveSubmittedAsync } = useUpdateSubmittedProposal(projectId);
+  const saveAsync = mode === "submitted" ? saveSubmittedAsync : saveDraftAsync;
+  const latestSaveRef = useRef(saveAsync);
   const latestPayloadRef = useRef<Record<string, unknown> | null>(null);
   const latestSerializedRef = useRef("");
   const lastSavedSerializedRef = useRef("");
@@ -78,8 +84,8 @@ export const useAutoSaveForm = (projectId: string | undefined, disabled = false)
   const flush = useCallback(() => flushRef.current(), []);
 
   useEffect(() => {
-    latestSaveDraftRef.current = saveDraftAsync;
-  }, [saveDraftAsync]);
+    latestSaveRef.current = saveAsync;
+  }, [saveAsync]);
 
   useEffect(() => {
     if (disabled || !projectId) {
@@ -124,7 +130,9 @@ export const useAutoSaveForm = (projectId: string | undefined, disabled = false)
         try {
           // The backend merges draftPayload, so only changed top-level fields
           // need to cross the network on subsequent autosave requests.
-          await latestSaveDraftRef.current(toDraftRequest(changedPayload));
+          await latestSaveRef.current(
+            mode === "submitted" ? changedPayload : toDraftRequest(changedPayload),
+          );
           // Mark the payload only after the server confirms success. Failed
           // payloads remain eligible for retry instead of being lost.
           lastSavedSerializedRef.current = serialized;
@@ -164,11 +172,16 @@ export const useAutoSaveForm = (projectId: string | undefined, disabled = false)
       const changedPayload = getChangedPayload(payload, lastSavedPayloadRef.current);
       if (Object.keys(changedPayload).length === 0) return;
 
-      void fetch(`${API_BASE}/proposals/projects/${projectId}/draft`, {
+      const endpoint = mode === "submitted"
+        ? `${API_BASE}/proposals/projects/${projectId}`
+        : `${API_BASE}/proposals/projects/${projectId}/draft`;
+      const body = mode === "submitted" ? changedPayload : toDraftRequest(changedPayload);
+
+      void fetch(endpoint, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toDraftRequest(changedPayload)),
+        body: JSON.stringify(body),
         keepalive: true,
       }).catch(() => undefined);
     };
@@ -195,7 +208,7 @@ export const useAutoSaveForm = (projectId: string | undefined, disabled = false)
       if (flushRef.current === saveLatest) flushRef.current = async () => true;
       mounted = false;
     };
-  }, [disabled, projectId, setLastSavedAt, watch]);
+  }, [disabled, mode, projectId, setLastSavedAt, watch]);
 
   return { flush };
 };

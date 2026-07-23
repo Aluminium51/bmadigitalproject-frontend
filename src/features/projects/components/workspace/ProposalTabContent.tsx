@@ -10,6 +10,7 @@ import {
   Building2,
   Database,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -137,7 +138,21 @@ export function ProposalTabContent({ project }: ProposalTabContentProps) {
   const totalBudgetInMillions = (proposal.totalBudget / 1000000).toFixed(2);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <>
+      {project.permissions?.canEditProposal && !project.permissions?.canSubmitProposal && (
+        <div className="mb-4 flex justify-end">
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/projects/${projectId}/proposal/create?mode=review`)}
+            className="gap-2 font-bold"
+          >
+            <Pencil className="h-4 w-4" />
+            Edit Proposal
+          </Button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
       {/* 1. ข้อมูลเบื้องต้น (แสดงเต็มความกว้าง) */}
       <Card className="rounded-md border-[#D1CDC7] shadow-sm lg:col-span-2">
@@ -352,6 +367,7 @@ export function ProposalTabContent({ project }: ProposalTabContentProps) {
         </CardContent>
       </Card>
 
-    </div>
+      </div>
+    </>
   );
 }

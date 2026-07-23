@@ -1,4 +1,6 @@
 import type { User } from "../types";
+import { z } from "zod";
+import { schemas } from "@/types/api-schemas";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
   ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
@@ -32,27 +34,8 @@ export interface GetUsersResponse {
   pagination: UserPagination;
 }
 
-export type ApiUser = {
-  userId: string;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  position?: string | null;
-  isActive: boolean;
-  lastLogin?: string | null;
-  createdAt?: string | null;
-  division?: {
-    divisionName?: string;
-    departmentName?: string;
-  } | null;
-  roles?: Array<{ roleId?: number; roleName?: string }> | string[];
-};
-
-export interface ApiUsersResponse {
-  data?: ApiUser[];
-  pagination?: UserPagination;
-}
+export type ApiUser = z.infer<typeof schemas.UserProfileResponse>;
+export type ApiUsersResponse = z.infer<typeof schemas.PaginatedUserResponse>;
 
 function mapApiUser(user: ApiUser): User {
   const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
@@ -66,18 +49,13 @@ function mapApiUser(user: ApiUser): User {
     position: user.position ?? null,
     department_name: user.division?.departmentName ?? "-",
     division_name: user.division?.divisionName ?? "-",
-    roles: (user.roles ?? []).map((role) =>
-      typeof role === "string" ? role : role.roleName ?? "USER",
-    ),
-    role_ids: (user.roles ?? [])
-      .filter((role): role is { roleId?: number; roleName?: string } => typeof role !== "string")
-      .map((role) => role.roleId)
-      .filter((roleId): roleId is number => typeof roleId === "number"),
+    roles: user.roles.map((role) => role.roleName),
+    role_ids: user.roles.map((role) => role.roleId),
     is_active: user.isActive,
     last_login: lastLogin && !Number.isNaN(lastLogin.getTime())
       ? lastLogin.toLocaleString("th-TH")
       : null,
-    created_at: user.createdAt ?? undefined,
+    created_at: user.createdAt,
   };
 }
 
@@ -86,7 +64,7 @@ export function mapUsersResponse(
   fallbackPagination: UserPagination,
 ): GetUsersResponse {
   return {
-    data: (result.data ?? []).map(mapApiUser),
+    data: result.data.map(mapApiUser),
     pagination: result.pagination ?? fallbackPagination,
   };
 }

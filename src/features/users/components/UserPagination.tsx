@@ -7,6 +7,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { cn } from "@/lib/utils";
 
 interface UserPaginationProps {
   currentPage: number;
@@ -15,38 +16,32 @@ interface UserPaginationProps {
 }
 
 export function UserPagination({ currentPage, totalPages, onPageChange }: UserPaginationProps) {
-  if (totalPages <= 1) return null;
+  const pageCount = Math.max(1, totalPages);
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), pageCount);
 
   return (
-    <div className="border-t border-[#ededf4] p-4 bg-white shrink-0">
+    <div className={cn("mt-auto shrink-0 border-t border-[#ededf4] bg-white p-4")}>
       <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious 
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
+              aria-disabled={safeCurrentPage === 1}
+              className={safeCurrentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />
           </PaginationItem>
           
-          {[...Array(totalPages)].map((_, i) => {
-            const pageNumber = i + 1;
-            return (
-              <PaginationItem key={pageNumber}>
-                <PaginationLink 
-                  onClick={() => onPageChange(pageNumber)}
-                  isActive={currentPage === pageNumber}
-                  className="cursor-pointer"
-                >
-                  {pageNumber}
-                </PaginationLink>
-              </PaginationItem>
-            );
-          })}
+          <PaginationItem>
+            <PaginationLink isActive aria-label={`Page ${safeCurrentPage} of ${pageCount}`}>
+              {safeCurrentPage} <span className="ml-1 text-xs opacity-70">/ {pageCount}</span>
+            </PaginationLink>
+          </PaginationItem>
 
           <PaginationItem>
             <PaginationNext 
-              onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+              onClick={() => onPageChange(Math.min(pageCount, safeCurrentPage + 1))}
+              aria-disabled={safeCurrentPage === pageCount}
+              className={safeCurrentPage === pageCount ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />
           </PaginationItem>
         </PaginationContent>

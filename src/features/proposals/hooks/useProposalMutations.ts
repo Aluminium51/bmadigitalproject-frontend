@@ -214,7 +214,34 @@ export function useAutoSaveDraft(projectId: string | undefined) {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Submit Proposal (POST)
+// 3. Secretary submitted-proposal update (PATCH)
+// ---------------------------------------------------------------------------
+export function useUpdateSubmittedProposal(projectId: string | undefined) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      apiFetch(`${API_BASE}/proposals/projects/${requireProjectId(projectId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(normalizeProposalSubmissionPayload(payload)),
+      }),
+    onSuccess: async (response) => {
+      if (!projectId) return;
+
+      if (response?.data) {
+        qc.setQueryData(["proposals", "submitted", projectId], response);
+      }
+
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["proposals", "submitted", projectId] }),
+        qc.invalidateQueries({ queryKey: ["project", projectId] }),
+      ]);
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 4. Submit Proposal (POST)
 //    Final submission with strict validation on the backend.
 // ---------------------------------------------------------------------------
 export function useSubmitProposal(projectId: string | undefined) {
