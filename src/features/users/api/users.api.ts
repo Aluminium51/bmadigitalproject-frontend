@@ -53,7 +53,11 @@ function mapApiUser(user: ApiUser): User {
     role_ids: user.roles.map((role) => role.roleId),
     is_active: user.isActive,
     last_login: lastLogin && !Number.isNaN(lastLogin.getTime())
-      ? lastLogin.toLocaleString("th-TH")
+      ? new Intl.DateTimeFormat("th-TH", {
+          dateStyle: "short",
+          timeStyle: "short",
+          timeZone: "Asia/Bangkok",
+        }).format(lastLogin)
       : null,
     created_at: user.createdAt,
   };
