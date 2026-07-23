@@ -14,6 +14,12 @@ type ActionResponse<T = any> = {
 
 type PaginatedResponse = z.infer<typeof schemas.PaginatedProjectResponse>;
 type ProjectResponse = z.infer<typeof schemas.Project>;
+type LookupResponse = z.infer<typeof schemas.LookupResponse>;
+
+export type SecretaryReviewPayload =
+  z.infer<typeof schemas.SecretaryReviewRequest>;
+
+export type SecretaryReviewResponse = z.infer<typeof schemas.SecretaryReviewResponse>;
 
 // --- Action สำหรับสร้างโครงการ ---
 export async function createProjectAction(payload: Record<string, unknown>): Promise<ActionResponse> {
@@ -79,4 +85,32 @@ export async function getProjectByIdAction(id: string): Promise<ProjectResponse>
   } catch (error: any) {
     throw new Error(error.message || "ไม่สามารถดึงข้อมูลโครงการได้");
   }
+}
+
+export async function getSecretaryPendingProjectsAction(
+  queryString: string,
+): Promise<PaginatedResponse> {
+  return serverFetch<PaginatedResponse>(
+    `/api/v1/projects/secretary/pending?${queryString}`,
+    { method: "GET" },
+  );
+}
+
+export async function reviewSecretaryProjectAction(
+  projectId: string,
+  payload: SecretaryReviewPayload,
+): Promise<SecretaryReviewResponse> {
+  return serverFetch<SecretaryReviewResponse>(
+    `/api/v1/projects/${projectId}/secretary-review`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function getProjectTypesAction(): Promise<LookupResponse> {
+  return serverFetch<LookupResponse>("/api/v1/lookups/project-types", {
+    method: "GET",
+  });
 }

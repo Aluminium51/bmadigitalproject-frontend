@@ -51,7 +51,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
 
   const handleSubmit = () => {
     if (!currentDraft) {
-      toast.error("Unable to submit project", {
+      toast.error("ไม่สามารถส่งโครงการได้", {
         description: "The current draft is still loading. Please try again.",
       });
       return;
@@ -65,8 +65,9 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
 
     submitProposal(currentDraft, {
       onError: (error) => {
-        toast.error("Unable to submit project", {
-          description: error instanceof Error ? error.message : "Please try again.",
+        toast.error("ไม่สามารถส่งโครงการได้", {
+          // description: error instanceof Error ? error.message : "Please try again.",
+          description: error instanceof Error ? "โปรดตรวจสอบข้อมูลในแบบฟอร์มให้ครบถ้วน" : "Please try again.",
         });
       },
     });
@@ -104,7 +105,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   return (
     <div className="space-y-4 mb-6">
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push("/projects")}
         className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#00734b] transition-colors"
       >
         <ArrowLeft className="w-4 h-4" /> กลับไปหน้ารวมโครงการ
@@ -201,10 +202,10 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
                 <Button
                   disabled={isSubmitDisabled}
                   onClick={handleSubmit}
-                  className="gap-2 bg-primary hover:bg-primary-dark text-white rounded-md px-6 h-11 font-bold shadow-sm w-full xl:w-auto transition-all active:scale-95"
+                  className="gap-2 bg-primary hover:bg-primary-dark text-white rounded-xl px-6 h-11 font-bold shadow-sm w-full xl:w-auto transition-all active:scale-95"
                 >
                   <Send className="w-4 h-4" />
-                  {isSubmitting ? "Submitting..." : "Submit Project"}
+                  {isSubmitting ? "กำลังส่ง..." : "ส่งโครงการเข้าสู่การพิจารณา"}
                 </Button>
               )}
               {project.permissions?.canDelete && (
@@ -212,9 +213,9 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
                   variant="outline"
                   disabled={deleteMutation.isPending}
                   onClick={() => setDeleteConfirmOpen(true)}
-                  className="h-10 w-full xl:w-auto border-red-200 text-red-700 hover:bg-red-50"
+                  className="h-10 w-full xl:w-auto border-red-200 text-red-700 hover:bg-red-50 rounded-xl"
                 >
-                  {deleteMutation.isPending ? "Deleting..." : "Delete Project"}
+                  {deleteMutation.isPending ? "กำลังลบโครงการ..." : "ลบโครงการ"}
                 </Button>
               )}
             </div>

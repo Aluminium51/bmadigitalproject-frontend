@@ -59,7 +59,18 @@ export interface paths {
         /** ดึงรายชื่อผู้ใช้งานทั้งหมด */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    page?: number;
+                    limit?: number;
+                    search?: string;
+                    sort?: "createdAt" | "username" | "name" | "firstName" | "email" | "role" | "department";
+                    order?: "asc" | "desc";
+                    role?: string;
+                    status?: "all" | "active" | "inactive";
+                    department?: string;
+                    departmentId?: number;
+                    divisionId?: number;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -72,7 +83,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["UserProfileResponse"][];
+                        "application/json": components["schemas"]["PaginatedUserResponse"];
                     };
                 };
                 /** @description ไม่พบข้อมูลผู้ใช้งานในระบบ */
@@ -215,6 +226,190 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/:userId/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateUserRolesRequest"];
+                };
+            };
+            responses: {
+                /** @description User roles updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+                /** @description Invalid role assignment */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description User not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/users/:userId/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateUserStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description User status updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description User not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateOwnProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description Own profile updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+                /** @description Invalid profile update */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/auth/login": {
         parameters: {
             query?: never;
@@ -308,9 +503,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            message: string;
-                        };
+                        "application/json": components["schemas"]["SuccessResponse"];
                     };
                 };
                 /** @description Token ไม่ถูกต้องหรือหมดอายุ */
@@ -329,6 +522,258 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/forgot-username": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request a username reminder */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RecoveryEmailRequest"];
+                };
+            };
+            responses: {
+                /** @description Recovery request accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+                /** @description Too many requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request a password reset link */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RecoveryEmailRequest"];
+                };
+            };
+            responses: {
+                /** @description Recovery request accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+                /** @description Too many requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set a new password using a reset token */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ResetPasswordRequest"];
+                };
+            };
+            responses: {
+                /** @description Password reset */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+                /** @description Invalid or expired token */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * ออกจากระบบ (Logout)
+         * @description ยกเลิกเซสชันปัจจุบันและลบคุกกี้การยืนยันตัวตน
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ออกจากระบบสำเร็จ */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+                /** @description เกิดข้อผิดพลาดที่เซิร์ฟเวอร์ */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/uploads/files/{fileName}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download or preview an uploaded project file */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    fileName: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Uploaded file */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Uploaded file not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
                     };
                 };
             };
@@ -360,15 +805,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "multipart/form-data": {
-                        /**
-                         * Format: binary
-                         * @description เอกสาร PDF ที่ต้องการบีบอัด
-                         */
-                        file: string;
-                        /** Project that owns the uploaded document */
-                        projectId: string;
-                    };
+                    "multipart/form-data": components["schemas"]["UploadDocumentRequest"];
                 };
             };
             responses: {
@@ -377,11 +814,170 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            success: boolean;
+                            message: string;
+                            data: {
+                                /** Format: uuid */
+                                attachmentId: string;
+                                fileName: string;
+                                storedFileName: string;
+                                fileSize: number;
+                                contentType: string;
+                                compressionApplied: boolean;
+                                /** Format: uri */
+                                url: string;
+                                uploader: {
+                                    /** Format: uuid */
+                                    userId: string;
+                                    firstName: string;
+                                    lastName: string;
+                                } | null;
+                            };
+                        };
+                    };
+                };
+                /** @description Missing file or project ID */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description The authenticated user cannot upload for this project */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Project not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description Uploads are locked for the current project stage */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description File exceeds the supported size limit */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
                 };
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/uploads/files/{fileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a project attachment */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description File deleted */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description The authenticated user cannot delete this file */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description File not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+                /** @description File management is locked for the current project stage */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message?: string;
+                            error?: string;
+                        };
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -425,10 +1021,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
-                            message: string;
-                        };
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
             };
@@ -444,21 +1037,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /** @example โครงการพัฒนาระบบให้บริการประชาชน */
-                        projectName: string;
-                        /** @example 2 */
-                        projectTypeId?: number;
-                        /**
-                         * @default false
-                         * @example false
-                         */
-                        isPublic?: boolean;
-                        /** @example 1 */
-                        fourQuadrantsId?: number;
-                        /** @example 3 */
-                        deputyGovernorId?: number;
-                    };
+                    "application/json": components["schemas"]["CreateProjectRequest"];
                 };
             };
             responses: {
@@ -480,14 +1059,60 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
-                            message: string;
-                        };
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/secretary/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all projects waiting for Secretary review */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Projects pending Secretary review */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedProjectResponse"];
+                    };
+                };
+                /** @description Only Secretaries may access this queue */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -529,10 +1154,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
-                            message: string;
-                        };
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
                 /** @description ไม่พบข้อมูลโครงการ */
@@ -541,10 +1163,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
-                            message: string;
-                        };
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
             };
@@ -581,10 +1200,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
-                            message: string;
-                        };
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
             };
@@ -604,21 +1220,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /** @example โครงการพัฒนาระบบให้บริการประชาชน */
-                        projectName?: string;
-                        /** @example 2 */
-                        projectTypeId?: number;
-                        /**
-                         * @default false
-                         * @example false
-                         */
-                        isPublic?: boolean;
-                        /** @example 1 */
-                        fourQuadrantsId?: number;
-                        /** @example 3 */
-                        deputyGovernorId?: number;
-                    };
+                    "application/json": components["schemas"]["UpdateProjectRequest"];
                 };
             };
             responses: {
@@ -640,10 +1242,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
-                            message: string;
-                        };
+                        "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
             };
@@ -676,13 +1275,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /** @example 2 */
-                        projectStatusId: number;
-                        projectTypeId?: number;
-                        /** @example ผ่านการอนุมัติขั้นต้น */
-                        remark?: string;
-                    };
+                    "application/json": components["schemas"]["UpdateProjectStatusRequest"];
                 };
             };
             responses: {
@@ -695,6 +1288,85 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/v1/projects/{id}/secretary-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review a project waiting for Secretary verification */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description รหัสโครงการ (UUID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SecretaryReviewRequest"];
+                };
+            };
+            responses: {
+                /** @description Secretary review completed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SecretaryReviewResponse"];
+                    };
+                };
+                /** @description Invalid decision or missing required data */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Only Secretaries may review projects */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Project not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Project is no longer pending Secretary review */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/projects/{id}/type": {
@@ -723,10 +1395,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /** @example 3 */
-                        projectTypeId: number;
-                    };
+                    "application/json": components["schemas"]["UpdateProjectTypeRequest"];
                 };
             };
             responses: {
@@ -767,13 +1436,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /**
-                         * Format: uuid
-                         * @description UUID ของนักวิเคราะห์
-                         */
-                        analystId: string;
-                    };
+                    "application/json": components["schemas"]["AssignProjectRequest"];
                 };
             };
             responses: {
@@ -926,16 +1589,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        projectId?: string;
-                        currentStep?: number | null;
-                        draftPayload?: {
-                            [key: string]: unknown;
-                        };
-                    } & {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DraftProposalRequest"];
                 };
             };
             responses: {
@@ -1041,240 +1695,7 @@ export interface paths {
             };
             requestBody?: {
                 content: {
-                    "application/json": {
-                        projectName: string;
-                        agencyName: string;
-                        headOfAgency: string;
-                        dcioName: string;
-                        projectManager: string;
-                        totalBudget: number;
-                        /** @default [] */
-                        budgetsByYear?: {
-                            /** Format: uuid */
-                            id?: string;
-                            year: number;
-                            amount: number;
-                            budgetType: string;
-                        }[];
-                        background: string;
-                        objective: string;
-                        target: string;
-                        scope: string;
-                        /** @enum {string} */
-                        projectType: "NEW" | "REPLACEMENT" | "CONTINUOUS";
-                        currentSystemStatus: string;
-                        currentProblems: string;
-                        /** @default [] */
-                        relatedProjects?: {
-                            /** Format: uuid */
-                            id?: string;
-                            projectName: string;
-                            agency: string;
-                            fiscalYear: string;
-                            relationType: string;
-                            remark?: string;
-                        }[];
-                        /** @default [] */
-                        manpower?: {
-                            /** Format: uuid */
-                            id?: string;
-                            agencyPart: string;
-                            positionLimit: number | null;
-                            occupied: number | null;
-                            vacant: number | null;
-                        }[];
-                        /** @default [] */
-                        existingEquipment?: {
-                            /** Format: uuid */
-                            id?: string;
-                            itemName: string;
-                            ageYears: number | null;
-                            quantity: number | null;
-                            user: string;
-                            location: string;
-                            remark?: string;
-                        }[];
-                        /** @default false */
-                        isBmaPlan?: boolean;
-                        /** @default false */
-                        isAgencyPlan?: boolean;
-                        agencyStrategy?: string;
-                        agencyIssue?: string;
-                        agencyKpi?: string;
-                        /** @default false */
-                        isGovernorPolicy?: boolean;
-                        governorPolicyCode?: string;
-                        governorPolicyName?: string;
-                        obstacleLaws?: string;
-                        appArchitecture: string;
-                        dataOwner: string;
-                        dataExchangePlan: string;
-                        /** @default [] */
-                        hardwareCosts?: {
-                            /** Format: uuid */
-                            id?: string;
-                            itemName: string;
-                            quantity: number;
-                            unitPrice: number | null;
-                            /** @enum {string} */
-                            referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
-                            mdesMonth?: string;
-                            mdesYear?: string;
-                            mdesItemNo?: string;
-                            marketCount?: number | null;
-                            marketCompany?: string;
-                            prevProject?: string;
-                            prevYear?: string;
-                            otherDetail?: string;
-                        }[];
-                        /** @default [] */
-                        softwareCosts?: {
-                            /** Format: uuid */
-                            id?: string;
-                            itemName: string;
-                            quantity: number;
-                            unitPrice: number | null;
-                            /** @enum {string} */
-                            referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
-                            mdesMonth?: string;
-                            mdesYear?: string;
-                            mdesItemNo?: string;
-                            marketCount?: number | null;
-                            marketCompany?: string;
-                            prevProject?: string;
-                            prevYear?: string;
-                            otherDetail?: string;
-                        }[];
-                        /** @default [] */
-                        personnelCoreCosts?: {
-                            /** Format: uuid */
-                            id?: string;
-                            /** @enum {string} */
-                            personnelType: "CORE" | "ASST" | "SUPP";
-                            position: string;
-                            degree: string;
-                            fieldOfStudy?: string;
-                            experienceYears: number | null;
-                            baseSalary: number;
-                            multiplier?: number | null;
-                            personCount: number;
-                            durationMonths: number;
-                        }[];
-                        /** @default [] */
-                        personnelAsstCosts?: {
-                            /** Format: uuid */
-                            id?: string;
-                            /** @enum {string} */
-                            personnelType: "CORE" | "ASST" | "SUPP";
-                            position: string;
-                            degree: string;
-                            fieldOfStudy?: string;
-                            experienceYears: number | null;
-                            baseSalary: number;
-                            multiplier?: number | null;
-                            personCount: number;
-                            durationMonths: number;
-                        }[];
-                        /** @default [] */
-                        personnelSuppCosts?: {
-                            /** Format: uuid */
-                            id?: string;
-                            /** @enum {string} */
-                            personnelType: "CORE" | "ASST" | "SUPP";
-                            position: string;
-                            degree: string;
-                            fieldOfStudy?: string;
-                            experienceYears: number | null;
-                            baseSalary: number;
-                            multiplier?: number | null;
-                            personCount: number;
-                            durationMonths: number;
-                        }[];
-                        /** @default [] */
-                        personnelResponsibilities?: {
-                            /** Format: uuid */
-                            id?: string;
-                            position: string;
-                            responsibility: string;
-                        }[];
-                        /** @default [] */
-                        trainingCourses?: {
-                            /** Format: uuid */
-                            id?: string;
-                            courseName: string;
-                            trainingMethod: string;
-                            /** @enum {string} */
-                            locationType: "GOVERNMENT" | "PRIVATE";
-                            /** @default false */
-                            hasSpeakerCost?: boolean;
-                            speakerReason?: string;
-                            /** @default [] */
-                            speakerCosts?: {
-                                /** Format: uuid */
-                                id?: string;
-                                itemName: string;
-                                hours: number;
-                                ratePerHour: number | null;
-                                days: number;
-                            }[];
-                            /** @default [] */
-                            foodCosts?: {
-                                /** Format: uuid */
-                                id?: string;
-                                /** @enum {string} */
-                                itemName: "PARTIAL_MEAL" | "FULL_MEAL" | "SNACK" | "OTHER";
-                                mealsCount: number | null;
-                                ratePerMeal: number | null;
-                                traineesCount: number | null;
-                                days: number | null;
-                            }[];
-                        }[];
-                        /** @default [] */
-                        otherCosts?: {
-                            /** Format: uuid */
-                            id?: string;
-                            itemName: string;
-                            quantity: number;
-                            unitPrice: number | null;
-                            remark?: string;
-                            /** @enum {string} */
-                            costType: "IT" | "NON_IT";
-                        }[];
-                        durationDays: number;
-                        /** @default [] */
-                        ictPersonnel?: {
-                            /** Format: uuid */
-                            id?: string;
-                            position: string;
-                            level: string;
-                            count: number;
-                        }[];
-                        /** @default [] */
-                        cloudRequests?: {
-                            /** Format: uuid */
-                            id?: string;
-                            systemName: string;
-                            /** Format: date-time */
-                            requestedServiceDate: string | null;
-                            /** Format: date-time */
-                            recordedRequestDate: string | null;
-                            /** @default [] */
-                            vms?: {
-                                /** Format: uuid */
-                                id?: string;
-                                vmDescription: string;
-                                osDatabase: string;
-                                vcpu: number | null;
-                                ramGb: number | null;
-                                gpuGb: number | null;
-                                storageGb: number | null;
-                                price: number | null;
-                            }[];
-                        }[];
-                        otherReadiness?: string;
-                        expectedBenefits: string;
-                        isInRoadmap: boolean;
-                    };
+                    "application/json": components["schemas"]["SubmitProposalRequest"];
                 };
             };
             responses: {
@@ -1345,7 +1766,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
@@ -1385,7 +1806,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
@@ -1435,7 +1856,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
@@ -1476,7 +1897,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
@@ -1514,7 +1935,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
@@ -1567,7 +1988,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
@@ -1662,7 +2083,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
@@ -1700,13 +2121,80 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @example เกิดข้อผิดพลาดบางอย่าง */
+                            /** @example An error occurred */
                             message: string;
                         };
                     };
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/agendas/{id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RecordResolution"];
+                };
+            };
+            responses: {
+                /** @description Resolution recorded */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: unknown;
+                        };
+                    };
+                };
+                /** @description Invalid resolution */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example An error occurred */
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Invalid workflow state */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example An error occurred */
+                            message: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1766,6 +2254,261 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lookups/divisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ดึงข้อมูล Divisions (หน่วยงาน) */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description ใช้กรองส่วนราชการตาม ID หน่วยงานหลัก */
+                    departmentId?: number | null;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description รายการ Divisions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DivisionResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lookups/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ดึงข้อมูล Departments (หน่วยงานหลัก) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description รายการ Departments */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LookupResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lookups/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get available user roles */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Available user roles */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LookupResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lookups/four-quadrants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ดึงข้อมูล 4 Quadrants Model */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description รายการ 4 Quadrants Model */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LookupResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lookups/deputy-governors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ดึงข้อมูลรองผู้ว่าฯ ที่กำกับดูแล */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description รายการรองผู้ว่าฯ */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LookupResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lookups/project-statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ดึงข้อมูลสถานะโครงการ */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description รายการสถานะโครงการ */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProjectStatusResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lookups/project-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get project types */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Available project types */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LookupResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1784,6 +2527,15 @@ export interface components {
             /** @example disconnected */
             database: string;
         };
+        PaginatedUserResponse: {
+            data: components["schemas"]["UserProfileResponse"][];
+            pagination: {
+                total: number;
+                page: number;
+                limit: number;
+                totalPages: number;
+            };
+        };
         UserProfileResponse: {
             /** Format: uuid */
             userId: string;
@@ -1799,13 +2551,16 @@ export interface components {
             officePhone: string | null;
             internalExtension: string | null;
             isActive: boolean;
-            /** Format: date-time */
-            lastLogin: string | null;
             isVerified: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+            /**
+             * Format: date-time
+             * @description The latest successful login timestamp
+             */
+            lastLogin: string | null;
             /** @description ข้อมูลหน่วยงานและต้นสังกัด */
             division: {
                 /** @example 1 */
@@ -1855,6 +2610,19 @@ export interface components {
              */
             roleIds: number[];
         };
+        UpdateUserRolesRequest: {
+            roleIds: number[];
+        };
+        UpdateUserStatusRequest: {
+            isActive: boolean;
+        };
+        UpdateOwnProfileRequest: {
+            firstName?: string;
+            lastName?: string;
+            mobilePhone?: string | null;
+            officePhone?: string | null;
+            internalExtension?: string | null;
+        };
         LoginResponse: {
             message: string;
             token: string;
@@ -1868,6 +2636,33 @@ export interface components {
         LoginRequest: {
             username: string;
             password: string;
+        };
+        SuccessResponse: {
+            message: string;
+        };
+        RecoveryEmailRequest: {
+            /** Format: email */
+            email: string;
+        };
+        ResetPasswordRequest: {
+            token: string;
+            newPassword: string;
+        };
+        UploadDocumentRequest: {
+            /**
+             * Format: binary
+             * @description Project document to upload
+             */
+            file: string;
+            /**
+             * Format: uuid
+             * @description Project that owns the uploaded document
+             */
+            projectId: string;
+            /** @description Project attachment type */
+            docTypeId: number;
+            /** @description Optional description for the uploaded attachment */
+            description?: string;
         };
         PaginatedProjectResponse: {
             data: components["schemas"]["Project"][];
@@ -1939,6 +2734,11 @@ export interface components {
              * @example null
              */
             updatedBy: string | null;
+            /**
+             * Format: date-time
+             * @example null
+             */
+            deletedAt: string;
             /** @description ข้อมูลส่วนราชการเจ้าของโครงการ */
             division: {
                 id: number;
@@ -1963,6 +2763,353 @@ export interface components {
                 firstName: string;
                 lastName: string;
             } | null;
+            /** @description ผู้วิเคราะห์โครงการ */
+            analyst: {
+                /** Format: uuid */
+                userId: string;
+                firstName: string;
+                lastName: string;
+            } | null;
+            /** @default [] */
+            attachments: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                projectId: string;
+                docTypeId: number;
+                docTypeName: string | null;
+                /** Format: uuid */
+                uploadedBy: string;
+                fileName: string;
+                /** Format: uri */
+                fileUrl: string;
+                fileType: string;
+                description: string | null;
+                uploader: {
+                    /** Format: uuid */
+                    userId: string;
+                    firstName: string;
+                    lastName: string;
+                } | null;
+                createdAt: string;
+            }[];
+            permissions?: {
+                canDelete: boolean;
+                canManageAttachments: boolean;
+            };
+        };
+        CreateProjectRequest: {
+            /** @example โครงการพัฒนาระบบให้บริการประชาชน */
+            projectName: string;
+            /** @example 2 */
+            projectTypeId?: number;
+            /**
+             * @default false
+             * @example false
+             */
+            isPublic: boolean;
+            /** @example 1 */
+            fourQuadrantsId: number | null;
+            /** @example 3 */
+            deputyGovernorId: number | null;
+        };
+        UpdateProjectRequest: {
+            /** @example โครงการพัฒนาระบบให้บริการประชาชน */
+            projectName?: string;
+            /** @example 2 */
+            projectTypeId?: number;
+            /**
+             * @default false
+             * @example false
+             */
+            isPublic: boolean;
+            /** @example 1 */
+            fourQuadrantsId?: number | null;
+            /** @example 3 */
+            deputyGovernorId?: number | null;
+        };
+        UpdateProjectStatusRequest: {
+            /** @example 2 */
+            projectStatusId: number;
+            /** @example 2 */
+            projectTypeId?: number;
+            /** @example ผ่านการอนุมัติขั้นต้น */
+            remark?: string;
+        };
+        SecretaryReviewResponse: {
+            message: string;
+            /** @enum {string} */
+            decision: "approve" | "return" | "reject";
+            project: components["schemas"]["Project"];
+        };
+        SecretaryReviewRequest: {
+            /** @enum {string} */
+            decision: "approve";
+            projectTypeId: number;
+        } | {
+            /** @enum {string} */
+            decision: "return";
+            remark: string;
+        } | {
+            /** @enum {string} */
+            decision: "reject";
+            remark: string;
+        };
+        UpdateProjectTypeRequest: {
+            /** @example 3 */
+            projectTypeId: number;
+        };
+        AssignProjectRequest: {
+            /**
+             * Format: uuid
+             * @description UUID ของนักวิเคราะห์
+             */
+            analystId: string;
+        };
+        /** @description Schema สำหรับข้อมูลแบบร่างโครงการ (Auto-Save) */
+        DraftProposalRequest: {
+            /** Format: uuid */
+            projectId?: string;
+            currentStep?: number | null;
+            /** @description ข้อมูลฟอร์มแบบร่างทั้งหมด (JSON) */
+            draftPayload?: Record<string, never>;
+            projectName?: string;
+            objective?: string;
+            totalBudget?: number | null;
+        };
+        SubmitProposalRequest: {
+            projectName: string;
+            agencyName: string;
+            headOfAgency: string;
+            dcioName: string;
+            projectManager: string;
+            totalBudget: number;
+            /** @default [] */
+            budgetsByYear: {
+                /** Format: uuid */
+                id?: string;
+                year: number;
+                amount: number;
+                budgetType: string;
+            }[];
+            background: string;
+            objective: string;
+            target: string;
+            scope: string;
+            /** @enum {string} */
+            projectType: "NEW" | "REPLACEMENT" | "CONTINUOUS";
+            currentSystemStatus: string;
+            currentProblems: string;
+            /** @default [] */
+            relatedProjects: {
+                /** Format: uuid */
+                id?: string;
+                projectName: string;
+                agency: string;
+                fiscalYear: string;
+                relationType: string;
+                remark?: string;
+            }[];
+            /** @default [] */
+            manpower: {
+                /** Format: uuid */
+                id?: string;
+                agencyPart: string;
+                positionLimit: number | null;
+                occupied: number | null;
+                vacant: number | null;
+            }[];
+            /** @default [] */
+            existingEquipment: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                ageYears: number | null;
+                quantity: number | null;
+                user: string;
+                location: string;
+                remark?: string;
+            }[];
+            /** @default false */
+            isBmaPlan: boolean;
+            /** @default false */
+            isAgencyPlan: boolean;
+            agencyStrategy?: string;
+            agencyIssue?: string;
+            agencyKpi?: string;
+            /** @default false */
+            isGovernorPolicy: boolean;
+            governorPolicyCode?: string;
+            governorPolicyName?: string;
+            obstacleLaws?: string;
+            appArchitecture: string;
+            dataOwner: string;
+            dataExchangePlan: string;
+            /** @default [] */
+            hardwareCosts: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                quantity: number;
+                unitPrice: number | null;
+                /** @enum {string} */
+                referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
+                mdesMonth?: string;
+                mdesYear?: string;
+                mdesItemNo?: string;
+                marketCount?: number | null;
+                marketCompany?: string;
+                prevProject?: string;
+                prevYear?: string;
+                otherDetail?: string;
+            }[];
+            /** @default [] */
+            softwareCosts: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                quantity: number;
+                unitPrice: number | null;
+                /** @enum {string} */
+                referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
+                mdesMonth?: string;
+                mdesYear?: string;
+                mdesItemNo?: string;
+                marketCount?: number | null;
+                marketCompany?: string;
+                prevProject?: string;
+                prevYear?: string;
+                otherDetail?: string;
+            }[];
+            /** @default [] */
+            personnelCoreCosts: {
+                /** Format: uuid */
+                id?: string;
+                /** @enum {string} */
+                personnelType: "CORE" | "ASST" | "SUPP";
+                position: string;
+                degree: string;
+                fieldOfStudy?: string;
+                experienceYears: number | null;
+                baseSalary: number;
+                multiplier?: number | null;
+                personCount: number;
+                durationMonths: number;
+            }[];
+            /** @default [] */
+            personnelAsstCosts: {
+                /** Format: uuid */
+                id?: string;
+                /** @enum {string} */
+                personnelType: "CORE" | "ASST" | "SUPP";
+                position: string;
+                degree: string;
+                fieldOfStudy?: string;
+                experienceYears: number | null;
+                baseSalary: number;
+                multiplier?: number | null;
+                personCount: number;
+                durationMonths: number;
+            }[];
+            /** @default [] */
+            personnelSuppCosts: {
+                /** Format: uuid */
+                id?: string;
+                /** @enum {string} */
+                personnelType: "CORE" | "ASST" | "SUPP";
+                position: string;
+                degree: string;
+                fieldOfStudy?: string;
+                experienceYears: number | null;
+                baseSalary: number;
+                multiplier?: number | null;
+                personCount: number;
+                durationMonths: number;
+            }[];
+            /** @default [] */
+            personnelResponsibilities: {
+                /** Format: uuid */
+                id?: string;
+                position: string;
+                responsibility: string;
+            }[];
+            /** @default [] */
+            trainingCourses: {
+                /** Format: uuid */
+                id?: string;
+                courseName: string;
+                trainingMethod: string;
+                /** @enum {string} */
+                locationType: "GOVERNMENT" | "PRIVATE";
+                /** @default false */
+                hasSpeakerCost: boolean;
+                speakerReason?: string;
+                /** @default [] */
+                speakerCosts: {
+                    /** Format: uuid */
+                    id?: string;
+                    itemName: string;
+                    hours: number;
+                    ratePerHour: number | null;
+                    days: number;
+                }[];
+                /** @default [] */
+                foodCosts: {
+                    /** Format: uuid */
+                    id?: string;
+                    /** @enum {string} */
+                    itemName: "PARTIAL_MEAL" | "FULL_MEAL" | "SNACK" | "OTHER";
+                    mealsCount: number | null;
+                    ratePerMeal: number | null;
+                    traineesCount: number | null;
+                    days: number | null;
+                }[];
+            }[];
+            /** @default [] */
+            otherCosts: {
+                /** Format: uuid */
+                id?: string;
+                itemName: string;
+                quantity: number;
+                unitPrice: number | null;
+                remark?: string;
+                /** @enum {string} */
+                costType: "IT" | "NON_IT";
+            }[];
+            durationDays: number;
+            /** @default [] */
+            ictPersonnel: {
+                /** Format: uuid */
+                id?: string;
+                position: string;
+                level: string;
+                count: number;
+            }[];
+            /** @default [] */
+            cloudRequests: {
+                /** Format: uuid */
+                id?: string;
+                systemName: string;
+                /** Format: date-time */
+                requestedServiceDate: string | null;
+                /** Format: date-time */
+                recordedRequestDate: string | null;
+                /** @default [] */
+                vms: {
+                    /** Format: uuid */
+                    id?: string;
+                    vmDescription: string;
+                    osDatabase: string;
+                    vcpu: number | null;
+                    ramGb: number | null;
+                    gpuGb: number | null;
+                    storageGb: number | null;
+                    price: number | null;
+                }[];
+            }[];
+            otherReadiness?: string;
+            expectedBenefits: string;
+            isInRoadmap: boolean;
         };
         Meeting: {
             /** Format: uuid */
@@ -1982,6 +3129,20 @@ export interface components {
             updatedAt: string;
             /** Format: uuid */
             updatedBy?: string | null;
+            meetingType?: {
+                id: number;
+                name: string;
+            } | null;
+            meetingStatus?: {
+                id: number;
+                name: string;
+            } | null;
+            creator?: {
+                /** Format: uuid */
+                userId: string;
+                firstName: string;
+                lastName: string;
+            } | null;
         };
         CreateMeeting: {
             meetingNo: string;
@@ -1989,7 +3150,7 @@ export interface components {
             meetingTypeId: number;
             /** Format: date-time */
             meetingDate: string;
-            location?: string;
+            location?: string | null;
             meetingStatusId: number;
         };
         UpdateMeeting: {
@@ -1998,7 +3159,7 @@ export interface components {
             meetingTypeId?: number;
             /** Format: date-time */
             meetingDate?: string;
-            location?: string;
+            location?: string | null;
             meetingStatusId?: number;
         };
         Agenda: {
@@ -2009,9 +3170,17 @@ export interface components {
             /** Format: uuid */
             projectId?: string | null;
             agendaNumber: string;
+            sortOrder: number;
             agendaTypeId: number;
             title: string;
             description?: string | null;
+            project?: {
+                /** Format: uuid */
+                id: string;
+                projectCode?: string | null;
+                projectName?: string | null;
+                initialRequestedBudget?: string | null;
+            } | null;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -2021,19 +3190,25 @@ export interface components {
             /** Format: uuid */
             meetingId: string;
             /** Format: uuid */
-            projectId?: string;
+            projectId?: string | null;
             agendaNumber: string;
+            sortOrder?: number;
             agendaTypeId: number;
             title: string;
-            description?: string;
+            description?: string | null;
         };
         UpdateAgenda: {
             /** Format: uuid */
-            projectId?: string;
+            projectId?: string | null;
             agendaNumber?: string;
+            sortOrder?: number;
             agendaTypeId?: number;
             title?: string;
-            description?: string;
+            description?: string | null;
+        };
+        RecordResolution: {
+            resolutionStatusId: number;
+            comment?: string;
         };
         CloudRequest: {
             /** Format: uuid */
@@ -2065,6 +3240,28 @@ export interface components {
                 storageGb: number;
                 price: string;
             }[];
+        };
+        DivisionResponse: {
+            data: components["schemas"]["DivisionItem"][];
+        };
+        DivisionItem: {
+            id: number;
+            departmentId: number;
+            name: string;
+        };
+        LookupResponse: {
+            data: components["schemas"]["LookupItem"][];
+        };
+        LookupItem: {
+            id: number;
+            name: string;
+        };
+        ProjectStatusResponse: {
+            data: components["schemas"]["ProjectStatusItem"][];
+        };
+        ProjectStatusItem: {
+            id: number;
+            statusName: string;
         };
     };
     responses: never;

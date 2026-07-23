@@ -327,7 +327,7 @@ const WizardForm = ({ projectId }: { projectId: string }) => {
                   key="submit-btn"
                   type="button"
                   onClick={() => void handleFinishDraft()}
-                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-status-orange hover:bg-[#d65f00] text-white shadow-sm transition-transform active:scale-[0.99]"
+                  className="px-8 h-12 w-full sm:w-auto font-bold rounded-full bg-primary hover:bg-primary-dark text-white shadow-sm transition-transform active:scale-[0.99]"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   บันทึกฉบับร่าง

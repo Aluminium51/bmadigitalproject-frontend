@@ -247,6 +247,27 @@ const UpdateProjectStatusRequest = z
     remark: z.string().optional(),
   })
   .passthrough();
+const SecretaryReviewRequest = z.union([
+  z
+    .object({
+      decision: z.literal("approve"),
+      projectTypeId: z.number().int().gt(0),
+    })
+    .passthrough(),
+  z
+    .object({ decision: z.literal("return"), remark: z.string().min(1) })
+    .passthrough(),
+  z
+    .object({ decision: z.literal("reject"), remark: z.string().min(1) })
+    .passthrough(),
+]);
+const SecretaryReviewResponse = z
+  .object({
+    message: z.string(),
+    decision: z.enum(["approve", "return", "reject"]),
+    project: Project,
+  })
+  .passthrough();
 const UpdateProjectTypeRequest = z
   .object({ projectTypeId: z.number().int() })
   .passthrough();
@@ -756,6 +777,8 @@ export const schemas = {
   CreateProjectRequest,
   UpdateProjectRequest,
   UpdateProjectStatusRequest,
+  SecretaryReviewRequest,
+  SecretaryReviewResponse,
   UpdateProjectTypeRequest,
   AssignProjectRequest,
   DraftProposalRequest,
@@ -984,6 +1007,13 @@ const endpoints = makeApi([
     alias: "getApiv1lookupsprojectStatuses",
     requestFormat: "json",
     response: ProjectStatusResponse,
+  },
+  {
+    method: "get",
+    path: "/api/v1/lookups/project-types",
+    alias: "getApiv1lookupsprojectTypes",
+    requestFormat: "json",
+    response: LookupResponse,
   },
   {
     method: "get",
@@ -1372,6 +1402,47 @@ const endpoints = makeApi([
     response: z.void(),
   },
   {
+    method: "post",
+    path: "/api/v1/projects/:id/secretary-review",
+    alias: "postApiv1projectsIdsecretaryReview",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: SecretaryReviewRequest,
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SecretaryReviewResponse,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid decision or missing required data`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 403,
+        description: `Only Secretaries may review projects`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 404,
+        description: `Project not found`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 409,
+        description: `Project is no longer pending Secretary review`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/api/v1/projects/:id/status",
     alias: "patchApiv1projectsIdstatus",
@@ -1408,6 +1479,37 @@ const endpoints = makeApi([
       },
     ],
     response: z.void(),
+  },
+  {
+    method: "get",
+    path: "/api/v1/projects/secretary/pending",
+    alias: "getApiv1projectssecretarypending",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "page",
+        type: "Query",
+        schema: z.number().int().gte(1).optional().default(1),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().int().gte(1).lte(100).optional().default(10),
+      },
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string().optional(),
+      },
+    ],
+    response: PaginatedProjectResponse,
+    errors: [
+      {
+        status: 403,
+        description: `Only Secretaries may access this queue`,
+        schema: ErrorResponse,
+      },
+    ],
   },
   {
     method: "get",
