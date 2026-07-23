@@ -22,7 +22,9 @@ export function ProjectPagination({ currentPage, totalPages, onPageChange }: Pro
       <Pagination>
         <PaginationContent>
           <PaginationItem>
-            <PaginationPrevious 
+            <PaginationPrevious
+              text="ก่อนหน้า"
+              aria-label="ไปหน้าก่อนหน้า"
               onClick={() => onPageChange(Math.max(1, currentPage - 1))}
               className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />
@@ -44,7 +46,9 @@ export function ProjectPagination({ currentPage, totalPages, onPageChange }: Pro
           })}
 
           <PaginationItem>
-            <PaginationNext 
+            <PaginationNext
+              text="ถัดไป"
+              aria-label="ไปหน้าถัดไป"
               onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
               className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
             />

@@ -11,7 +11,7 @@ export default async function SecretaryScreeningPage() {
 
   const roles = Array.isArray(session.roles) ? session.roles : [];
   if (!roles.includes("secretary")) {
-    redirect("/dashboard");
+    redirect("/projects");
   }
 
   return <SecretaryVerificationView />;

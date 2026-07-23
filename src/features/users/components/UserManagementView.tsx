@@ -5,7 +5,7 @@ import { useUserManagement } from "../hooks/useUserManagement";
 import { UserHeader } from "./UserHeader";
 import { UserToolbar } from "./UserToolbar";
 import { UserTable } from "./UserTable";
-import { UserPagination } from "./UserPagination";
+import { ProjectPagination } from "@/features/projects/components/ProjectPagination";
 
 const RoleModal = dynamic(
   () => import("./modals/RoleModal").then((module) => module.RoleModal),
@@ -82,7 +82,7 @@ export const UserManagementView = ({ currentUserId }: { currentUserId?: string |
             Updating users...
           </p>
         )}
-        <UserPagination
+        <ProjectPagination
           currentPage={currentPage}
           totalPages={pagination.totalPages}
           onPageChange={setCurrentPage}

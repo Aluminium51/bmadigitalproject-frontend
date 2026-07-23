@@ -52,7 +52,7 @@ export function LoginForm() {
 
     if (response.success) {
       setStatusMessage({ type: "success", text: response.message });
-      setTimeout(() => router.push("/dashboard"), 1000);
+      setTimeout(() => router.push("/projects"), 1000);
     } else {
       if (response.field === "general") {
         setStatusMessage({

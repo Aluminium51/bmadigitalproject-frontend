@@ -206,12 +206,12 @@ export function SecretaryReviewDialog({
                 <Label htmlFor="secretary-project-type">ประเภทโครงการ *</Label>
                 <Select value={projectTypeId} onValueChange={setProjectTypeId}>
                   <SelectTrigger id="secretary-project-type" className="bg-background">
-                    <SelectValue placeholder="เลือก Hardware หรือ Software" />
+                    <SelectValue placeholder="เลือกฮาร์ดแวร์หรือซอฟต์แวร์" />
                   </SelectTrigger>
                   <SelectContent>
                     {allowedProjectTypes.map((type) => (
                       <SelectItem key={type.id} value={String(type.id)}>
-                        {type.name}
+                        {type.name.trim().toLowerCase() === "hardware" ? "ฮาร์ดแวร์" : "ซอฟต์แวร์"}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -220,7 +220,7 @@ export function SecretaryReviewDialog({
                   <p className="text-xs text-muted-foreground">กำลังโหลดประเภทโครงการ...</p>
                 )}
                 {!projectTypesQuery.isLoading && allowedProjectTypes.length === 0 && (
-                  <p className="text-xs text-destructive">ไม่พบประเภท Hardware หรือ Software ในระบบ</p>
+                  <p className="text-xs text-destructive">ไม่พบประเภทฮาร์ดแวร์หรือซอฟต์แวร์ในระบบ</p>
                 )}
               </div>
             )}

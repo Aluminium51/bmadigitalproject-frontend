@@ -35,6 +35,18 @@ import { SortField } from "../hooks/useUserManagement";
 
 const SKELETON_ROWS = [0, 1, 2, 3, 4];
 
+function sortRolesById(user: User) {
+  return user.roles
+    .map((role, index) => ({
+      role,
+      roleId: user.role_ids?.[index] ?? Number.MIN_SAFE_INTEGER,
+      originalIndex: index,
+    }))
+    .sort((left, right) =>
+      right.roleId - left.roleId || left.originalIndex - right.originalIndex,
+    );
+}
+
 interface UserTableProps {
   users: User[];
   isLoading?: boolean;
@@ -199,7 +211,7 @@ export const UserTable = memo(function UserTable({
                 <TableCell>
                   <div className="flex flex-wrap gap-1.5">
                     {user.roles.length > 0
-                      ? user.roles.map((role, index) => getRoleBadge(role, index))
+                      ? sortRolesById(user).map(({ role }, index) => getRoleBadge(role, index))
                       : <span className="text-sm text-slate-400">-</span>}
                   </div>
                 </TableCell>

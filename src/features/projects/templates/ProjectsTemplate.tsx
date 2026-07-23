@@ -64,7 +64,11 @@ export function ProjectsTemplate() {
             <p>กำลังโหลดข้อมูลโครงการ...</p>
           </div>
         ) : (
-          <ProjectTable data={projectsData} activeTab={activeTab} />
+          <ProjectTable
+            data={projectsData}
+            activeTab={activeTab}
+            hideAnalystColumn={activeTab === "drafts"}
+          />
         )}
 
         {/* Hide pagination on initial load */}
