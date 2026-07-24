@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Loader2, Paperclip, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,7 +29,10 @@ function formatBytes(bytes: number) {
 
 function matchesAccept(file: File, accept?: string) {
   if (!accept) return true;
-  const tokens = accept.split(",").map((token) => token.trim().toLowerCase()).filter(Boolean);
+  const tokens = accept
+    .split(",")
+    .map((token) => token.trim().toLowerCase())
+    .filter(Boolean);
   const name = file.name.toLowerCase();
   return tokens.some((token) => {
     if (token.startsWith(".")) return name.endsWith(token);
@@ -46,6 +49,7 @@ export function FileUploadModal({
   onUpload,
 }: FileUploadModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const descriptionId = useId();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -69,7 +73,7 @@ export function FileUploadModal({
   const selectFile = (file: File | undefined) => {
     if (!file) return;
     if (!matchesAccept(file, accept)) {
-      setError(`Unsupported file type. Allowed: ${accept || "this file type"}.`);
+      setError(`ไม่รองรับประเภทไฟล์นี้ ประเภทที่รองรับ: ${accept || "ไฟล์ประเภทนี้"}`);
       setSelectedFile(null);
       return;
     }
@@ -88,7 +92,11 @@ export function FileUploadModal({
       resetForm();
       onOpenChange(false);
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "File upload failed.");
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : "อัปโหลดเอกสารไม่สำเร็จ",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -100,9 +108,9 @@ export function FileUploadModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="w-[min(94vw,560px)] max-w-none">
         <DialogHeader>
-          <DialogTitle>Upload {title}</DialogTitle>
+          <DialogTitle>อัปโหลด{title}</DialogTitle>
           <DialogDescription>
-            Select a file and add its description before uploading.
+            เลือกเอกสารและระบุคำอธิบายก่อนอัปโหลด
           </DialogDescription>
         </DialogHeader>
 
@@ -112,7 +120,9 @@ export function FileUploadModal({
             tabIndex={0}
             onClick={() => inputRef.current?.click()}
             onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") inputRef.current?.click();
+              if (event.key === "Enter" || event.key === " ") {
+                inputRef.current?.click();
+              }
             }}
             onDragOver={(event) => {
               event.preventDefault();
@@ -125,8 +135,10 @@ export function FileUploadModal({
               selectFile(event.dataTransfer.files[0]);
             }}
             className={cn(
-              "rounded-lg border-2 border-dashed px-5 py-7 text-center transition-colors cursor-pointer",
-              isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/60",
+              "cursor-pointer rounded-lg border-2 border-dashed px-5 py-7 text-center transition-colors",
+              isDragging
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/60",
             )}
           >
             <input
@@ -138,9 +150,13 @@ export function FileUploadModal({
               disabled={isUploading}
             />
             <UploadCloud className="mx-auto mb-2 h-8 w-8 text-primary" />
-            <p className="text-sm font-semibold">Drag and drop a file here</p>
-            <p className="mt-1 text-xs text-muted-foreground">or click to browse</p>
-            {accept && <p className="mt-2 text-[11px] text-muted-foreground">Allowed: {accept}</p>}
+            <p className="text-sm font-semibold">ลากเอกสารมาวางที่นี่</p>
+            <p className="mt-1 text-xs text-muted-foreground">หรือคลิกเพื่อเลือกไฟล์</p>
+            {accept && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                ไฟล์ที่รองรับ: {accept}
+              </p>
+            )}
           </div>
 
           {selectedFile && (
@@ -149,7 +165,9 @@ export function FileUploadModal({
                 <Paperclip className="h-4 w-4 shrink-0 text-primary" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{selectedFile.name}</p>
-                  <p className="text-xs text-muted-foreground">{formatBytes(selectedFile.size)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatBytes(selectedFile.size)}
+                  </p>
                 </div>
               </div>
               <Button
@@ -161,7 +179,7 @@ export function FileUploadModal({
                   if (inputRef.current) inputRef.current.value = "";
                 }}
                 disabled={isUploading}
-                aria-label="Remove selected file"
+                aria-label="นำเอกสารที่เลือกออก"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -169,11 +187,11 @@ export function FileUploadModal({
           )}
 
           <div className="space-y-2">
-            <label htmlFor="file-upload-description" className="text-sm font-semibold">
-              Description
+            <label htmlFor={descriptionId} className="text-sm font-semibold">
+              คำอธิบายเอกสาร
             </label>
             <Textarea
-              id="file-upload-description"
+              id={descriptionId}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="ถ้าไม่มีคำอธิบายให้กรอกว่า ไม่มี"
@@ -187,15 +205,21 @@ export function FileUploadModal({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isUploading}>
-            Cancel
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isUploading}
+          >
+            ยกเลิก
           </Button>
           <Button type="button" onClick={() => void handleUpload()} disabled={!canUpload}>
             {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isUploading ? "Uploading..." : "Upload"}
+            {isUploading ? "กำลังอัปโหลด..." : "อัปโหลด"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+

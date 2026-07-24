@@ -28,6 +28,8 @@ export type DocumentFile = {
   url?: string;
   file?: File | string;
   description?: string;
+  createdAt?: string | Date;
+  canDelete?: boolean;
   uploader?: {
     userId: string;
     firstName: string;

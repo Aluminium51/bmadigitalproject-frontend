@@ -198,6 +198,7 @@ const Project = z
               .passthrough()
               .nullable(),
             createdAt: z.union([z.string(), z.string()]),
+            canDelete: z.boolean(),
           })
           .passthrough()
       )
@@ -1349,6 +1350,13 @@ const endpoints = makeApi([
   },
   {
     method: "get",
+    path: "/api/v1/lookups/project-attachment-types",
+    alias: "getApiv1lookupsprojectAttachmentTypes",
+    requestFormat: "json",
+    response: LookupResponse,
+  },
+  {
+    method: "get",
     path: "/api/v1/lookups/project-statuses",
     alias: "getApiv1lookupsprojectStatuses",
     requestFormat: "json",
@@ -2079,6 +2087,7 @@ const endpoints = makeApi([
             contentType: z.string(),
             compressionApplied: z.boolean(),
             url: z.string().url(),
+            canDelete: z.boolean(),
             uploader: z
               .object({
                 userId: z.string().uuid(),

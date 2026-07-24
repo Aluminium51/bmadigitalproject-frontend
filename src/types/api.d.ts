@@ -873,6 +873,7 @@ export interface paths {
                                 compressionApplied: boolean;
                                 /** Format: uri */
                                 url: string;
+                                canDelete: boolean;
                                 uploader: {
                                     /** Format: uuid */
                                     userId: string;
@@ -2881,6 +2882,7 @@ export interface components {
                     lastName: string;
                 } | null;
                 createdAt: string;
+                canDelete: boolean;
             }[];
             permissions?: {
                 canDelete: boolean;

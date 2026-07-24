@@ -1,17 +1,7 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import type { DocumentFile } from "../types/workspace";
+import type { DocumentFile, ProjectResponse } from "../types/workspace";
 
-export type ProjectAttachment = {
-  id: string;
-  projectId: string;
-  docTypeId: number;
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  description?: string | null;
-  uploader?: { userId: string; firstName: string; lastName: string } | null;
-  createdAt?: string | Date;
-};
+export type ProjectAttachment = ProjectResponse["attachments"][number];
 
 const EMPTY_ATTACHMENTS: ProjectAttachment[] = [];
 
@@ -32,8 +22,17 @@ function mapAttachment(attachment: ProjectAttachment): DocumentFile {
     url: attachment.fileUrl,
     file: attachment.fileUrl,
     description: attachment.description ?? undefined,
+    createdAt: attachment.createdAt,
+    canDelete:
+      typeof attachment.canDelete === "boolean" ? attachment.canDelete : undefined,
     uploader: attachment.uploader,
   };
+}
+
+function compareAttachments(left: ProjectAttachment, right: ProjectAttachment) {
+  const createdAtDifference =
+    new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+  return createdAtDifference || right.id.localeCompare(left.id);
 }
 
 export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EMPTY_ATTACHMENTS) {
@@ -48,31 +47,49 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
   const [additionalDocs, setAdditionalDocs] = useState<DocumentFile[]>([]);
 
   const latestByType = useMemo(() => {
-    const latest = new Map<number, ProjectAttachment>();
-    for (const attachment of initialAttachments) {
-      const current = latest.get(attachment.docTypeId);
-      if (!current || new Date(attachment.createdAt ?? 0).getTime() > new Date(current.createdAt ?? 0).getTime()) {
-        latest.set(attachment.docTypeId, attachment);
+    const latest = new Map<string, ProjectAttachment>();
+    for (const attachment of [...initialAttachments].sort(compareAttachments)) {
+      const typeKey = attachment.docTypeName ?? String(attachment.docTypeId);
+      const current = latest.get(typeKey);
+      if (!current) {
+        latest.set(typeKey, attachment);
       }
     }
     return latest;
   }, [initialAttachments]);
 
+  const approvalDocuments = useMemo(
+    () =>
+      initialAttachments
+        .filter((attachment) => attachment.docTypeName === "approval_document")
+        .sort(compareAttachments)
+        .map(mapAttachment),
+    [initialAttachments],
+  );
+
+  // The local values mirror the server response and are also updated immediately
+  // by upload controls before the invalidated project query resolves.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    const get = (docTypeId: number) => {
-      const attachment = latestByType.get(docTypeId);
+    const get = (docTypeName: string) => {
+      const attachment = latestByType.get(docTypeName);
       return attachment ? mapAttachment(attachment) : null;
     };
-    setPresentation(get(5));
-    setQuotation(get(9));
-    setOnePage(get(10));
-    setApprovalDoc(get(11));
-    setSystemDiagram(get(1));
-    setNetworkDiagram(get(2));
-    setUseCaseDiagram(get(3));
-    setSecurityDiagram(get(4));
-    setAdditionalDocs(initialAttachments.filter((attachment) => attachment.docTypeId === 8).map(mapAttachment));
+    setPresentation(get("presentation"));
+    setQuotation(get("quotation"));
+    setOnePage(get("one_page_summary"));
+    setApprovalDoc(get("approval_document"));
+    setSystemDiagram(get("system_diagram"));
+    setNetworkDiagram(get("network_diagram"));
+    setUseCaseDiagram(get("use_case_diagram"));
+    setSecurityDiagram(get("security_diagram"));
+    setAdditionalDocs(
+      initialAttachments
+        .filter((attachment) => attachment.docTypeName === "other")
+        .map(mapAttachment),
+    );
   }, [initialAttachments, latestByType]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const mandatoryUploadedCount = [presentation, quotation, onePage, approvalDoc].filter(Boolean).length;
   const diagramsUploadedCount = [systemDiagram, networkDiagram, useCaseDiagram, securityDiagram].filter(Boolean).length;
@@ -85,5 +102,8 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
     additionalDocs, mandatoryUploadedCount, diagramsUploadedCount, setPresentation, setQuotation, setOnePage,
     setApprovalDoc, setSystemDiagram, setNetworkDiagram, setUseCaseDiagram, setSecurityDiagram, removeFile,
     removeAdditionalDoc, addAdditionalDocument,
+    approvalDocuments,
+    latestApprovalDocument: approvalDoc ?? approvalDocuments[0] ?? null,
+    approvalDocumentHistory: approvalDocuments.slice(1),
   };
 }
