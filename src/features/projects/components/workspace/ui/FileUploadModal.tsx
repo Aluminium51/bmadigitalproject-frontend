@@ -88,9 +88,9 @@ export function FileUploadModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="w-[min(94vw,560px)] max-w-none">
+      <DialogContent className="max-h-[90dvh] min-w-sm md:min-w-md lg:min-w-6xl  overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>อัปโหลด{title}</DialogTitle>
+          <DialogTitle className="wrap-break-word pr-8">อัปโหลด{title}</DialogTitle>
           <DialogDescription>
             เลือกเอกสารและระบุคำอธิบายก่อนอัปโหลด
           </DialogDescription>
@@ -135,19 +135,24 @@ export function FileUploadModal({
             <p className="text-sm font-semibold">ลากเอกสารมาวางที่นี่</p>
             <p className="mt-1 text-xs text-muted-foreground">หรือคลิกเพื่อเลือกไฟล์</p>
             {accept && (
-              <p className="mt-2 text-[11px] text-muted-foreground">
+              <p className="mt-2 wrap-break-word text-[11px] text-muted-foreground">
                 ไฟล์ที่รองรับ: {accept}
               </p>
             )}
           </div>
 
           {selectedFile && (
-            <div className="flex items-center justify-between gap-3 rounded-md border bg-slate-50 px-3 py-2">
-              <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 max-w-full items-center justify-between gap-3 overflow-hidden rounded-md border bg-slate-50 px-3 py-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                 <Paperclip className="h-4 w-4 shrink-0 text-primary" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{selectedFile.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p
+                    className="max-w-full truncate text-sm font-medium"
+                    title={selectedFile.name}
+                  >
+                    {selectedFile.name}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
                     {formatFileSize(selectedFile.size)}
                   </p>
                 </div>

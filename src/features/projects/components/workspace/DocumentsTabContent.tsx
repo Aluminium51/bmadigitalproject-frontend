@@ -229,7 +229,7 @@ export function DocumentsTabContent({
           <FileUploadField
             projectId={projectId}
             docTypeName={PROJECT_ATTACHMENT_TYPE_NAMES.approvalDocument}
-            title="เอกสารอนุมัติโครงการ"
+            title="เอกสารประกอบการพิจารณาพร้อมลายเซ็นรับรอง"
             accept=".pdf"
             value={documents.latestApprovalDocument}
             onChange={(file) => documents.setApprovalDoc(file as DocumentFile | null)}
