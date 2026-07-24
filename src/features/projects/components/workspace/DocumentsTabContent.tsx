@@ -83,7 +83,7 @@ export function DocumentsTabContent({
       docTypeName: "presentation",
       docTypeId: getAttachmentTypeId("presentation"),
       title: "Presentation",
-      accept: ".ppt,.pptx",
+      accept: ".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation",
       file: documents.presentation,
       setFile: documents.setPresentation,
     },
@@ -102,6 +102,14 @@ export function DocumentsTabContent({
       accept: ".pdf",
       file: documents.onePage,
       setFile: documents.setOnePage,
+    },
+    {
+      docTypeName: "bma_dc_usage",
+      docTypeId: getAttachmentTypeId("bma_dc_usage"),
+      title: "การใช้ BMA DC",
+      accept: ".pdf,application/pdf",
+      file: documents.bmaDcUsage,
+      setFile: documents.setBmaDcUsage,
     },
   ];
 
@@ -283,7 +291,7 @@ export function DocumentsTabContent({
           projectId={projectId}
           docTypeId={getAttachmentTypeId("other")}
           title="เอกสารเพิ่มเติม"
-          accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.webp"
+          accept="*/*"
           value={null}
           onChange={(file) =>
             file && documents.addAdditionalDocument(file as DocumentFile)

@@ -19,6 +19,7 @@ function mapAttachment(attachment: ProjectAttachment): DocumentFile {
     name: attachment.fileName,
     type: getDocumentType(attachment.fileName, attachment.fileType),
     mimeType: attachment.fileType,
+    fileSize: attachment.fileSize,
     url: attachment.fileUrl,
     file: attachment.fileUrl,
     description: attachment.description ?? undefined,
@@ -39,6 +40,7 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
   const [presentation, setPresentation] = useState<DocumentFile | null>(null);
   const [quotation, setQuotation] = useState<DocumentFile | null>(null);
   const [onePage, setOnePage] = useState<DocumentFile | null>(null);
+  const [bmaDcUsage, setBmaDcUsage] = useState<DocumentFile | null>(null);
   const [approvalDoc, setApprovalDoc] = useState<DocumentFile | null>(null);
   const [systemDiagram, setSystemDiagram] = useState<DocumentFile | null>(null);
   const [networkDiagram, setNetworkDiagram] = useState<DocumentFile | null>(null);
@@ -78,6 +80,7 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
     setPresentation(get("presentation"));
     setQuotation(get("quotation"));
     setOnePage(get("one_page_summary"));
+    setBmaDcUsage(get("bma_dc_usage"));
     setApprovalDoc(get("approval_document"));
     setSystemDiagram(get("system_diagram"));
     setNetworkDiagram(get("network_diagram"));
@@ -98,8 +101,9 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
   const addAdditionalDocument = (file: DocumentFile) => setAdditionalDocs((prev) => [...prev, file]);
 
   return {
-    presentation, quotation, onePage, approvalDoc, systemDiagram, networkDiagram, useCaseDiagram, securityDiagram,
+    presentation, quotation, onePage, bmaDcUsage, approvalDoc, systemDiagram, networkDiagram, useCaseDiagram, securityDiagram,
     additionalDocs, mandatoryUploadedCount, diagramsUploadedCount, setPresentation, setQuotation, setOnePage,
+    setBmaDcUsage,
     setApprovalDoc, setSystemDiagram, setNetworkDiagram, setUseCaseDiagram, setSecurityDiagram, removeFile,
     removeAdditionalDoc, addAdditionalDocument,
     approvalDocuments,

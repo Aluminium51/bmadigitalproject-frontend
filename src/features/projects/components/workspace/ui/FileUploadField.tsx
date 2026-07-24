@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { FileUploadModal } from "./FileUploadModal";
+import { formatFileSize, matchesAccept } from "../../../utils/fileValidation";
 
 export const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024;
 export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -37,6 +38,7 @@ export type SharedFileValue = {
   type?: string;
   mimeType?: string;
   size?: string;
+  fileSize?: number | null;
   url?: string;
   file?: File | string;
   description?: string;
@@ -72,11 +74,6 @@ const API_BASE =
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-}
 
 function fileKind(fileName: string, mimeType = "") {
   const extension = fileName.split(".").pop()?.toLowerCase();
@@ -128,20 +125,6 @@ function getSource(value: SharedFileValue | string | null | undefined) {
   };
 }
 
-function matchesAccept(file: File, accept?: string) {
-  if (!accept) return true;
-  const tokens = accept
-    .split(",")
-    .map((token) => token.trim().toLowerCase())
-    .filter(Boolean);
-  const name = file.name.toLowerCase();
-  return tokens.some((token) => {
-    if (token.startsWith(".")) return name.endsWith(token);
-    if (token.endsWith("/*")) return file.type.startsWith(token.slice(0, -1));
-    return file.type.toLowerCase() === token;
-  });
-}
-
 function localizeFileError(message: string) {
   const normalized = message.toLowerCase();
   if (normalized.includes("only admin") || normalized.includes("super admin")) {
@@ -188,6 +171,7 @@ async function uploadProjectFile(
     attachmentId?: string;
     url: string;
     canDelete?: boolean;
+    fileSize?: number | null;
     uploader?: SharedFileValue["uploader"];
   };
 }
@@ -272,6 +256,9 @@ export function FileAttachment({
               <span className="truncate">
                 • อัปโหลดโดย {value.uploader.firstName} {value.uploader.lastName}
               </span>
+            )}
+            {typeof value !== "string" && (
+              <span>• ขนาด {formatFileSize(value.fileSize)}</span>
             )}
           </div>
           {typeof value !== "string" && value.description && (
@@ -381,10 +368,10 @@ export function FileUploadField({
       throw new Error(`ไม่รองรับประเภทไฟล์นี้ ประเภทที่รองรับ: ${accept || "ไฟล์ประเภทนี้"}`);
     }
     if (file.type === "application/pdf" && file.size > MAX_PDF_SIZE_BYTES) {
-      throw new Error(`ไฟล์ PDF ต้องมีขนาดไม่เกิน ${formatBytes(MAX_PDF_SIZE_BYTES)}`);
+      throw new Error(`ไฟล์ PDF ต้องมีขนาดไม่เกิน ${formatFileSize(MAX_PDF_SIZE_BYTES)}`);
     }
     if (file.type.startsWith("image/") && file.size > MAX_IMAGE_SIZE_BYTES) {
-      throw new Error(`ไฟล์รูปภาพต้องมีขนาดไม่เกิน ${formatBytes(MAX_IMAGE_SIZE_BYTES)} ก่อนบีบอัด`);
+      throw new Error(`ไฟล์รูปภาพต้องมีขนาดไม่เกิน ${formatFileSize(MAX_IMAGE_SIZE_BYTES)} ก่อนบีบอัด`);
     }
 
     setError(null);
@@ -417,7 +404,8 @@ export function FileUploadField({
         name: file.name,
         type: fileKind(file.name, file.type),
         mimeType: file.type,
-        size: formatBytes(uploadFile.size),
+        size: formatFileSize(uploaded.fileSize ?? uploadFile.size),
+        fileSize: uploaded.fileSize ?? uploadFile.size,
         url: uploaded.url,
         file: uploaded.url,
         description: trimmedDescription,

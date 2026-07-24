@@ -25,6 +25,7 @@ export type DocumentFile = {
   type: "pdf" | "ppt" | "image" | "other";
   mimeType?: string;
   size?: string;
+  fileSize?: number | null;
   url?: string;
   file?: File | string;
   description?: string;

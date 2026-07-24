@@ -188,6 +188,7 @@ const Project = z
             fileName: z.string(),
             fileUrl: z.string().url(),
             fileType: z.string(),
+            fileSize: z.number().int().nullable(),
             description: z.string().nullable(),
             uploader: z
               .object({
@@ -2103,7 +2104,7 @@ const endpoints = makeApi([
     errors: [
       {
         status: 400,
-        description: `Missing file or project ID`,
+        description: `Missing file/project ID or invalid file type for the document category`,
         schema: z
           .object({ message: z.string(), error: z.string() })
           .partial()

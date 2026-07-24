@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { formatFileSize, matchesAccept } from "../../../utils/fileValidation";
 
 type FileUploadModalProps = {
   open: boolean;
@@ -21,25 +22,6 @@ type FileUploadModalProps = {
   accept?: string;
   onUpload: (file: File, description: string) => Promise<void>;
 };
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-}
-
-function matchesAccept(file: File, accept?: string) {
-  if (!accept) return true;
-  const tokens = accept
-    .split(",")
-    .map((token) => token.trim().toLowerCase())
-    .filter(Boolean);
-  const name = file.name.toLowerCase();
-  return tokens.some((token) => {
-    if (token.startsWith(".")) return name.endsWith(token);
-    if (token.endsWith("/*")) return file.type.startsWith(token.slice(0, -1));
-    return file.type.toLowerCase() === token;
-  });
-}
 
 export function FileUploadModal({
   open,
@@ -166,7 +148,7 @@ export function FileUploadModal({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{selectedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatBytes(selectedFile.size)}
+                    {formatFileSize(selectedFile.size)}
                   </p>
                 </div>
               </div>
@@ -222,4 +204,3 @@ export function FileUploadModal({
     </Dialog>
   );
 }
-
