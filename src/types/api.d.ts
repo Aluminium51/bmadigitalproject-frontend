@@ -866,6 +866,8 @@ export interface paths {
                             data: {
                                 /** Format: uuid */
                                 attachmentId: string;
+                                docTypeId: number;
+                                docTypeName: string;
                                 fileName: string;
                                 storedFileName: string;
                                 fileSize: number;
@@ -2619,7 +2621,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["LookupResponse"];
+                        "application/json": components["schemas"]["ProjectAttachmentTypeLookupResponse"];
                     };
                 };
             };
@@ -2785,8 +2787,8 @@ export interface components {
              * @description Project that owns the uploaded document
              */
             projectId: string;
-            /** @description Project attachment type */
-            docTypeId: number;
+            /** @description Project attachment type name from the project attachment lookup */
+            docTypeName: string;
             /** @description Optional description for the uploaded attachment */
             description?: string;
         };
@@ -3642,6 +3644,14 @@ export interface components {
         ProjectStatusItem: {
             id: number;
             statusName: string;
+        };
+        ProjectAttachmentTypeLookupResponse: {
+            data: components["schemas"]["ProjectAttachmentTypeLookupItem"][];
+        };
+        ProjectAttachmentTypeLookupItem: {
+            id: number;
+            name: string;
+            label: string;
         };
     };
     responses: never;

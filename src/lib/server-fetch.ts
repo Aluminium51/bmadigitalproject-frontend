@@ -25,7 +25,15 @@ export async function serverFetch<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const url = new URL(`${process.env.BACKEND_URL}${endpoint}`);
+  const backendBaseUrl =
+    process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!backendBaseUrl) {
+    throw new Error("BACKEND_URL is not configured");
+  }
+
+  const url = new URL(
+    `${backendBaseUrl.replace(/\/+$/, "")}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`,
+  );
 
   // แปลง params ให้เป็น Query String (เช่น ?status=pending)
   if (options.params) {

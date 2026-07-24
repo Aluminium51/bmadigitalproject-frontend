@@ -1,9 +1,10 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { FileCheck2, History, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Accordion,
@@ -14,13 +15,16 @@ import {
 import { useProjectDocuments, type ProjectAttachment } from "../../hooks/useProjectDocuments";
 import { deleteProjectFile, FileAttachment, FileUploadField } from "./ui/FileUploadField";
 import type { DocumentFile } from "../../types/workspace";
-import { getProjectAttachmentTypesAction } from "@/features/projects/actions/project-attachment.actions";
+import { useProjectAttachmentTypes } from "../../hooks/useProjectAttachmentTypes";
+import {
+  PROJECT_ATTACHMENT_TYPE_NAMES,
+  type ProjectAttachmentTypeName,
+} from "../../types/project-attachment-type";
 
 const EMPTY_ATTACHMENTS: ProjectAttachment[] = [];
 
 type DocumentField = {
-  docTypeName: string;
-  docTypeId?: number;
+  docTypeName: ProjectAttachmentTypeName;
   title: string;
   accept: string;
   file: DocumentFile | null;
@@ -45,17 +49,19 @@ export function DocumentsTabContent({
   initialAttachments?: ProjectAttachment[];
   canManage?: boolean;
 }) {
-  const documents = useProjectDocuments(initialAttachments);
   const queryClient = useQueryClient();
-  const { data: attachmentTypesResponse } = useQuery({
-    queryKey: ["lookups", "project-attachment-types"],
-    queryFn: getProjectAttachmentTypesAction,
-    staleTime: 24 * 60 * 60 * 1000,
-  });
-  const attachmentTypeIds = new Map(
-    (attachmentTypesResponse?.data ?? []).map((type) => [type.name, type.id]),
+  const {
+    data: attachmentTypesResponse,
+    isPending: isAttachmentTypesPending,
+    isError: isAttachmentTypesError,
+    error: attachmentTypesError,
+    refetch: refetchAttachmentTypes,
+  } = useProjectAttachmentTypes();
+  const documents = useProjectDocuments(
+    initialAttachments,
+    attachmentTypesResponse?.data ?? [],
   );
-  const getAttachmentTypeId = (name: string) => attachmentTypeIds.get(name);
+  const hasAttachmentTypes = (attachmentTypesResponse?.data.length ?? 0) > 0;
 
   const invalidateProjectData = async () => {
     await Promise.all([
@@ -80,32 +86,28 @@ export function DocumentsTabContent({
 
   const requiredDocuments: DocumentField[] = [
     {
-      docTypeName: "presentation",
-      docTypeId: getAttachmentTypeId("presentation"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.presentation,
       title: "Presentation",
       accept: ".pdf,.ppt,.pptx,application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation",
       file: documents.presentation,
       setFile: documents.setPresentation,
     },
     {
-      docTypeName: "quotation",
-      docTypeId: getAttachmentTypeId("quotation"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.quotation,
       title: "ใบเสนอราคา",
       accept: ".pdf",
       file: documents.quotation,
       setFile: documents.setQuotation,
     },
     {
-      docTypeName: "one_page_summary",
-      docTypeId: getAttachmentTypeId("one_page_summary"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.onePageSummary,
       title: "One page",
       accept: ".pdf",
       file: documents.onePage,
       setFile: documents.setOnePage,
     },
     {
-      docTypeName: "bma_dc_usage",
-      docTypeId: getAttachmentTypeId("bma_dc_usage"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.bmaDcUsage,
       title: "การใช้ BMA DC",
       accept: ".pdf,application/pdf",
       file: documents.bmaDcUsage,
@@ -115,32 +117,28 @@ export function DocumentsTabContent({
 
   const diagrams: DocumentField[] = [
     {
-      docTypeName: "system_diagram",
-      docTypeId: getAttachmentTypeId("system_diagram"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.systemDiagram,
       title: "System Diagram",
       accept: ".png,.jpg,.jpeg,.webp",
       file: documents.systemDiagram,
       setFile: documents.setSystemDiagram,
     },
     {
-      docTypeName: "network_diagram",
-      docTypeId: getAttachmentTypeId("network_diagram"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.networkDiagram,
       title: "Network Diagram",
       accept: ".png,.jpg,.jpeg,.webp",
       file: documents.networkDiagram,
       setFile: documents.setNetworkDiagram,
     },
     {
-      docTypeName: "use_case_diagram",
-      docTypeId: getAttachmentTypeId("use_case_diagram"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.useCaseDiagram,
       title: "Use Case Diagram",
       accept: ".png,.jpg,.jpeg,.webp",
       file: documents.useCaseDiagram,
       setFile: documents.setUseCaseDiagram,
     },
     {
-      docTypeName: "security_diagram",
-      docTypeId: getAttachmentTypeId("security_diagram"),
+      docTypeName: PROJECT_ATTACHMENT_TYPE_NAMES.securityDiagram,
       title: "Security Diagram",
       accept: ".png,.jpg,.jpeg,.webp",
       file: documents.securityDiagram,
@@ -150,6 +148,54 @@ export function DocumentsTabContent({
 
   return (
     <div className="space-y-6">
+      {isAttachmentTypesPending && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          กำลังโหลดประเภทเอกสาร...
+        </div>
+      )}
+      {isAttachmentTypesError && (
+        <div className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">ไม่สามารถโหลดประเภทเอกสารได้</p>
+            <p className="text-xs text-red-700">
+              {attachmentTypesError instanceof Error
+                ? attachmentTypesError.message
+                : "กรุณาตรวจสอบการเชื่อมต่อแล้วลองใหม่อีกครั้ง"}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void refetchAttachmentTypes()}
+            className="w-full border-red-300 text-red-700 hover:bg-red-100 sm:w-auto"
+          >
+            ลองใหม่
+          </Button>
+        </div>
+      )}
+      {!isAttachmentTypesError && attachmentTypesResponse && !hasAttachmentTypes && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          ไม่พบข้อมูลประเภทเอกสารจากระบบ จึงยังไม่สามารถอัปโหลดเอกสารได้
+        </div>
+      )}
+      {documents.unclassifiedDocs.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm text-red-800">
+              Unclassified attachments
+            </CardTitle>
+            <p className="text-xs text-red-700">
+              These files do not match a known attachment type and were not placed under Other Documents.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {documents.unclassifiedDocs.map((document) => (
+              <FileAttachment key={document.id} value={document} canManage={false} />
+            ))}
+          </CardContent>
+        </Card>
+      )}
       <Card className="overflow-hidden border-amber-200 border bg-amber-50">
         <CardHeader className="border-b border-amber-200 b-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -182,7 +228,7 @@ export function DocumentsTabContent({
         <CardContent className="space-y-4 p-4 sm:p-5">
           <FileUploadField
             projectId={projectId}
-            docTypeId={getAttachmentTypeId("approval_document")}
+            docTypeName={PROJECT_ATTACHMENT_TYPE_NAMES.approvalDocument}
             title="เอกสารอนุมัติโครงการ"
             accept=".pdf"
             value={documents.latestApprovalDocument}
@@ -243,7 +289,7 @@ export function DocumentsTabContent({
               <FileUploadField
                 key={field.docTypeName}
                 projectId={projectId}
-                docTypeId={field.docTypeId}
+                docTypeName={field.docTypeName}
                 title={field.title}
                 accept={field.accept}
                 value={field.file}
@@ -267,7 +313,7 @@ export function DocumentsTabContent({
               <FileUploadField
                 key={field.docTypeName}
                 projectId={projectId}
-                docTypeId={field.docTypeId}
+                docTypeName={field.docTypeName}
                 title={field.title}
                 accept={field.accept}
                 value={field.file}
@@ -289,7 +335,7 @@ export function DocumentsTabContent({
         </div>
         <FileUploadField
           projectId={projectId}
-          docTypeId={getAttachmentTypeId("other")}
+          docTypeName={PROJECT_ATTACHMENT_TYPE_NAMES.other}
           title="เอกสารเพิ่มเติม"
           accept="*/*"
           value={null}

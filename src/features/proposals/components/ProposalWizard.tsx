@@ -42,6 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useProjectWorkspace } from "@/features/projects/hooks/useProjectWorkspace";
+import { useProjectAttachmentTypes } from "@/features/projects/hooks/useProjectAttachmentTypes";
 
 // ---------------------------------------------------------------------------
 // AutoSaveWatcher — renders null, just triggers the auto-save side-effect
@@ -82,6 +83,7 @@ const WizardForm = ({
   const router = useRouter();
   const flushDraftRef = useRef<(() => Promise<boolean>) | null>(null);
   const { projectDetail, isLoading: isProjectLoading } = useProjectWorkspace(projectId);
+  const { getTypeId: getAttachmentTypeId } = useProjectAttachmentTypes();
   const {
     currentStep,
     nextStep,
@@ -140,16 +142,16 @@ const WizardForm = ({
     Object.assign(hydratedDraft, getProposalStep1ContextValues(projectDetail));
 
     const fileFields = [
-      { field: "systemDiagram", docTypeId: 1 },
-      { field: "networkDiagram", docTypeId: 2 },
-      { field: "useCaseDiagram", docTypeId: 3 },
-      { field: "securityDiagram", docTypeId: 4 },
+      { field: "systemDiagram", docTypeName: "system_diagram" },
+      { field: "networkDiagram", docTypeName: "network_diagram" },
+      { field: "useCaseDiagram", docTypeName: "use_case_diagram" },
+      { field: "securityDiagram", docTypeName: "security_diagram" },
     ] as const;
 
     // Recreate the UI descriptor from either the saved draft URL or the
     // latest project attachment. Project Detail uploads are stored in
     // project_attachments and may not yet exist in draftPayload.
-    for (const { field, docTypeId } of fileFields) {
+    for (const { field, docTypeName } of fileFields) {
       const fileKey = `${field}File`;
       const urlKey = `${field}Url`;
       const current = hydratedDraft[fileKey];
@@ -161,10 +163,12 @@ const WizardForm = ({
         currentRecord?.url ??
         (typeof currentRecord?.file === "string" ? currentRecord.file : undefined);
 
+      const docTypeId = getAttachmentTypeId(docTypeName);
       const matchingAttachment = projectDetail.attachments
         ?.filter((attachment) => draftUrl
           ? attachment.fileUrl === draftUrl
-          : attachment.docTypeId === docTypeId)
+          : attachment.docTypeName === docTypeName ||
+            (docTypeId !== undefined && attachment.docTypeId === docTypeId))
         .sort((a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         )[0];
@@ -197,7 +201,7 @@ const WizardForm = ({
     }
     hasHydratedRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existingDraft, existingProposal, isDraftLoading, isProjectLoading, isProposalLoading, isReadOnly, mode, projectDetail]);
+  }, [existingDraft, existingProposal, getAttachmentTypeId, isDraftLoading, isProjectLoading, isProposalLoading, isReadOnly, mode, projectDetail]);
 
   // ── Step validation helper ─────────────────────────────────────────────────
   const getCurrentSchema = (step: number) => {

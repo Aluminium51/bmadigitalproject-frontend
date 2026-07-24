@@ -1,7 +1,7 @@
 // src/features/projects/hooks/useProjects.ts
 import { useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { getProjectsAction } from "../actions/project.actions"; // 👈 Import Server Action เข้ามา
+import { getProjectsAction } from "../actions/project.actions";
 
 export type TabType = "drafts" | "active" | "team" | "all";
 

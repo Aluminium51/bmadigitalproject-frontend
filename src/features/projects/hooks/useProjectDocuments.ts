@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import type { DocumentFile, ProjectResponse } from "../types/workspace";
+import {
+  PROJECT_ATTACHMENT_TYPE_NAMES,
+  type ProjectAttachmentType,
+} from "../types/project-attachment-type";
 
 export type ProjectAttachment = ProjectResponse["attachments"][number];
 
 const EMPTY_ATTACHMENTS: ProjectAttachment[] = [];
+const KNOWN_ATTACHMENT_TYPE_NAMES = new Set<string>(
+  Object.values(PROJECT_ATTACHMENT_TYPE_NAMES),
+);
 
 function getDocumentType(fileName: string, mimeType: string): DocumentFile["type"] {
   const extension = fileName.split(".").pop()?.toLowerCase();
@@ -36,7 +43,27 @@ function compareAttachments(left: ProjectAttachment, right: ProjectAttachment) {
   return createdAtDifference || right.id.localeCompare(left.id);
 }
 
-export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EMPTY_ATTACHMENTS) {
+function resolveAttachmentTypeName(
+  attachment: ProjectAttachment,
+  attachmentTypes: readonly Pick<ProjectAttachmentType, "id" | "name">[],
+) {
+  if (attachment.docTypeName?.trim()) {
+    const directName = attachment.docTypeName.trim();
+    if (KNOWN_ATTACHMENT_TYPE_NAMES.has(directName)) return directName;
+  }
+
+  const lookupName = attachmentTypes.find(
+    (type) => type.id === attachment.docTypeId,
+  )?.name;
+  return lookupName && KNOWN_ATTACHMENT_TYPE_NAMES.has(lookupName)
+    ? lookupName
+    : null;
+}
+
+export function useProjectDocuments(
+  initialAttachments: ProjectAttachment[] = EMPTY_ATTACHMENTS,
+  attachmentTypes: readonly Pick<ProjectAttachmentType, "id" | "name">[] = [],
+) {
   const [presentation, setPresentation] = useState<DocumentFile | null>(null);
   const [quotation, setQuotation] = useState<DocumentFile | null>(null);
   const [onePage, setOnePage] = useState<DocumentFile | null>(null);
@@ -48,25 +75,37 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
   const [securityDiagram, setSecurityDiagram] = useState<DocumentFile | null>(null);
   const [additionalDocs, setAdditionalDocs] = useState<DocumentFile[]>([]);
 
+  const resolvedAttachments = useMemo(
+    () =>
+      initialAttachments.map((attachment) => ({
+        attachment,
+        typeName: resolveAttachmentTypeName(attachment, attachmentTypes),
+      })),
+    [attachmentTypes, initialAttachments],
+  );
+
   const latestByType = useMemo(() => {
     const latest = new Map<string, ProjectAttachment>();
-    for (const attachment of [...initialAttachments].sort(compareAttachments)) {
-      const typeKey = attachment.docTypeName ?? String(attachment.docTypeId);
-      const current = latest.get(typeKey);
+    for (const { attachment, typeName } of [...resolvedAttachments].sort((left, right) =>
+      compareAttachments(left.attachment, right.attachment),
+    )) {
+      if (!typeName) continue;
+      const current = latest.get(typeName);
       if (!current) {
-        latest.set(typeKey, attachment);
+        latest.set(typeName, attachment);
       }
     }
     return latest;
-  }, [initialAttachments]);
+  }, [resolvedAttachments]);
 
   const approvalDocuments = useMemo(
     () =>
-      initialAttachments
-        .filter((attachment) => attachment.docTypeName === "approval_document")
+      resolvedAttachments
+        .filter(({ typeName }) => typeName === "approval_document")
+        .map(({ attachment }) => attachment)
         .sort(compareAttachments)
         .map(mapAttachment),
-    [initialAttachments],
+    [resolvedAttachments],
   );
 
   // The local values mirror the server response and are also updated immediately
@@ -87,11 +126,12 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
     setUseCaseDiagram(get("use_case_diagram"));
     setSecurityDiagram(get("security_diagram"));
     setAdditionalDocs(
-      initialAttachments
-        .filter((attachment) => attachment.docTypeName === "other")
+      resolvedAttachments
+        .filter(({ typeName }) => typeName === "other")
+        .map(({ attachment }) => attachment)
         .map(mapAttachment),
     );
-  }, [initialAttachments, latestByType]);
+  }, [latestByType, resolvedAttachments]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const mandatoryUploadedCount = [presentation, quotation, onePage, approvalDoc].filter(Boolean).length;
@@ -106,6 +146,9 @@ export function useProjectDocuments(initialAttachments: ProjectAttachment[] = EM
     setBmaDcUsage,
     setApprovalDoc, setSystemDiagram, setNetworkDiagram, setUseCaseDiagram, setSecurityDiagram, removeFile,
     removeAdditionalDoc, addAdditionalDocument,
+    unclassifiedDocs: resolvedAttachments
+      .filter(({ typeName }) => typeName === null)
+      .map(({ attachment }) => mapAttachment(attachment)),
     approvalDocuments,
     latestApprovalDocument: approvalDoc ?? approvalDocuments[0] ?? null,
     approvalDocumentHistory: approvalDocuments.slice(1),

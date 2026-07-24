@@ -115,7 +115,7 @@ const UploadDocumentRequest = z
   .object({
     file: z.instanceof(File),
     projectId: z.string().uuid(),
-    docTypeId: z.number().int().gt(0),
+    docTypeName: z.string().min(1).max(255),
     description: z.string().max(2000).optional(),
   })
   .passthrough();
@@ -1087,6 +1087,16 @@ const ProjectStatusItem = z
 const ProjectStatusResponse = z
   .object({ data: z.array(ProjectStatusItem) })
   .passthrough();
+const ProjectAttachmentTypeLookupItem = z
+  .object({
+    id: z.number().int(),
+    name: z.string().max(255),
+    label: z.string().max(255),
+  })
+  .passthrough();
+const ProjectAttachmentTypeLookupResponse = z
+  .object({ data: z.array(ProjectAttachmentTypeLookupItem) })
+  .passthrough();
 
 export const schemas = {
   HealthSuccess,
@@ -1131,6 +1141,8 @@ export const schemas = {
   LookupResponse,
   ProjectStatusItem,
   ProjectStatusResponse,
+  ProjectAttachmentTypeLookupItem,
+  ProjectAttachmentTypeLookupResponse,
 };
 
 const endpoints = makeApi([
@@ -1354,7 +1366,7 @@ const endpoints = makeApi([
     path: "/api/v1/lookups/project-attachment-types",
     alias: "getApiv1lookupsprojectAttachmentTypes",
     requestFormat: "json",
-    response: LookupResponse,
+    response: ProjectAttachmentTypeLookupResponse,
   },
   {
     method: "get",
@@ -2082,6 +2094,8 @@ const endpoints = makeApi([
         data: z
           .object({
             attachmentId: z.string().uuid(),
+            docTypeId: z.number().int(),
+            docTypeName: z.string(),
             fileName: z.string(),
             storedFileName: z.string(),
             fileSize: z.number(),

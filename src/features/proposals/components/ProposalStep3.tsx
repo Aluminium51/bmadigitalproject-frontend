@@ -17,6 +17,8 @@ import { CloudUpload, FileImage, X, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import imageCompression from "browser-image-compression";
 import { FileUploadField, type SharedFileValue } from "@/features/projects/components/workspace/ui/FileUploadField";
+import { CLIENT_API_BASE } from "@/lib/client-api";
+import type { ProjectAttachmentTypeName } from "@/features/projects/types/project-attachment-type";
 
 // กำหนดโครงสร้างข้อมูลไฟล์ที่เก็บใน React Hook Form ให้ชัดเจน
 interface MappedFile {
@@ -29,6 +31,7 @@ interface MappedFile {
 interface SingleFileUploadWithDescBoxProps {
   projectId: string;
   title: string;
+  docTypeName: ProjectAttachmentTypeName;
   name: keyof ProposalStep3Values;
   watch: UseFormWatch<ProposalStep3Values>;
   setValue: UseFormSetValue<ProposalStep3Values>;
@@ -36,13 +39,16 @@ interface SingleFileUploadWithDescBoxProps {
   onUploadingChange?: (uploading: boolean) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081/api/v1";
-
-async function uploadImage(file: File, projectId: string): Promise<string> {
+async function uploadImage(
+  file: File,
+  projectId: string,
+  docTypeName: ProjectAttachmentTypeName,
+): Promise<string> {
   const body = new FormData();
   body.append("file", file);
   body.append("projectId", projectId);
-  const response = await fetch(`${API_BASE}/uploads/document`, {
+  body.append("docTypeName", docTypeName);
+  const response = await fetch(`${CLIENT_API_BASE}/uploads/document`, {
     method: "POST",
     credentials: "include",
     body,
@@ -58,6 +64,7 @@ async function uploadImage(file: File, projectId: string): Promise<string> {
 const LegacySingleFileUploadWithDescBox = ({
   projectId,
   title,
+  docTypeName,
   name,
   watch,
   setValue,
@@ -174,7 +181,7 @@ const LegacySingleFileUploadWithDescBox = ({
         description: "",
       };
 
-      const url = await uploadImage(compressedFile, projectId);
+      const url = await uploadImage(compressedFile, projectId, docTypeName);
       const urlField = `${String(name).replace("File", "Url")}` as keyof ProposalStep3Values;
       setValue(name, { ...mappedFile, file: url, url } as any, { shouldValidate: true });
       setValue(urlField, url as any, { shouldValidate: true });
@@ -326,6 +333,7 @@ const LegacySingleFileUploadWithDescBox = ({
 const SingleFileUploadWithDescBox = ({
   projectId,
   title,
+  docTypeName,
   name,
   watch,
   setValue,
@@ -342,11 +350,7 @@ const SingleFileUploadWithDescBox = ({
   return (
     <FileUploadField
       projectId={projectId}
-      docTypeId={
-        name === "systemDiagramFile" ? 1 :
-        name === "networkDiagramFile" ? 2 :
-        name === "useCaseDiagramFile" ? 3 : 4
-      }
+      docTypeName={docTypeName}
       title={title}
       accept="image/png,image/jpeg,image/webp"
       value={value}
@@ -488,6 +492,7 @@ export const ProposalStep3 = ({
           <SingleFileUploadWithDescBox
             projectId={projectId}
             title="System Diagram"
+            docTypeName="system_diagram"
             name="systemDiagramFile"
             watch={watch}
             setValue={setValue}
@@ -497,6 +502,7 @@ export const ProposalStep3 = ({
           <SingleFileUploadWithDescBox
             projectId={projectId}
             title="Network Diagram"
+            docTypeName="network_diagram"
             name="networkDiagramFile"
             watch={watch}
             setValue={setValue}
@@ -506,6 +512,7 @@ export const ProposalStep3 = ({
           <SingleFileUploadWithDescBox
             projectId={projectId}
             title="Use Case Diagram"
+            docTypeName="use_case_diagram"
             name="useCaseDiagramFile"
             watch={watch}
             setValue={setValue}
@@ -515,6 +522,7 @@ export const ProposalStep3 = ({
           <SingleFileUploadWithDescBox
             projectId={projectId}
             title="Security Diagram"
+            docTypeName="security_diagram"
             name="securityDiagramFile"
             watch={watch}
             setValue={setValue}
