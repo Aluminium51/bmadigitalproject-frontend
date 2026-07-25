@@ -115,7 +115,7 @@ export default function WorkspaceLayout({
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar />
-        <main className="flex-1 min-w-0 flex flex-col bg-surface-container-low min-h-screen">
+        <main className="flex h-screen min-h-0 min-w-0 flex-1 flex-col bg-surface-container-low">
 
           {/* --- Navbar --- */}
           <nav className="p-4 bg-white border-b border-[#ededf4] flex items-center justify-between sticky top-0 z-40 shadow-sm h-16">
@@ -130,7 +130,7 @@ export default function WorkspaceLayout({
           </nav>
 
           {/* ส่วนเนื้อหาของหน้าเพจต่างๆ */}
-          <div className="p-2 md:p-4 overflow-y-auto flex-1">{children}</div>
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2 md:p-4">{children}</div>
         </main>
       </SidebarProvider>
     </TooltipProvider>

@@ -1,133 +1,179 @@
 "use client";
 
+import Link from "next/link";
+import { Eye, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Eye, CheckCircle2 } from "lucide-react";
+import type {
+  AnalystWorkloadResponse,
+  AssignmentProjectsResponse,
+} from "../actions/assignment.actions";
 
-// --- Types ---
-export type Analyst = { id: string; name: string; workload: number };
-export type ProjectForAssign = {
-  id: string; code: string; name: string; agency: string;
-  type: string; status: string; analystId: string | null;
-};
+export type AssignmentProject = AssignmentProjectsResponse["data"][number];
+export type AnalystWorkload = AnalystWorkloadResponse["data"][number];
 
-interface AssignmentTableProps {
-  projects: ProjectForAssign[];
-  analysts: Analyst[];
+type AssignmentTableProps = {
+  projects: AssignmentProject[];
+  analysts: AnalystWorkload[];
   selectedIds: string[];
   onSelectToggle: (id: string) => void;
   onSelectAll: (checked: boolean) => void;
   onAssignSingle: (projectId: string, analystId: string) => void;
-  onAssignBulk: (analystId: string) => void;
-  onOpenDetails: (project: ProjectForAssign) => void;
+  onRequestBulkAssign: (analystId: string) => void;
+  pendingProjectId?: string | null;
+  isBulkAssigning?: boolean;
+};
+
+function analystName(analyst: AnalystWorkload) {
+  return `${analyst.firstName} ${analyst.lastName}`.trim() || analyst.username;
+}
+
+function workloadClassName(count: number) {
+  if (count >= 6) return "bg-red-50 text-red-700 border-red-200";
+  if (count >= 3) return "bg-amber-50 text-amber-700 border-amber-200";
+  return "bg-emerald-50 text-emerald-700 border-emerald-200";
 }
 
 export function AssignmentTable({
-  projects, analysts, selectedIds,
-  onSelectToggle, onSelectAll, onAssignSingle, onAssignBulk, onOpenDetails
+  projects,
+  analysts,
+  selectedIds,
+  onSelectToggle,
+  onSelectAll,
+  onAssignSingle,
+  onRequestBulkAssign,
+  pendingProjectId,
+  isBulkAssigning = false,
 }: AssignmentTableProps) {
-
   const isAllSelected = projects.length > 0 && selectedIds.length === projects.length;
 
   return (
-    <div className="relative flex-1 flex flex-col overflow-hidden">
-
-      {/* --- Bulk Action Floating Bar --- */}
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       {selectedIds.length > 0 && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-slate-900 text-white px-4 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in slide-in-from-top-4 fade-in">
-          <span className="text-sm font-medium px-2">
-            เลือกแล้ว <span className="text-orange-400 font-bold text-lg">{selectedIds.length}</span> รายการ
+        <div className="absolute left-1/2 top-4 z-20 flex w-[calc(100%-2rem)] -translate-x-1/2 flex-col gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-white shadow-2xl sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+          <span className="text-sm font-medium">
+            เลือกแล้ว <strong className="text-lg text-orange-300">{selectedIds.length}</strong> โครงการ
           </span>
-          <div className="h-5 w-px bg-slate-700" />
-          <div className="flex items-center gap-2">
-            <Select onValueChange={(val) => onAssignBulk(val)}>
-              <SelectTrigger className="h-9 bg-slate-800 border-slate-700 text-white min-w-[200px]">
-                <SelectValue placeholder="เลือกนักวิเคราะห์ให้ทุกรายการ..." />
-              </SelectTrigger>
-              <SelectContent>
-                {analysts.map(a => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.name} <span className="text-slate-400 ml-1">(งาน: {a.workload})</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select
+            disabled={isBulkAssigning}
+            onValueChange={onRequestBulkAssign}
+          >
+            <SelectTrigger className="h-9 min-w-0 border-slate-700 bg-slate-800 text-white sm:min-w-[260px]">
+              <SelectValue placeholder="เลือกนักวิเคราะห์เพื่อมอบหมาย..." />
+            </SelectTrigger>
+            <SelectContent>
+              {analysts.map((analyst) => (
+                <SelectItem key={analyst.userId} value={analyst.userId}>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate">{analystName(analyst)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({analyst.activeTaskCount} งาน)
+                    </span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isBulkAssigning && <Loader2 className="h-4 w-4 animate-spin" />}
         </div>
       )}
 
-      {/* --- Table --- */}
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-left text-sm whitespace-nowrap">
-          <thead className="bg-white sticky top-0 text-slate-500 font-bold z-10 border-b border-[#ededf4] text-[12px] uppercase tracking-wide">
+      <div className="min-h-0 flex-1 overflow-auto">
+        <table className="w-full min-w-[980px] text-left text-sm">
+          <thead className="sticky top-0 z-10 border-b border-border bg-background text-xs font-bold uppercase tracking-wide text-muted-foreground">
             <tr>
-              <th className="px-4 py-4 w-12 text-center">
+              <th className="w-12 px-4 py-4 text-center">
                 <Checkbox
                   checked={isAllSelected}
-                  onCheckedChange={(checked) => onSelectAll(checked as boolean)}
+                  onCheckedChange={(checked) => onSelectAll(checked === true)}
+                  aria-label="เลือกโครงการทั้งหมด"
                 />
               </th>
               <th className="px-4 py-4">รหัสโครงการ</th>
-              <th className="px-4 py-4 w-full">ชื่อโครงการ & หน่วยงาน</th>
+              <th className="w-full px-4 py-4">ชื่อโครงการ</th>
               <th className="px-4 py-4">ประเภท</th>
-              <th className="px-4 py-4 min-w-55">นักวิเคราะห์ (ผู้รับผิดชอบ)</th>
-              <th className="px-4 py-4 text-right">จัดการ</th>
+              <th className="min-w-72 px-4 py-4">นักวิเคราะห์</th>
+              <th className="px-4 py-4 text-right">รายละเอียด</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#ededf4]">
+          <tbody className="divide-y divide-border">
             {projects.map((project) => {
               const isSelected = selectedIds.includes(project.id);
+              const isAssigning = pendingProjectId === project.id;
+
               return (
-                <tr key={project.id} className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-blue-50/50' : ''}`}>
+                <tr
+                  key={project.id}
+                  className={`transition-colors hover:bg-muted/50 ${isSelected ? "bg-primary/5" : ""}`}
+                >
                   <td className="px-4 py-4 text-center">
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => onSelectToggle(project.id)}
+                      aria-label={`เลือก ${project.projectName ?? "โครงการ"}`}
                     />
                   </td>
-                  <td className="px-4 py-4 font-mono text-xs text-slate-500">{project.code}</td>
-                  <td className="px-4 py-4">
-                    <p className="font-bold text-[#191c20] truncate max-w-[300px] lg:max-w-md">{project.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{project.agency}</p>
+                  <td className="px-4 py-4 font-mono text-xs text-muted-foreground">
+                    {project.projectCode ?? "-"}
+                  </td>
+                  <td className="min-w-0 px-4 py-4">
+                    <Link
+                      href={`/projects/${project.id}`}
+                      className="block max-w-[360px] truncate font-bold text-foreground transition-colors hover:text-primary"
+                    >
+                      {project.projectName ?? "ไม่ระบุชื่อโครงการ"}
+                    </Link>
+                    <p className="mt-1 max-w-[360px] truncate text-xs text-muted-foreground">
+                      {project.division?.departmentName ?? "ไม่ระบุหน่วยงาน"}
+                      {project.division?.name ? ` · ${project.division.name}` : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      เจ้าของ: {project.owner ? `${project.owner.firstName} ${project.owner.lastName}` : "-"}
+                    </p>
                   </td>
                   <td className="px-4 py-4">
-                    <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                      {project.type}
+                    <span className="rounded-md border border-border bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+                      {project.projectType?.name ?? "-"}
                     </span>
                   </td>
-
-                  {/* Inline Assignment Dropdown */}
-                  <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-4 py-4" onClick={(event) => event.stopPropagation()}>
                     <Select
-                      value={project.analystId || ""}
-                      onValueChange={(val) => onAssignSingle(project.id, val)}
+                      disabled={isAssigning || isBulkAssigning}
+                      onValueChange={(analystId) => onAssignSingle(project.id, analystId)}
                     >
-                      <SelectTrigger className={`h-9 bg-white ${project.analystId ? 'border-[#00734b] text-[#00734b] bg-[#00734b]/5' : 'border-orange-300'}`}>
-                        <SelectValue placeholder="-- มอบหมายงาน --" />
+                      <SelectTrigger className="h-9 bg-background">
+                        {isAssigning ? (
+                          <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> กำลังมอบหมาย...</span>
+                        ) : (
+                          <SelectValue placeholder="-- เลือกนักวิเคราะห์ --" />
+                        )}
                       </SelectTrigger>
                       <SelectContent>
-                        {analysts.map(a => (
-                          <SelectItem key={a.id} value={a.id}>
-                            <div className="flex items-center justify-between w-full min-w-[150px]">
-                              <span>{a.name}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ml-2 ${a.workload > 3 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-600'}`}>
-                                ภาระงาน: {a.workload}
+                        {analysts.map((analyst) => (
+                          <SelectItem key={analyst.userId} value={analyst.userId}>
+                            <span className="flex min-w-[240px] items-center justify-between gap-3">
+                              <span className="truncate">{analystName(analyst)}</span>
+                              <span className={`rounded-full border px-1.5 py-0.5 text-[10px] ${workloadClassName(analyst.activeTaskCount)}`}>
+                                {analyst.activeTaskCount} งาน
                               </span>
-                            </div>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </td>
-
                   <td className="px-4 py-4 text-right">
-                    <Button
-                      variant="ghost"
-                      onClick={() => onOpenDetails(project)}
-                      className="rounded-full text-slate-500 hover:text-[#00734b] hover:bg-[#00734b]/10 h-8 px-3"
-                    >
-                      <Eye className="w-4 h-4 mr-1.5" /> รายละเอียด
+                    <Button asChild variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-primary">
+                      <Link href={`/projects/${project.id}`}>
+                        <Eye className="h-4 w-4" /> ดูรายละเอียด
+                      </Link>
                     </Button>
                   </td>
                 </tr>

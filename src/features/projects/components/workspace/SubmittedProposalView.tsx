@@ -55,7 +55,7 @@ export function SubmittedProposalView({
   const editAllowed = project.permissions?.canEditProposal && !project.permissions?.canSubmitProposal;
 
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="flex flex-col gap-4 p-4 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
@@ -88,10 +88,10 @@ export function SubmittedProposalView({
         </CardContent>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
-        <nav aria-label="ขั้นตอนข้อเสนอ" className="lg:sticky lg:top-5">
-          <Card className="rounded-2xl border-border/70 shadow-sm">
-            <CardContent className="flex gap-2 overflow-x-auto p-3 lg:block lg:space-y-1 lg:overflow-visible">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start">
+        <nav aria-label="ขั้นตอนข้อเสนอ" className="lg:sticky lg:top-5 lg:z-20 lg:self-start lg:max-h-[calc(100dvh-2.5rem)]">
+          <Card className="rounded-2xl border-border/70 shadow-sm lg:max-h-[calc(100dvh-2.5rem)]">
+            <CardContent className="flex gap-2 overflow-x-auto p-3 lg:block lg:max-h-[calc(100dvh-2.5rem)] lg:space-y-1 lg:overflow-y-auto lg:overscroll-contain">
               {steps.map((step) => (
                 <a
                   key={step.id}
@@ -100,11 +100,19 @@ export function SubmittedProposalView({
                   onClick={() => setActiveStep(step.number)}
                   className={`flex min-w-max items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors lg:min-w-0 ${
                     activeStep === step.number
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      ? "bg-primary text-white"
+                      : "text-primary-foreground hover:bg-muted/60 hover:text-primary-foreground"
                   }`}
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">{step.number}</span>
+                  <span
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                      activeStep === step.number
+                        ? "border-2 border-white text-white"
+                        : "border border-primary-foreground"
+                    }`}
+                  >
+                    {step.number}
+                  </span>
                   <span className="whitespace-nowrap lg:whitespace-normal">{step.title}</span>
                 </a>
               ))}

@@ -73,6 +73,19 @@ const CreateUserRequest = z
     roleIds: z.array(z.number()).optional().default([1]),
   })
   .passthrough();
+const AnalystWorkload = z
+  .object({
+    userId: z.string().uuid(),
+    username: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+    position: z.string().nullable(),
+    activeTaskCount: z.number().int(),
+  })
+  .passthrough();
+const AnalystWorkloadResponse = z
+  .object({ data: z.array(AnalystWorkload) })
+  .passthrough();
 const UpdateUserRolesRequest = z.object({
   roleIds: z.array(z.number().int().gt(0)).min(1).max(20),
 });
@@ -256,6 +269,76 @@ const CreateProjectRequest = z
     isPublic: z.boolean().optional().default(false),
     fourQuadrantsId: z.number().int().nullable(),
     deputyGovernorId: z.number().int().nullable(),
+  })
+  .passthrough();
+const AssignmentProject = z
+  .object({
+    id: z.string().uuid(),
+    projectCode: z.string().nullable(),
+    projectName: z.string().nullable(),
+    projectType: z
+      .object({ id: z.number(), name: z.string() })
+      .passthrough()
+      .nullable(),
+    division: z
+      .object({
+        id: z.number(),
+        name: z.string(),
+        departmentId: z.number().nullable(),
+        departmentName: z.string().nullable(),
+      })
+      .passthrough()
+      .nullable(),
+    owner: z
+      .object({
+        userId: z.string().uuid(),
+        firstName: z.string(),
+        lastName: z.string(),
+      })
+      .passthrough()
+      .nullable(),
+    projectStatusId: z.number().int(),
+    createdAt: z.union([z.string(), z.string()]),
+    analystId: z.string().uuid().nullable(),
+  })
+  .passthrough();
+const PaginatedAssignmentProjectResponse = z
+  .object({
+    data: z.array(AssignmentProject),
+    pagination: z
+      .object({
+        total: z.number(),
+        page: z.number(),
+        limit: z.number(),
+        totalPages: z.number(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+const BulkAssignProjectRequest = z.object({
+  projectIds: z.array(z.string().uuid()).min(1).max(100),
+  analystId: z.string().uuid(),
+});
+const BulkAssignProjectResponse = z
+  .object({
+    count: z.number().int(),
+    analyst: z
+      .object({
+        userId: z.string().uuid(),
+        firstName: z.string(),
+        lastName: z.string(),
+      })
+      .passthrough(),
+    projects: z.array(
+      z
+        .object({
+          id: z.string().uuid(),
+          projectCode: z.string().nullable(),
+          projectStatusId: z.number().int(),
+          analystId: z.string().uuid(),
+        })
+        .passthrough()
+    ),
   })
   .passthrough();
 const UpdateProjectRequest = z
@@ -1165,6 +1248,8 @@ export const schemas = {
   PaginatedUserResponse,
   ErrorResponse,
   CreateUserRequest,
+  AnalystWorkload,
+  AnalystWorkloadResponse,
   UpdateUserRolesRequest,
   UpdateUserStatusRequest,
   UpdateOwnProfileRequest,
@@ -1178,6 +1263,10 @@ export const schemas = {
   Project,
   PaginatedProjectResponse,
   CreateProjectRequest,
+  AssignmentProject,
+  PaginatedAssignmentProjectResponse,
+  BulkAssignProjectRequest,
+  BulkAssignProjectResponse,
   UpdateProjectRequest,
   UpdateProjectStatusRequest,
   SecretaryReviewRequest,
@@ -1910,6 +1999,68 @@ const endpoints = makeApi([
     response: z.void(),
   },
   {
+    method: "post",
+    path: "/api/v1/projects/assignment/bulk",
+    alias: "postApiv1projectsassignmentbulk",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: BulkAssignProjectRequest,
+      },
+    ],
+    response: BulkAssignProjectResponse,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid Analyst`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 409,
+        description: `A project is no longer pending assignment`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/projects/assignment/pending",
+    alias: "getApiv1projectsassignmentpending",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "page",
+        type: "Query",
+        schema: z.number().int().gte(1).optional().default(1),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().int().gte(1).lte(100).optional().default(20),
+      },
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string().max(100).optional(),
+      },
+    ],
+    response: PaginatedAssignmentProjectResponse,
+    errors: [
+      {
+        status: 403,
+        description: `Only Admin users may access the assignment queue`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
     method: "get",
     path: "/api/v1/projects/secretary/pending",
     alias: "getApiv1projectssecretarypending",
@@ -2457,6 +2608,20 @@ const endpoints = makeApi([
       {
         status: 404,
         description: `User not found`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/users/analysts/workload",
+    alias: "getApiv1usersanalystsworkload",
+    requestFormat: "json",
+    response: AnalystWorkloadResponse,
+    errors: [
+      {
+        status: 403,
+        description: `Only Admin users may access Analyst workload data`,
         schema: ErrorResponse,
       },
     ],

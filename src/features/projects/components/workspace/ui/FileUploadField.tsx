@@ -147,6 +147,7 @@ export function FileUploadField({
         deleteError instanceof Error ? deleteError.message : "File deletion failed.";
       setError(message);
       toast.error("File deletion failed", { description: message });
+      throw deleteError instanceof Error ? deleteError : new Error(message);
     } finally {
       setIsDeleting(false);
     }

@@ -160,6 +160,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/analysts/workload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get active Analysts and their current workload */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Analyst workload list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AnalystWorkloadResponse"];
+                    };
+                };
+                /** @description Only Admin users may access Analyst workload data */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/profile/:userId": {
         parameters: {
             query?: never;
@@ -1161,6 +1206,122 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/assignment/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get projects waiting for Analyst assignment */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Projects waiting for assignment */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedAssignmentProjectResponse"];
+                    };
+                };
+                /** @description Only Admin users may access the assignment queue */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/assignment/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign multiple projects to an Analyst */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["BulkAssignProjectRequest"];
+                };
+            };
+            responses: {
+                /** @description Projects assigned successfully */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkAssignProjectResponse"];
+                    };
+                };
+                /** @description Invalid Analyst */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description A project is no longer pending assignment */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -2707,6 +2868,18 @@ export interface components {
             /** @example email */
             field?: string;
         };
+        AnalystWorkloadResponse: {
+            data: components["schemas"]["AnalystWorkload"][];
+        };
+        AnalystWorkload: {
+            /** Format: uuid */
+            userId: string;
+            username: string;
+            firstName: string;
+            lastName: string;
+            position: string | null;
+            activeTaskCount: number;
+        };
         CreateUserRequest: {
             username: string;
             password: string;
@@ -2940,6 +3113,63 @@ export interface components {
                 oldStatusId: number;
                 newStatusId: number;
             } | null;
+        };
+        PaginatedAssignmentProjectResponse: {
+            data: components["schemas"]["AssignmentProject"][];
+            pagination: {
+                total: number;
+                page: number;
+                limit: number;
+                totalPages: number;
+            };
+        };
+        AssignmentProject: {
+            /** Format: uuid */
+            id: string;
+            projectCode: string | null;
+            projectName: string | null;
+            projectType: {
+                id: number;
+                name: string;
+            } | null;
+            division: {
+                id: number;
+                name: string;
+                departmentId: number | null;
+                departmentName: string | null;
+            } | null;
+            owner: {
+                /** Format: uuid */
+                userId: string;
+                firstName: string;
+                lastName: string;
+            } | null;
+            projectStatusId: number;
+            createdAt: string;
+            /** Format: uuid */
+            analystId: string | null;
+        };
+        BulkAssignProjectResponse: {
+            count: number;
+            analyst: {
+                /** Format: uuid */
+                userId: string;
+                firstName: string;
+                lastName: string;
+            };
+            projects: {
+                /** Format: uuid */
+                id: string;
+                projectCode: string | null;
+                projectStatusId: number;
+                /** Format: uuid */
+                analystId: string;
+            }[];
+        };
+        BulkAssignProjectRequest: {
+            projectIds: string[];
+            /** Format: uuid */
+            analystId: string;
         };
         CreateProjectRequest: {
             /** @example โครงการพัฒนาระบบให้บริการประชาชน */
@@ -3260,7 +3490,7 @@ export interface components {
             message?: string;
             success?: boolean;
         };
-        ProposalResponse: ({
+        ProposalResponse: {
             /** Format: uuid */
             id: string;
             status: string;
@@ -3513,9 +3743,7 @@ export interface components {
             } & {
                 [key: string]: unknown;
             })[];
-        } & {
-            [key: string]: unknown;
-        }) | null;
+        } | null;
         SubmitProposalRequest: {
             projectName: string;
             agencyName: string;

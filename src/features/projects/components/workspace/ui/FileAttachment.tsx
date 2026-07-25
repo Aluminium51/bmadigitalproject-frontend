@@ -3,13 +3,24 @@
 import { useMemo, useState } from "react";
 import {
   Download,
+  AlertTriangle,
   FileImage,
   FileSpreadsheet,
   FileText,
+  Loader2,
   Presentation,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +53,8 @@ export function FileAttachment({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   const source = useMemo(() => getFileSource(value), [value]);
   const canPreview = source.kind === "image" || source.kind === "pdf";
   const canDelete = typeof value === "string" || value.canDelete !== false;
@@ -58,6 +71,21 @@ export function FileAttachment({
     link.download = source.name;
     link.rel = "noopener";
     link.click();
+  };
+
+  const confirmRemove = async () => {
+    if (!onRemove || isRemoving) return;
+
+    setIsRemoving(true);
+    try {
+      await onRemove();
+      setDeleteDialogOpen(false);
+    } catch {
+      // The delete handler owns the error toast. Keep the confirmation open
+      // so the user can retry after a failed request.
+    } finally {
+      setIsRemoving(false);
+    }
   };
 
   return (
@@ -120,8 +148,8 @@ export function FileAttachment({
               type="button"
               variant="ghost"
               size="icon-sm"
-              onClick={() => void onRemove()}
-              disabled={!canManage}
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={!canManage || isRemoving}
               className="text-slate-400 hover:bg-red-50 hover:text-red-600"
               aria-label={`Remove ${source.name}`}
               title={canManage ? "Remove file" : "File removal is disabled"}
@@ -131,6 +159,38 @@ export function FileAttachment({
           )}
         </div>
       </div>
+
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!isRemoving) setDeleteDialogOpen(nextOpen);
+        }}
+      >
+        <AlertDialogContent className="w-[calc(100%-2rem)] sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <AlertTriangle className="size-5" aria-hidden="true" />
+            </div>
+            <AlertDialogTitle>ยืนยันการลบไฟล์</AlertDialogTitle>
+            <AlertDialogDescription className="break-words">
+              คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ &quot;{source.name}&quot;?
+              การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRemoving}>ยกเลิก</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void confirmRemove()}
+              disabled={isRemoving}
+            >
+              {isRemoving && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {isRemoving ? "กำลังลบ..." : "ลบไฟล์"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="flex h-[min(92vh,900px)] w-[min(96vw,1100px)] max-w-none flex-col p-4 sm:p-6">

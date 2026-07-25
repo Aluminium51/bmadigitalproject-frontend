@@ -43,21 +43,21 @@ export default function ProjectWorkspacePage() {
   }
 
   return (
-    <div className="flex flex-col h-full p-4 sm:p-6 lg:p-8 mx-auto w-full animate-in fade-in duration-500">
+    <div className="flex min-h-full min-w-0 flex-col p-4 sm:p-6 lg:p-8 mx-auto w-full animate-in fade-in duration-500">
       <ProjectHeader project={projectDetail} />
 
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as typeof activeTab)}
-        className="flex-1 flex flex-col mt-6"
+        className="min-h-0 min-w-0 flex-1 flex flex-col mt-6"
       >
         <WorkspaceTabsList />
 
-        <TabsContent value="tab-proposal" className="flex-1 mt-6">
+        <TabsContent value="tab-proposal" className="min-w-0 flex-1 mt-6">
           <ProposalTabContent project={projectDetail} />
         </TabsContent>
 
-        <TabsContent value="tab-documents" className="flex-1 mt-6">
+        <TabsContent value="tab-documents" className="min-w-0 flex-1 mt-6">
           <DocumentsTabContent
             projectId={projectId}
             initialAttachments={projectDetail.attachments ?? []}
@@ -65,7 +65,7 @@ export default function ProjectWorkspacePage() {
           />
         </TabsContent>
 
-        <TabsContent value="tab-timeline" className="flex-1 mt-6">
+        <TabsContent value="tab-timeline" className="min-w-0 flex-1 mt-6">
           <TimelineTabContent />
         </TabsContent>
       </Tabs>

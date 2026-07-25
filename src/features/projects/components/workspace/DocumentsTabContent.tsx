@@ -81,6 +81,7 @@ export function DocumentsTabContent({
         description:
           error instanceof Error ? error.message : "กรุณาลองใหม่อีกครั้ง",
       });
+      throw error instanceof Error ? error : new Error("File deletion failed.");
     }
   };
 

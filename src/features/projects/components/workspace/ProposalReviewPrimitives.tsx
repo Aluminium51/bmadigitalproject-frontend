@@ -78,7 +78,7 @@ export function ProposalLongText({
   const hasText = shown !== "-";
 
   return (
-    <div className={cn("group rounded-xl p-3 transition-colors hover:bg-muted/50", className)}>
+    <div className={cn("group min-w-0 rounded-xl p-3 transition-colors hover:bg-muted/50", className)}>
       <div className="mb-1 flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
         {hasText && <CopyValueButton value={shown} label={label} />}
@@ -116,8 +116,8 @@ export function ProposalStepSection({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-6">
-      <Card className="overflow-visible rounded-2xl border-border/70 shadow-sm">
+    <section id={id} className="min-w-0 scroll-mt-6">
+      <Card className="min-w-0 overflow-visible rounded-2xl border-border/70 shadow-sm">
         <CardHeader className="border-b border-border/60 bg-muted/20">
           <div className="flex items-start gap-3">
             <Badge className="mt-0.5 h-7 min-w-7 justify-center rounded-full">{number}</Badge>
@@ -135,7 +135,7 @@ export function ProposalStepSection({
 
 export function ReviewSubsection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <h4 className="text-sm font-bold text-foreground">{title}</h4>
       <Separator />
       {children}
@@ -160,7 +160,7 @@ export function ProposalArrayTable({
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border/70">
-          <table className="min-w-full text-left text-sm">
+          <table className="min-w-max text-left text-sm sm:min-w-full">
             <thead className="bg-muted/40 text-xs text-muted-foreground">
               <tr>
                 {columns.map((column) => <th key={column.key} className="whitespace-nowrap px-3 py-2.5 font-semibold">{column.label}</th>)}
@@ -170,7 +170,7 @@ export function ProposalArrayTable({
               {rows.map((row, index) => (
                 <tr key={String(row.id ?? index)} className="transition-colors hover:bg-muted/50">
                   {columns.map((column) => (
-                    <td key={column.key} className="whitespace-nowrap px-3 py-2.5 align-top text-foreground">
+                    <td key={column.key} className="max-w-[20rem] whitespace-nowrap px-3 py-2.5 align-top text-foreground sm:max-w-none">
                       {column.render ? column.render(row) : displayValue(row[column.key])}
                     </td>
                   ))}
