@@ -58,10 +58,12 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   };
 
   const confirmSubmit = () => {
-    setSubmitConfirmOpen(false);
     if (!currentDraft) return;
 
     submitProposal(currentDraft, {
+      onSuccess: () => {
+        setSubmitConfirmOpen(false);
+      },
       onError: (error) => {
         toast.error("ไม่สามารถส่งโครงการได้", {
           // description: error instanceof Error ? error.message : "Please try again.",
@@ -233,7 +235,9 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSubmit}>Submit Project</AlertDialogAction>
+            <AlertDialogAction onClick={confirmSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit Project"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
