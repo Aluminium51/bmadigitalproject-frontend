@@ -29,6 +29,9 @@ interface ProjectTableProps {
   emptyMessage?: string;
   onRowClick?: (project: ProjectRow) => void;
   renderActions?: (project: ProjectRow) => ReactNode;
+  actionsFirst?: boolean;
+  stickyActions?: boolean;
+  actionsHeader?: string;
   hideAnalystColumn?: boolean;
   statusLanguage?: "th" | "en";
 }
@@ -88,6 +91,9 @@ export function ProjectTable({
   emptyMessage,
   onRowClick,
   renderActions,
+  actionsFirst = false,
+  stickyActions = false,
+  actionsHeader = "จัดการ",
   hideAnalystColumn = false,
   statusLanguage = "en",
 }: ProjectTableProps) {
@@ -96,6 +102,33 @@ export function ProjectTable({
     if (onRowClick) onRowClick(project);
     else router.push(`/projects/${project.id}`);
   };
+
+  const actionsClassName = stickyActions
+    ? "sticky left-0 z-20 px-3 py-4 text-center shadow-[2px_0_4px_-3px_rgba(0,0,0,0.25)] sm:px-6"
+    : "px-6 py-4 text-center sm:px-10";
+
+  const renderActionsHeader = () => (
+    <TableHead className={actionsClassName}>{actionsHeader}</TableHead>
+  );
+
+  const renderActionsCell = (project: ProjectRow) => (
+    <TableCell
+      className={actionsClassName}
+      onClick={(event) => event.stopPropagation()}
+    >
+      {renderActions ? (
+        renderActions(project)
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="การดำเนินการโครงการ"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </Button>
+      )}
+    </TableCell>
+  );
 
   if (data.length === 0) {
     return (
@@ -110,6 +143,7 @@ export function ProjectTable({
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-white">
           <TableRow>
+            {actionsFirst && renderActionsHeader()}
             <TableHead className="px-6 py-4 sm:px-10">วันที่นำเข้า</TableHead>
             <TableHead className="w-full px-6 py-4 sm:px-10">ชื่อโครงการ</TableHead>
             <TableHead className="px-6 py-4 sm:px-10">หน่วยงาน</TableHead>
@@ -120,7 +154,7 @@ export function ProjectTable({
             <TableHead className="min-w-50 px-6 py-4 sm:px-10">
               {activeTab === "drafts" ? "ความคืบหน้า" : "สถานะโครงการ"}
             </TableHead>
-            <TableHead className="px-6 py-4 text-center">การดำเนินการ</TableHead>
+            {!actionsFirst && renderActionsHeader()}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -138,6 +172,7 @@ export function ProjectTable({
                   : "cursor-pointer hover:bg-surface-variant/40"}
                 onClick={() => navigate(project)}
               >
+                {actionsFirst && renderActionsCell(project)}
                 <TableCell className="px-6 py-5 text-xs text-muted-foreground sm:px-10">{date}</TableCell>
                 <TableCell className="px-6 py-5 sm:px-10">
                   <div className={`flex flex-col font-bold ${isReturned && activeTab !== "drafts" ? "text-red-700" : "text-[#191c20]"}`}>
@@ -164,9 +199,7 @@ export function ProjectTable({
                     <StatusBadge statusId={project.status?.id} statusName={project.status?.name} language={statusLanguage} />
                   )}
                 </TableCell>
-                <TableCell className="px-6 py-5 text-center" onClick={(event) => event.stopPropagation()}>
-                  {renderActions ? renderActions(project) : <Button variant="ghost" size="icon" aria-label="การดำเนินการโครงการ"><MoreVertical className="h-5 w-5" /></Button>}
-                </TableCell>
+                {!actionsFirst && renderActionsCell(project)}
               </TableRow>
             );
           })}

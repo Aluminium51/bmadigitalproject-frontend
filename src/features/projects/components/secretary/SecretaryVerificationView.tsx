@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ClipboardCheck, Eye, Loader2, RefreshCw, Search } from "lucide-react";
+import { ClipboardCheck, Loader2, RefreshCw, Search } from "lucide-react";
 import { z } from "zod";
 import { schemas } from "@/types/api-schemas";
 import { Button } from "@/components/ui/button";
@@ -72,12 +72,20 @@ export function SecretaryVerificationView() {
             <ProjectTable
               data={projects}
               activeTab="all"
+              actionsFirst
+              stickyActions
+              actionsHeader="จัดการ"
               emptyMessage="ไม่มีโครงการที่รอการตรวจสอบจากเลขานุการ"
               hideAnalystColumn
               statusLanguage="th"
               renderActions={(project) => (
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => { setSelectedProject(project); setIsReviewOpen(true); }}>
-                  <Eye className="h-4 w-4" /> ตรวจสอบ
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full min-w-20"
+                  onClick={() => { setSelectedProject(project); setIsReviewOpen(true); }}
+                >
+                  ตรวจสอบ
                 </Button>
               )}
             />

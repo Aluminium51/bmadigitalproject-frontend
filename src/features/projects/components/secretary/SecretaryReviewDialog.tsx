@@ -110,9 +110,9 @@ export function SecretaryReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="w-[calc(100%-1rem)] max-h-[calc(100dvh-1rem)] max-w-[calc(100%-1rem)] overflow-y-auto p-4 sm:max-w-lg sm:p-6 md:max-w-2xl">
         <DialogHeader>
-          <div className="flex items-start gap-3 pr-8">
+          <div className="flex min-w-0 items-start gap-3 pr-8">
             <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
               <FileText className="size-5" />
             </div>
@@ -127,7 +127,7 @@ export function SecretaryReviewDialog({
 
         {project && (
           <div className="space-y-5">
-            <div className="rounded-xl border bg-muted/20 p-4">
+            <section className="min-w-0 rounded-md border bg-muted/30 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="font-mono text-xs font-semibold text-muted-foreground">
                   {project.projectCode ?? "ไม่มีรหัสโครงการ"}
@@ -136,7 +136,7 @@ export function SecretaryReviewDialog({
                   รอตรวจสอบโดยเลขานุการ
                 </Badge>
               </div>
-              <h3 className="mt-3 text-lg font-semibold text-foreground">
+              <h3 className="mt-3 warp-break-word text-lg font-semibold text-foreground">
                 {project.projectName ?? "ไม่ระบุชื่อโครงการ"}
               </h3>
               <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
@@ -163,12 +163,12 @@ export function SecretaryReviewDialog({
               </div>
               <Button asChild variant="link" className="mt-3 h-auto px-0 text-primary">
                 <Link href={`/projects/${project.id}`} target="_blank" rel="noreferrer">
-                  เปิดรายละเอียดโครงการฉบับเต็ม
+                  <span className="text-primary hover:text-green-900">เปิดรายละเอียดโครงการฉบับเต็ม</span>
                 </Link>
               </Button>
-            </div>
+            </section>
 
-            <div>
+            <section className="space-y-1">
               <p className="mb-3 text-sm font-semibold">เลือกการดำเนินการ</p>
               <div className="grid gap-2 sm:grid-cols-3">
                 <Button
@@ -199,7 +199,7 @@ export function SecretaryReviewDialog({
                   <span>ไม่อนุมัติ</span>
                 </Button>
               </div>
-            </div>
+            </section>
 
             {mode === "approve" && (
               <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
@@ -242,7 +242,10 @@ export function SecretaryReviewDialog({
             )}
 
             {validationError && (
-              <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+              >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <span>{validationError}</span>
               </div>
@@ -250,13 +253,19 @@ export function SecretaryReviewDialog({
           </div>
         )}
 
-        <DialogFooter className="border-t pt-4">
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+        <DialogFooter className="w-full border-t pt-4 sm:gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => handleOpenChange(false)}
+          >
             ยกเลิก
           </Button>
           <Button
             type="button"
             variant={mode === "reject" ? "destructive" : "default"}
+            className="w-full sm:w-auto"
             disabled={!project || !mode || reviewMutation.isPending}
             onClick={submitReview}
           >
