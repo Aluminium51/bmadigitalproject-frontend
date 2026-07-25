@@ -9,7 +9,7 @@
     "lint": "eslint",
     "clean": "rimraf .next && next dev",
     "generate:types": "npx openapi-typescript http://localhost:8081/openapi-v1.json -o src/types/api.d.ts",
-    "generate:schemas": "openapi-zod-client http://localhost:8081/openapi-v1.json -o src/types/api-schemas.ts"
+    "generate:schemas": "openapi-zod-client http://localhost:8081/openapi-v1.json -o src/types/api-schemas.ts && node scripts/normalize-generated-schemas.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

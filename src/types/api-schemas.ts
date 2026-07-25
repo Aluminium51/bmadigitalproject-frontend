@@ -617,6 +617,66 @@ const SubmittedProposalPatchRequest = z
   })
   .partial()
   .passthrough();
+const ProposalResponse = z.object({
+  id: z.string().uuid(),
+  status: z.string(),
+  projectId: z.string().uuid().nullable(),
+  userId: z.string().uuid(),
+  updatedBy: z.string().uuid().nullable(),
+  version: z.number().nullable(),
+  projectName: z.string().nullable(),
+  agencyName: z.string().nullable(),
+  headOfAgency: z.string().nullable(),
+  dcioName: z.string().nullable(),
+  projectManager: z.string().nullable(),
+  totalBudget: z.union([z.number(), z.string(), z.unknown()]),
+  background: z.string().nullable(),
+  objective: z.string().nullable(),
+  target: z.string().nullable(),
+  scope: z.string().nullable(),
+  projectType: z.string().nullable(),
+  currentSystemStatus: z.string().nullable(),
+  currentProblems: z.string().nullable(),
+  isBmaPlan: z.boolean().nullable(),
+  isAgencyPlan: z.boolean().nullable(),
+  agencyStrategy: z.string().nullable(),
+  agencyIssue: z.string().nullable(),
+  agencyKpi: z.string().nullable(),
+  isGovernorPolicy: z.boolean().nullable(),
+  governorPolicyCode: z.string().nullable(),
+  governorPolicyName: z.string().nullable(),
+  obstacleLaws: z.string().nullable(),
+  appArchitecture: z.string().nullable(),
+  dataOwner: z.string().nullable(),
+  dataExchangePlan: z.string().nullable(),
+  isReady: z.boolean().nullable(),
+  readinessDetails: z.string().nullable(),
+  durationDays: z.number().nullable(),
+  otherReadiness: z.string().nullable(),
+  expectedBenefits: z.string().nullable(),
+  isInRoadmap: z.boolean().nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+  budgets: z.array(z.record(z.string(), z.unknown().nullable())),
+  relatedProjects: z.array(z.record(z.string(), z.unknown().nullable())),
+  manpower: z.array(z.record(z.string(), z.unknown().nullable())),
+  existingEquipments: z.array(z.record(z.string(), z.unknown().nullable())),
+  hardwareCosts: z.array(z.record(z.string(), z.unknown().nullable())),
+  softwareCosts: z.array(z.record(z.string(), z.unknown().nullable())),
+  personnelCosts: z.array(z.record(z.string(), z.unknown().nullable())),
+  personnelResponsibilities: z.array(z.record(z.string(), z.unknown().nullable())),
+  trainings: z.array(z.record(z.string(), z.unknown().nullable())),
+  otherCosts: z.array(z.record(z.string(), z.unknown().nullable())),
+  ictPersonnel: z.array(z.record(z.string(), z.unknown().nullable())),
+  cloudRequests: z.array(z.record(z.string(), z.unknown().nullable())),
+});
+const ProposalDataResponse = z
+  .object({
+    data: ProposalResponse.nullable(),
+    message: z.string().optional(),
+    success: z.boolean().optional(),
+  })
+  .passthrough();
 const SubmitProposalRequest = z
   .object({
     projectName: z.string().min(5),
@@ -1126,6 +1186,8 @@ export const schemas = {
   AssignProjectRequest,
   DraftProposalRequest,
   SubmittedProposalPatchRequest,
+  ProposalResponse,
+  ProposalDataResponse,
   SubmitProposalRequest,
   CreateMeeting,
   Meeting,
@@ -1937,14 +1999,7 @@ const endpoints = makeApi([
         schema: z.string().uuid(),
       },
     ],
-    response: z
-      .object({
-        data: z.unknown().nullable(),
-        message: z.string(),
-        success: z.boolean(),
-      })
-      .partial()
-      .passthrough(),
+    response: ProposalDataResponse,
     errors: [
       {
         status: 400,

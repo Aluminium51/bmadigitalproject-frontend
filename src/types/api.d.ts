@@ -1694,11 +1694,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            data?: unknown;
-                            message?: string;
-                            success?: boolean;
-                        };
+                        "application/json": components["schemas"]["ProposalDataResponse"];
                     };
                 };
                 /** @description Invalid project id */
@@ -3259,6 +3255,267 @@ export interface components {
             objective?: string;
             totalBudget?: number | null;
         };
+        ProposalDataResponse: {
+            data: components["schemas"]["ProposalResponse"];
+            message?: string;
+            success?: boolean;
+        };
+        ProposalResponse: ({
+            /** Format: uuid */
+            id: string;
+            status: string;
+            /** Format: uuid */
+            projectId: string | null;
+            /** Format: uuid */
+            userId: string;
+            /** Format: uuid */
+            updatedBy: string | null;
+            version: number | null;
+            projectName: string | null;
+            agencyName: string | null;
+            headOfAgency: string | null;
+            dcioName: string | null;
+            projectManager: string | null;
+            totalBudget: number | string | unknown;
+            background: string | null;
+            objective: string | null;
+            target: string | null;
+            scope: string | null;
+            projectType: string | null;
+            currentSystemStatus: string | null;
+            currentProblems: string | null;
+            isBmaPlan: boolean | null;
+            isAgencyPlan: boolean | null;
+            agencyStrategy: string | null;
+            agencyIssue: string | null;
+            agencyKpi: string | null;
+            isGovernorPolicy: boolean | null;
+            governorPolicyCode: string | null;
+            governorPolicyName: string | null;
+            obstacleLaws: string | null;
+            appArchitecture: string | null;
+            dataOwner: string | null;
+            dataExchangePlan: string | null;
+            isReady: boolean | null;
+            readinessDetails: string | null;
+            durationDays: number | null;
+            otherReadiness: string | null;
+            expectedBenefits: string | null;
+            isInRoadmap: boolean | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            budgets: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                year: number | null;
+                amount: number | string | unknown;
+                budgetType: string | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            relatedProjects: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                projectName: string | null;
+                agency: string | null;
+                fiscalYear: string | null;
+                relationType: string | null;
+                remark: string | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            manpower: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                agencyPart: string | null;
+                positionLimit: number | null;
+                occupied: number | null;
+                vacant: number | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            existingEquipments: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                itemName: string | null;
+                ageYears: number | string | unknown;
+                quantity: number | null;
+                user: string | null;
+                location: string | null;
+                remark: string | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            hardwareCosts: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                itemName: string | null;
+                quantity: number | null;
+                unitPrice: number | string | unknown;
+                referenceType: string | null;
+                mdesMonth: string | null;
+                mdesYear: string | null;
+                mdesItemNo: string | null;
+                marketCount: number | null;
+                marketCompany: string | null;
+                prevProject: string | null;
+                prevYear: string | null;
+                otherDetail: string | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            softwareCosts: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                itemName: string | null;
+                quantity: number | null;
+                unitPrice: number | string | unknown;
+                referenceType: string | null;
+                mdesMonth: string | null;
+                mdesYear: string | null;
+                mdesItemNo: string | null;
+                marketCount: number | null;
+                marketCompany: string | null;
+                prevProject: string | null;
+                prevYear: string | null;
+                otherDetail: string | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            personnelCosts: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                personnelType: string;
+                position: string | null;
+                degree: string | null;
+                fieldOfStudy: string | null;
+                experienceYears: number | string | unknown;
+                baseSalary: number | string | unknown;
+                multiplier: number | string | unknown;
+                personCount: number | null;
+                durationMonths: number | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            personnelResponsibilities: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                position: string | null;
+                responsibility: string | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            trainings: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                courseName: string | null;
+                trainingMethod: string | null;
+                locationType: string | null;
+                hasSpeakerCost: boolean | null;
+                speakerReason: string | null;
+                speakerCosts: ({
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    trainingId: string;
+                    itemName: string;
+                    hours: number;
+                    ratePerHour: number | string | unknown;
+                    days: number;
+                } & {
+                    [key: string]: unknown;
+                })[];
+                foodCosts: ({
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    trainingId: string;
+                    itemName: string;
+                    mealsCount: number;
+                    ratePerMeal: number | string | unknown;
+                    traineesCount: number;
+                    days: number;
+                } & {
+                    [key: string]: unknown;
+                })[];
+            } & {
+                [key: string]: unknown;
+            })[];
+            otherCosts: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                itemName: string | null;
+                quantity: number | null;
+                unitPrice: number | string | unknown;
+                remark: string | null;
+                costType: string | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            ictPersonnel: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                position: string | null;
+                level: string | null;
+                count: number | null;
+            } & {
+                [key: string]: unknown;
+            })[];
+            cloudRequests: ({
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                proposalId: string;
+                systemName: string;
+                /** Format: date-time */
+                requestedServiceDate: string | null;
+                /** Format: date-time */
+                recordedRequestDate: string | null;
+                vms: ({
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    cloudRequestId: string;
+                    vmDescription: string;
+                    osDatabase: string | null;
+                    vcpu: number | null;
+                    ramGb: number | null;
+                    gpuGb: number | null;
+                    storageGb: number | null;
+                    price: number | string | unknown;
+                } & {
+                    [key: string]: unknown;
+                })[];
+            } & {
+                [key: string]: unknown;
+            })[];
+        } & {
+            [key: string]: unknown;
+        }) | null;
         SubmitProposalRequest: {
             projectName: string;
             agencyName: string;

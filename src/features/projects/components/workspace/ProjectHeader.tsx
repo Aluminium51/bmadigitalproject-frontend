@@ -67,7 +67,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
       onError: (error) => {
         toast.error("ไม่สามารถส่งโครงการได้", {
           // description: error instanceof Error ? error.message : "Please try again.",
-          description: error instanceof Error ? "โปรดตรวจสอบข้อมูลในแบบฟอร์มให้ครบถ้วน" : "Please try again.",
+          description: error instanceof Error ? error.message : "Please try again.",
         });
       },
     });

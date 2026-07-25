@@ -1,5 +1,9 @@
 // src/features/proposals/hooks/useProposalDraftQuery.ts
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+import { schemas } from "@/types/api-schemas";
+
+export type SubmittedProposalResponse = z.infer<typeof schemas.ProposalResponse>;
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
   ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
@@ -29,7 +33,7 @@ async function fetchSubmittedProposal(projectId: string) {
       { status: res.status, data: json },
     );
   }
-  return json as { data: Record<string, unknown> | null; message?: string };
+  return schemas.ProposalDataResponse.parse(json);
 }
 
 /**
@@ -64,7 +68,7 @@ export function useGetProposal(projectId: string | undefined) {
     refetchOnMount: "always",
     select: (res) => {
       if (!res.data) return null;
-      const proposal = res.data as Record<string, unknown> & {
+      const proposal = res.data as SubmittedProposalResponse & {
         budgets?: unknown;
         budgetsByYear?: unknown;
       };
