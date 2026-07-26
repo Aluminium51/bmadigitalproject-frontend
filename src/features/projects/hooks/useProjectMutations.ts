@@ -3,9 +3,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { updateProjectAction, type UpdateProjectPayload } from "../actions/project.actions";
+import { CLIENT_API_BASE } from "@/lib/client-api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+const API_BASE = CLIENT_API_BASE;
 
 async function deleteProject(projectId: string) {
   const response = await fetch(`${API_BASE}/projects/${projectId}`, {

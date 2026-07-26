@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CLIENT_API_BASE } from "@/lib/client-api";
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -21,9 +22,7 @@ function VerifyContent() {
 
     const verifyToken = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081/api/v1";
-
-        const res = await fetch(`${baseUrl}/api/v1/auth/verify?token=${token}`, {
+        const res = await fetch(`${CLIENT_API_BASE}/auth/verify?token=${encodeURIComponent(token)}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" }
         });

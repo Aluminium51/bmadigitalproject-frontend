@@ -25,8 +25,7 @@ export async function serverFetch<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const backendBaseUrl =
-    process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL;
+  const backendBaseUrl = process.env.BACKEND_URL;
   if (!backendBaseUrl) {
     throw new Error("BACKEND_URL is not configured");
   }

@@ -1,9 +1,9 @@
 import type { User } from "../types";
 import { z } from "zod";
 import { schemas } from "@/types/api-schemas";
+import { CLIENT_API_BASE } from "@/lib/client-api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+const API_BASE = CLIENT_API_BASE;
 
 export type UserSortField = "createdAt" | "username" | "name" | "firstName" | "email" | "role" | "department";
 export type UserSortOrder = "asc" | "desc";

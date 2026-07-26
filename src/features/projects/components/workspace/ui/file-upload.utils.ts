@@ -1,11 +1,10 @@
 import { formatFileSize, matchesAccept } from "../../../utils/fileValidation";
 import type { SharedFileValue } from "./file-upload.types";
+import { CLIENT_API_BASE } from "@/lib/client-api";
 
 export { formatFileSize, matchesAccept };
 
-const FILE_PREVIEW_BASE_URL = (
-  process.env.NEXT_PUBLIC_FILE_PREVIEW_URL ?? "http://localhost:8081/api/v1"
-).replace(/\/+$/, "");
+const FILE_PREVIEW_BASE_URL = CLIENT_API_BASE.replace(/\/+$/, "");
 
 /**
  * Rewrites attachment URLs to the temporary local preview host while keeping
@@ -22,8 +21,12 @@ export function getPreviewFileUrl(value: string) {
     const uploadIndex = source.pathname.indexOf(uploadMarker);
     if (uploadIndex < 0) return value;
 
-    const base = new URL(FILE_PREVIEW_BASE_URL);
     const uploadPath = source.pathname.slice(uploadIndex);
+    if (FILE_PREVIEW_BASE_URL.startsWith("/")) {
+      return `${FILE_PREVIEW_BASE_URL}${uploadPath}${source.search}${source.hash}`;
+    }
+
+    const base = new URL(FILE_PREVIEW_BASE_URL);
     return `${base.origin}${base.pathname.replace(/\/+$/, "")}${uploadPath}${source.search}${source.hash}`;
   } catch {
     return value;

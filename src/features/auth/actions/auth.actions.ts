@@ -24,6 +24,14 @@ type AuthResponse = {
   field?: string;
 };
 
+const cookieSecure = process.env.COOKIE_SECURE === "true";
+const cookieSameSite =
+  process.env.COOKIE_SAME_SITE === "strict" ||
+  process.env.COOKIE_SAME_SITE === "none"
+    ? process.env.COOKIE_SAME_SITE
+    : "lax";
+const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
 // ฟังก์ชันสำหรับสมัครสมาชิกผู้ใช้งานใหม่
 export async function registerUserAction(data: RegisterRequestDTO): Promise<AuthResponse> {
   try {
@@ -73,8 +81,9 @@ export async function loginUserAction(data: LoginRequestDTO): Promise<AuthRespon
     // โดย successData.token จะถูกบังคับให้มีอยู่จริงตาม Schema ของ Backend แน่นอน
     cookieStore.set('token', successData.token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' && process.env.ALLOW_HTTP_COOKIE !== 'true',
-      sameSite: 'lax',
+      secure: cookieSecure,
+      sameSite: cookieSameSite,
+      domain: cookieDomain,
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 วัน
     });
@@ -153,10 +162,9 @@ export async function refreshSessionAction(): Promise<{
     const cookieStore = await cookies();
     cookieStore.set("token", result.token, {
       httpOnly: true,
-      secure:
-        process.env.NODE_ENV === "production" &&
-        process.env.ALLOW_HTTP_COOKIE !== "true",
-      sameSite: "lax",
+      secure: cookieSecure,
+      sameSite: cookieSameSite,
+      domain: cookieDomain,
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });

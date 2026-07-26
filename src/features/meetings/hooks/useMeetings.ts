@@ -3,9 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Meeting, MeetingStatus } from "../types";
+import { CLIENT_API_BASE } from "@/lib/client-api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+const API_BASE = CLIENT_API_BASE;
 
 type ApiMeeting = {
   id: string;

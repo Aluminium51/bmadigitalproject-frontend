@@ -1,38 +1,35 @@
-# ---------------------------------------------------
-# Stage 1: ใช้ Bun โหลด Dependencies ให้ไวที่สุด
-# ---------------------------------------------------
-FROM oven/bun:alpine AS deps
-WORKDIR /app
-COPY package.json bun.lockb* ./
-RUN bun install --frozen-lockfile
+FROM node:24.6.0-alpine3.22 AS deps
 
-# ---------------------------------------------------
-# Stage 2: ใช้ Bun สั่ง Build โค้ด Next.js
-# ---------------------------------------------------
-FROM oven/bun:alpine AS builder
 WORKDIR /app
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+
+FROM node:24.6.0-alpine3.22 AS builder
+
+WORKDIR /app
+RUN corepack enable
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
 ENV NEXT_TELEMETRY_DISABLED=1
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_URL=/api/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_BACKEND_URL
-ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
-ARG NEXT_PUBLIC_FILE_PREVIEW_URL
-ENV NEXT_PUBLIC_FILE_PREVIEW_URL=$NEXT_PUBLIC_FILE_PREVIEW_URL
-RUN bun run build
 
-# ---------------------------------------------------
-# Stage 3: ใช้ Node.js v24
-# ---------------------------------------------------
-FROM node:24-alpine AS runner
+RUN pnpm build
+
+FROM node:24.6.0-alpine3.22 AS runner
+
 WORKDIR /app
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -41,7 +38,4 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
 CMD ["node", "server.js"]

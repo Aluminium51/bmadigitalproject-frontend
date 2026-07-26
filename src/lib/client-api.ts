@@ -6,7 +6,7 @@ function trimTrailingSlash(value: string) {
 }
 
 export const CLIENT_API_BASE = (() => {
-  if (configuredApiUrl && !configuredApiUrl.startsWith("/")) {
+  if (configuredApiUrl) {
     return trimTrailingSlash(configuredApiUrl);
   }
 
@@ -14,5 +14,5 @@ export const CLIENT_API_BASE = (() => {
     return `${trimTrailingSlash(configuredBackendUrl)}/api/v1`;
   }
 
-  return configuredApiUrl ?? "http://localhost:8081/api/v1";
+  return "/api/v1";
 })();

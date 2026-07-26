@@ -4,9 +4,9 @@ import { toast } from "sonner";
 import { ProposalDraftValues } from "../types";
 import { useProposalFormStore } from "../stores/useProposalFormStore";
 import { useAutoSaveDraft, useUpdateSubmittedProposal } from "./useProposalMutations";
+import { CLIENT_API_BASE } from "@/lib/client-api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+const API_BASE = CLIENT_API_BASE;
 // Wait until the user has been idle for two seconds before writing. Keeping
 // this value in one place makes the request-rate guarantee explicit.
 const DEBOUNCE_MS = 2000;

@@ -2,11 +2,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { schemas } from "@/types/api-schemas";
+import { CLIENT_API_BASE } from "@/lib/client-api";
 
 export type SubmittedProposalResponse = z.infer<typeof schemas.ProposalResponse>;
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-  ?? `${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8081"}/api/v1`;
+const API_BASE = CLIENT_API_BASE;
 
 async function fetchDraft(projectId: string) {
   const res = await fetch(`${API_BASE}/proposals/projects/${projectId}/draft`, {

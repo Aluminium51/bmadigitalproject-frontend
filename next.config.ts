@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ['localhost'],
+  allowedDevOrigins: ['localhost', '127.0.0.1'],
   output: "standalone",
+  compress: true,
 };
 
 export default nextConfig;
