@@ -9,6 +9,7 @@ type ProjectQuery = {
   page?: number;
   limit?: number;
   search?: string;
+  statusIds?: number[];
   status?: "draft" | "submitted" | "all_except_draft" | "all";
   ownership?: "mine" | "team_only" | "team_and_mine" | "all";
 };
@@ -29,17 +30,19 @@ const getQueryParamsForTab = (tab: TabType): ProjectQuery => {
   }
 };
 
-const fetchProjectsAPI = async (params: { page: number; limit: number; search: string; tab: TabType }) => {
+const fetchProjectsAPI = async (params: { page: number; limit: number; search: string; tab: TabType; statusIds: number[] }) => {
   const tabConditions = getQueryParamsForTab(params.tab);
+  const statusIds = [...params.statusIds].sort((a, b) => a - b);
 
   // สร้าง Object สำหรับส่งไปเป็น URL Query String
   const queryParams = new URLSearchParams({
     page: params.page.toString(),
     limit: params.limit.toString(),
     ...(params.search ? { search: params.search } : {}),
-    ...(tabConditions.status ? { status: tabConditions.status } : {}),
+    ...(statusIds.length === 0 && tabConditions.status ? { status: tabConditions.status } : {}),
     ...(tabConditions.ownership ? { ownership: tabConditions.ownership } : {}),
   });
+  statusIds.forEach((statusId) => queryParams.append("statusIds", String(statusId)));
 
   // 👈 เรียกใช้งาน Server Action แทนการเรียก serverFetch ตรงๆ
   const result = await getProjectsAction(queryParams.toString());
@@ -62,16 +65,19 @@ const fetchProjectsAPI = async (params: { page: number; limit: number; search: s
 export function useProjects() {
   const [activeTab, setActiveTab] = useState<TabType>("drafts");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatusIds, setSelectedStatusIdsState] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const normalizedStatusIds = [...selectedStatusIds].sort((a, b) => a - b);
   const { data: response, isLoading, isError, isFetching } = useQuery({
-    queryKey: ["projects", activeTab, currentPage, searchQuery],
+    queryKey: ["projects", activeTab, currentPage, searchQuery, normalizedStatusIds],
     queryFn: () => fetchProjectsAPI({
       page: currentPage,
       limit: itemsPerPage,
       search: searchQuery,
-      tab: activeTab
+      tab: activeTab,
+      statusIds: normalizedStatusIds,
     }),
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
@@ -82,6 +88,7 @@ export function useProjects() {
     setActiveTab(tab);
     setCurrentPage(1);
     setSearchQuery("");
+    setSelectedStatusIdsState([]);
   };
 
   const handleSearch = (query: string) => {
@@ -89,11 +96,21 @@ export function useProjects() {
     setCurrentPage(1);
   };
 
+  const setSelectedStatusIds = (statusIds: number[]) => {
+    setSelectedStatusIdsState([...new Set(statusIds)].sort((a, b) => a - b));
+    setCurrentPage(1);
+  };
+
+  const clearStatusFilter = () => setSelectedStatusIds([]);
+
   return {
     activeTab,
     handleTabChange,
     searchQuery,
     setSearchQuery: handleSearch,
+    selectedStatusIds: normalizedStatusIds,
+    setSelectedStatusIds,
+    clearStatusFilter,
     projectsData: response?.data || [],
     currentPage: response?.meta.currentPage || 1,
     totalPages: response?.meta.totalPages || 1,

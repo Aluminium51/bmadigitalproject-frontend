@@ -132,6 +132,9 @@ const UploadDocumentRequest = z
     description: z.string().max(2000).optional(),
   })
   .passthrough();
+const statusIds = z
+  .union([z.array(z.number().int().gte(1).lte(15)), z.number(), z.string()])
+  .optional();
 const Project = z
   .object({
     id: z.string().uuid(),
@@ -1317,6 +1320,7 @@ export const schemas = {
   ResetPasswordRequest,
   RefreshSessionResponse,
   UploadDocumentRequest,
+  statusIds,
   Project,
   PaginatedProjectResponse,
   CreateProjectRequest,
@@ -1841,6 +1845,11 @@ const endpoints = makeApi([
         name: "search",
         type: "Query",
         schema: z.string().optional(),
+      },
+      {
+        name: "statusIds",
+        type: "Query",
+        schema: statusIds,
       },
       {
         name: "status",

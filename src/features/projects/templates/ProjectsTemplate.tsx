@@ -2,11 +2,18 @@
 "use client";
 
 import Link from "next/link";
-import { Plus, Search, Filter, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Plus, Search, Filter, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProjects } from "@/features/projects/hooks/useProjects";
 import { ProjectTabs } from "@/features/projects/components/ProjectTabs";
 import { ProjectTable } from "@/features/projects/components/ProjectTable";
 import { ProjectPagination } from "@/features/projects/components/ProjectPagination";
+import {
+  getProjectStatusMeta,
+  PROJECT_STATUS,
+  PROJECT_STATUS_FILTER_OPTIONS,
+} from "@/features/projects/utils/projectStatus";
 
 export function ProjectsTemplate() {
   const {
@@ -14,8 +21,17 @@ export function ProjectsTemplate() {
     searchQuery, setSearchQuery,
     projectsData, currentPage, setCurrentPage, totalPages,
     draftsCount, activeCount,
-    isLoading, isFetching
+    isLoading, isFetching,
+    selectedStatusIds, setSelectedStatusIds, clearStatusFilter,
   } = useProjects();
+
+  const showStatusFilter = activeTab !== "drafts";
+  const availableStatusOptions =
+    activeTab === "all"
+      ? PROJECT_STATUS_FILTER_OPTIONS
+      : PROJECT_STATUS_FILTER_OPTIONS.filter(
+          ({ id }) => id !== PROJECT_STATUS.DRAFT,
+        );
 
   return (
     <div className="flex flex-col h-full p-6 lg:p-8 animate-in fade-in duration-500 mx-auto w-full">
@@ -53,9 +69,78 @@ export function ProjectsTemplate() {
             />
             {isFetching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#00734b] animate-spin" />}
           </div>
-          <button className="flex items-center justify-center gap-2 px-6 h-11 text-sm font-bold border border-[#D1CDC7] rounded-full hover:bg-surface-variant transition-colors text-[#191c20]">
-            <Filter className="w-4 h-4" /> ตัวกรอง
-          </button>
+          {showStatusFilter && (
+            <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="กรองตามสถานะโครงการ"
+                className="flex h-11 items-center justify-center gap-2 rounded-full border border-[#D1CDC7] px-6 text-sm font-bold text-[#191c20] transition-colors hover:bg-surface-variant"
+              >
+                <Filter className="h-4 w-4" />
+                {selectedStatusIds.length > 0
+                  ? `เลือกแล้ว ${selectedStatusIds.length} สถานะ`
+                  : "ตัวกรองสถานะ"}
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-[min(22rem,calc(100vw-2rem))] gap-0 overflow-hidden p-0"
+            >
+              <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+                <div className="min-w-0">
+                  <p className="font-semibold">ตัวกรองสถานะ</p>
+                  <p className="text-xs text-muted-foreground">เลือกได้หลายสถานะ</p>
+                </div>
+                {selectedStatusIds.length > 0 && (
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                    onClick={clearStatusFilter}
+                  >
+                    ล้างตัวกรอง
+                  </button>
+                )}
+              </div>
+              <div className="max-h-80 space-y-1 overflow-y-auto p-3">
+                {availableStatusOptions.map(({ id, label }) => {
+                  const checked = selectedStatusIds.includes(id);
+                  const meta = getProjectStatusMeta(id);
+
+                  return (
+                    <label
+                      key={id}
+                      className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted/50 ${
+                        checked ? meta.className : "border-transparent"
+                      }`}
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(nextChecked) => {
+                          const nextStatusIds = nextChecked
+                              ? [...selectedStatusIds, id]
+                              : selectedStatusIds.filter((value) => value !== id);
+
+                          setSelectedStatusIds(
+                            availableStatusOptions
+                              .filter(({ id: optionId }) =>
+                                nextStatusIds.includes(optionId),
+                              )
+                              .map(({ id: optionId }) => optionId),
+                          );
+                        }}
+                        aria-label={label}
+                      />
+                      <span className="min-w-0 flex-1 break-words">{label}</span>
+                      {checked && <Check className="h-4 w-4 shrink-0" />}
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+            </Popover>
+          )}
         </div>
 
         {isLoading ? (
@@ -68,6 +153,7 @@ export function ProjectsTemplate() {
             data={projectsData}
             activeTab={activeTab}
             hideAnalystColumn={activeTab === "drafts"}
+            statusLanguage="th"
           />
         )}
 

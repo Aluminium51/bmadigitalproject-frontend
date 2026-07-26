@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TabType } from "../hooks/useProjects";
-import { getProjectStatusMeta } from "../utils/projectStatus";
+import { getProjectStatusMeta, getThaiProjectStatus } from "../utils/projectStatus";
 
 type Project = z.infer<typeof schemas.Project>;
 type ProjectRow = Project & {
@@ -36,24 +36,6 @@ interface ProjectTableProps {
   statusLanguage?: "th" | "en";
 }
 
-const THAI_STATUS_LABELS: Record<number, string> = {
-  1: "แบบร่าง",
-  2: "รอตรวจสอบโดยเลขานุการ",
-  3: "ส่งกลับแก้ไขโดยเลขานุการ",
-  4: "ไม่อนุมัติโดยเลขานุการ",
-  5: "รอมอบหมายผู้วิเคราะห์",
-  6: "อยู่ระหว่างการวิเคราะห์",
-  7: "ส่งกลับแก้ไขโดยผู้วิเคราะห์",
-  8: "ไม่อนุมัติโดยผู้วิเคราะห์",
-  9: "รอพิจารณาโดยคณะกรรมการกลั่นกรอง",
-  10: "ส่งกลับแก้ไขโดยคณะกรรมการกลั่นกรอง",
-  11: "ไม่อนุมัติโดยคณะกรรมการกลั่นกรอง",
-  12: "รอพิจารณาโดยคณะกรรมการนโยบาย",
-  13: "ส่งกลับแก้ไขโดยคณะกรรมการนโยบาย",
-  14: "ไม่อนุมัติโดยคณะกรรมการนโยบาย",
-  15: "อนุมัติแล้ว",
-};
-
 function StatusBadge({
   statusId,
   statusName,
@@ -65,7 +47,7 @@ function StatusBadge({
 }) {
   const meta = getProjectStatusMeta(statusId, statusName);
   const label = language === "th"
-    ? THAI_STATUS_LABELS[statusId ?? -1] ?? "ไม่ทราบสถานะ"
+    ? getThaiProjectStatus(statusId)
     : meta.label;
 
   return (

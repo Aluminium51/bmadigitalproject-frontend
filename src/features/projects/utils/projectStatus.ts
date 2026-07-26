@@ -37,6 +37,33 @@ const STATUS_META: Record<number, { label: string; className: string }> = {
   15: { label: "Approved", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 };
 
+const THAI_STATUS_LABELS: Record<number, string> = {
+  1: "แบบร่าง",
+  2: "รอตรวจสอบโดยเลขานุการ",
+  3: "ส่งกลับแก้ไขโดยเลขานุการ",
+  4: "ไม่อนุมัติโดยเลขานุการ",
+  5: "รอมอบหมายผู้วิเคราะห์",
+  6: "อยู่ระหว่างการวิเคราะห์",
+  7: "ส่งกลับแก้ไขโดยผู้วิเคราะห์",
+  8: "ไม่อนุมัติโดยผู้วิเคราะห์",
+  9: "รอพิจารณาโดยคณะกรรมการกลั่นกรอง",
+  10: "ส่งกลับแก้ไขโดยคณะกรรมการกลั่นกรอง",
+  11: "ไม่อนุมัติโดยคณะกรรมการกลั่นกรอง",
+  12: "รอพิจารณาโดยคณะกรรมการนโยบาย",
+  13: "ส่งกลับแก้ไขโดยคณะกรรมการนโยบาย",
+  14: "ไม่อนุมัติโดยคณะกรรมการนโยบาย",
+  15: "อนุมัติแล้ว",
+};
+
+export function getThaiProjectStatus(statusId?: number | null) {
+  return THAI_STATUS_LABELS[statusId ?? -1] ?? "ไม่ทราบสถานะ";
+}
+
+export const PROJECT_STATUS_FILTER_OPTIONS = Object.keys(THAI_STATUS_LABELS)
+  .map(Number)
+  .sort((a, b) => a - b)
+  .map((id) => ({ id, label: THAI_STATUS_LABELS[id] }));
+
 export function getProjectStatusMeta(statusId?: number | null, fallbackName?: string | null) {
   return STATUS_META[statusId ?? -1] ?? {
     label: fallbackName || "Unknown",

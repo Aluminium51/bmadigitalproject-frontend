@@ -1090,6 +1090,7 @@ export interface paths {
                     page?: number;
                     limit?: number;
                     search?: string;
+                    statusIds?: number[] | number | string;
                     status?: "draft" | "submitted" | "all_except_draft" | "all";
                     ownership?: "mine" | "team_only" | "team_and_mine" | "all";
                 };
