@@ -2,6 +2,11 @@
 import { useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getProjectsAction } from "../actions/project.actions";
+import {
+  canViewAllProjectsTab,
+  canViewDraftsTab,
+  type UserRoleInput,
+} from "@/utils/rbac-helpers";
 
 export type TabType = "drafts" | "active" | "team" | "all";
 
@@ -62,8 +67,9 @@ const fetchProjectsAPI = async (params: { page: number; limit: number; search: s
   };
 };
 
-export function useProjects() {
-  const [activeTab, setActiveTab] = useState<TabType>("drafts");
+export function useProjects(userRoles: UserRoleInput = []) {
+  const defaultTab: TabType = canViewDraftsTab(userRoles) ? "drafts" : "active";
+  const [activeTab, setActiveTab] = useState<TabType>(defaultTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatusIds, setSelectedStatusIdsState] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,6 +91,9 @@ export function useProjects() {
   });
 
   const handleTabChange = (tab: TabType) => {
+    if (tab === "drafts" && !canViewDraftsTab(userRoles)) return;
+    if (tab === "all" && !canViewAllProjectsTab(userRoles)) return;
+
     setActiveTab(tab);
     setCurrentPage(1);
     setSearchQuery("");

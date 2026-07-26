@@ -14,8 +14,17 @@ import {
   PROJECT_STATUS,
   PROJECT_STATUS_FILTER_OPTIONS,
 } from "@/features/projects/utils/projectStatus";
+import {
+  canViewAllProjectsTab,
+  canViewDraftsTab,
+  type UserRoleInput,
+} from "@/utils/rbac-helpers";
 
-export function ProjectsTemplate() {
+export function ProjectsTemplate({
+  userRoles = [],
+}: {
+  userRoles?: UserRoleInput;
+}) {
   const {
     activeTab, handleTabChange,
     searchQuery, setSearchQuery,
@@ -23,8 +32,10 @@ export function ProjectsTemplate() {
     draftsCount, activeCount,
     isLoading, isFetching,
     selectedStatusIds, setSelectedStatusIds, clearStatusFilter,
-  } = useProjects();
+  } = useProjects(userRoles);
 
+  const canViewDrafts = canViewDraftsTab(userRoles);
+  const canViewAll = canViewAllProjectsTab(userRoles);
   const showStatusFilter = activeTab !== "drafts";
   const availableStatusOptions =
     activeTab === "all"
@@ -55,6 +66,8 @@ export function ProjectsTemplate() {
           onTabChange={handleTabChange}
           draftsCount={draftsCount}
           activeCount={activeCount}
+          showDrafts={canViewDrafts}
+          showAll={canViewAll}
         />
 
         <div className="p-6 px-6 sm:px-10 border-b border-[#ededf4] flex flex-col sm:flex-row gap-3 shrink-0">
