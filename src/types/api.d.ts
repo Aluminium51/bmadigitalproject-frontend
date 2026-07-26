@@ -1328,6 +1328,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/analyst/assigned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get projects assigned to the authenticated Analyst */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Assigned Analyst projects */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedAnalystAssignedProjectResponse"];
+                    };
+                };
+                /** @description Only Analysts may access this queue */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{id}": {
         parameters: {
             query?: never;
@@ -1497,6 +1546,137 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/v1/projects/{id}/analyst-reassignment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Analyst reassignment */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description รหัสโครงการ (UUID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AnalystReassignmentRequest"];
+                };
+            };
+            responses: {
+                /** @description Reassignment requested */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AnalystWorkflowResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Stale project state */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{id}/analyst-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Analyst project review */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description รหัสโครงการ (UUID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AnalystReviewRequest"];
+                };
+            };
+            responses: {
+                /** @description Analyst review completed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AnalystWorkflowResponse"];
+                    };
+                };
+                /** @description Invalid review */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Stale project state */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/projects/{id}/secretary-review": {
@@ -3171,6 +3351,42 @@ export interface components {
             /** Format: uuid */
             analystId: string;
         };
+        PaginatedAnalystAssignedProjectResponse: {
+            data: components["schemas"]["AnalystAssignedProject"][];
+            pagination: {
+                total: number;
+                page: number;
+                limit: number;
+                totalPages: number;
+            };
+        };
+        AnalystAssignedProject: {
+            /** Format: uuid */
+            id: string;
+            projectCode: string | null;
+            projectName: string | null;
+            projectType: {
+                id: number;
+                name: string;
+            } | null;
+            division: {
+                id: number;
+                name: string;
+                departmentId: number | null;
+                departmentName: string | null;
+            } | null;
+            owner: {
+                /** Format: uuid */
+                userId: string;
+                firstName: string;
+                lastName: string;
+            } | null;
+            projectStatusId: number;
+            assignedAt: string | unknown;
+            createdAt: string;
+            /** Format: uuid */
+            analystId: string;
+        };
         CreateProjectRequest: {
             /** @example โครงการพัฒนาระบบให้บริการประชาชน */
             projectName: string;
@@ -3208,6 +3424,18 @@ export interface components {
             projectTypeId?: number;
             /** @example ผ่านการอนุมัติขั้นต้น */
             remark?: string;
+        };
+        AnalystWorkflowResponse: {
+            message: string;
+            project: components["schemas"]["Project"];
+        };
+        AnalystReassignmentRequest: {
+            reason: string;
+        };
+        AnalystReviewRequest: {
+            /** @enum {string} */
+            decision: "approve" | "return" | "reject";
+            remark: string;
         };
         SecretaryReviewResponse: {
             message: string;

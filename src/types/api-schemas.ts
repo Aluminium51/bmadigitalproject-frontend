@@ -341,6 +341,51 @@ const BulkAssignProjectResponse = z
     ),
   })
   .passthrough();
+const AnalystAssignedProject = z
+  .object({
+    id: z.string().uuid(),
+    projectCode: z.string().nullable(),
+    projectName: z.string().nullable(),
+    projectType: z
+      .object({ id: z.number(), name: z.string() })
+      .passthrough()
+      .nullable(),
+    division: z
+      .object({
+        id: z.number(),
+        name: z.string(),
+        departmentId: z.number().nullable(),
+        departmentName: z.string().nullable(),
+      })
+      .passthrough()
+      .nullable(),
+    owner: z
+      .object({
+        userId: z.string().uuid(),
+        firstName: z.string(),
+        lastName: z.string(),
+      })
+      .passthrough()
+      .nullable(),
+    projectStatusId: z.number().int(),
+    assignedAt: z.union([z.string(), z.string(), z.unknown()]),
+    createdAt: z.union([z.string(), z.string()]),
+    analystId: z.string().uuid(),
+  })
+  .passthrough();
+const PaginatedAnalystAssignedProjectResponse = z
+  .object({
+    data: z.array(AnalystAssignedProject),
+    pagination: z
+      .object({
+        total: z.number(),
+        page: z.number(),
+        limit: z.number(),
+        totalPages: z.number(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
 const UpdateProjectRequest = z
   .object({
     projectName: z.string().min(1).max(600),
@@ -356,6 +401,18 @@ const UpdateProjectStatusRequest = z
     projectStatusId: z.number().int(),
     projectTypeId: z.number().int().optional(),
     remark: z.string().optional(),
+  })
+  .passthrough();
+const AnalystReassignmentRequest = z
+  .object({ reason: z.string().min(1) })
+  .passthrough();
+const AnalystWorkflowResponse = z
+  .object({ message: z.string(), project: Project })
+  .passthrough();
+const AnalystReviewRequest = z
+  .object({
+    decision: z.enum(["approve", "return", "reject"]),
+    remark: z.string().min(1),
   })
   .passthrough();
 const SecretaryReviewRequest = z.union([
@@ -1267,8 +1324,13 @@ export const schemas = {
   PaginatedAssignmentProjectResponse,
   BulkAssignProjectRequest,
   BulkAssignProjectResponse,
+  AnalystAssignedProject,
+  PaginatedAnalystAssignedProjectResponse,
   UpdateProjectRequest,
   UpdateProjectStatusRequest,
+  AnalystReassignmentRequest,
+  AnalystWorkflowResponse,
+  AnalystReviewRequest,
   SecretaryReviewRequest,
   SecretaryReviewResponse,
   UpdateProjectTypeRequest,
@@ -1901,6 +1963,73 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: "post",
+    path: "/api/v1/projects/:id/analyst-reassignment",
+    alias: "postApiv1projectsIdanalystReassignment",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ reason: z.string().min(1) }).passthrough(),
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AnalystWorkflowResponse,
+    errors: [
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 409,
+        description: `Stale project state`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/projects/:id/analyst-review",
+    alias: "postApiv1projectsIdanalystReview",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: AnalystReviewRequest,
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AnalystWorkflowResponse,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid review`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 409,
+        description: `Stale project state`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
     method: "patch",
     path: "/api/v1/projects/:id/assign",
     alias: "patchApiv1projectsIdassign",
@@ -1997,6 +2126,37 @@ const endpoints = makeApi([
       },
     ],
     response: z.void(),
+  },
+  {
+    method: "get",
+    path: "/api/v1/projects/analyst/assigned",
+    alias: "getApiv1projectsanalystassigned",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "page",
+        type: "Query",
+        schema: z.number().int().gte(1).optional().default(1),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().int().gte(1).lte(100).optional().default(20),
+      },
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string().max(100).optional(),
+      },
+    ],
+    response: PaginatedAnalystAssignedProjectResponse,
+    errors: [
+      {
+        status: 403,
+        description: `Only Analysts may access this queue`,
+        schema: ErrorResponse,
+      },
+    ],
   },
   {
     method: "post",

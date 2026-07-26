@@ -79,7 +79,7 @@ const navGroups: NavGroup[] = [
         subItems: [
           { title: "รับหนังสือขอส่งโครงการ (เลขาฯ)", url: "/tasks/screening" },
           { title: "ระบุผู้วิเคราะห์โครงการ (admin)", url: "/tasks/assignment" },
-          { title: "ตรวจสอบเอกสาร (ผู้วิเคราะห์)", url: "/tasks/analysis" },
+          { title: "งานวิเคราะห์โครงการ", url: "/tasks/analyst" },
         ]
       }
     ]

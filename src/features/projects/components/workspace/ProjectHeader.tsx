@@ -1,7 +1,7 @@
 // src/features/projects/components/workspace/ProjectHeader.tsx
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, Building2, CalendarDays, Send, Briefcase, Target } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, Send, Briefcase, Target, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,7 @@ import {
   getProjectStatusMeta,
 } from "../../utils/projectStatus";
 import { ReturnedFeedbackBanner } from "./ReturnedFeedbackBanner";
+import { ProjectDetailsEditDialog } from "./ProjectDetailsEditDialog";
 
 interface ProjectHeaderProps {
   project: ProjectDetail;
@@ -43,6 +44,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const deleteMutation = useDeleteProject(projectId);
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [editDetailsOpen, setEditDetailsOpen] = useState(false);
   const canSubmitProposal = project.permissions?.canSubmitProposal === true;
   const isSubmitDisabled = isDraftLoading || isSubmitting || !currentDraft || !canSubmitProposal;
   const statusMeta = getProjectStatusMeta(project.projectStatusId, project.status?.name);
@@ -198,6 +200,16 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
 
             {/* --- Single explicit final-submission action --- */}
             <div className="flex flex-col items-stretch gap-2 shrink-0 xl:self-start w-full xl:w-auto">
+              {project.permissions?.canUpdateProject && (
+                <Button
+                  variant="outline"
+                  onClick={() => setEditDetailsOpen(true)}
+                  className="gap-2 rounded-xl border-primary/30 text-primary hover:bg-primary/5"
+                >
+                  <Pencil className="h-4 w-4" />
+                  แก้ไขรายละเอียด
+                </Button>
+              )}
               {proposalState.status === "draft" && canSubmitProposal && (
                 <Button
                   disabled={isSubmitDisabled}
@@ -224,6 +236,14 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
       </Card>
 
       <ReturnedFeedbackBanner project={project} />
+
+      {project.permissions?.canUpdateProject && (
+        <ProjectDetailsEditDialog
+          project={project}
+          open={editDetailsOpen}
+          onOpenChange={setEditDetailsOpen}
+        />
+      )}
 
       <AlertDialog open={submitConfirmOpen} onOpenChange={setSubmitConfirmOpen}>
         <AlertDialogContent>

@@ -1,7 +1,6 @@
 // src/app/(protected)/tasks/analysis/page.tsx
-import { AnalysisTemplate } from "@/features/projects/templates/AnalysisTemplate";
+import { redirect } from "next/navigation";
+
 export default function TaskAnalysisPage() {
-  return (
-    <AnalysisTemplate />
-  )
+  redirect("/tasks/analyst");
 }

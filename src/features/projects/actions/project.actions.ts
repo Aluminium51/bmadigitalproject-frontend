@@ -15,6 +15,7 @@ type ActionResponse<T = any> = {
 type PaginatedResponse = z.infer<typeof schemas.PaginatedProjectResponse>;
 type ProjectResponse = z.infer<typeof schemas.Project>;
 type LookupResponse = z.infer<typeof schemas.LookupResponse>;
+export type UpdateProjectPayload = z.infer<typeof schemas.UpdateProjectRequest>;
 
 export type SecretaryReviewPayload =
   z.infer<typeof schemas.SecretaryReviewRequest>;
@@ -113,4 +114,14 @@ export async function getProjectTypesAction(): Promise<LookupResponse> {
   return serverFetch<LookupResponse>("/api/v1/lookups/project-types", {
     method: "GET",
   });
+}
+
+export async function updateProjectAction(
+  projectId: string,
+  payload: UpdateProjectPayload,
+): Promise<{ message: string; project: ProjectResponse }> {
+  return serverFetch<{ message: string; project: ProjectResponse }>(
+    `/api/v1/projects/${projectId}`,
+    { method: "PATCH", body: JSON.stringify(payload) },
+  );
 }
