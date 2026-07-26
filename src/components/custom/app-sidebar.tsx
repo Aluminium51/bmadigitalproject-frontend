@@ -1,22 +1,27 @@
-// src/components/custom/app-sidebar.tsx
-"use client"
+"use client";
 
 import {
-  LayoutDashboard,
-  FolderOpen,
-  ClipboardCheck,
   CalendarDays,
+  ClipboardCheck,
+  FolderOpen,
+  LayoutDashboard,
+  ListTodo,
   Settings,
   Users,
   X,
-  ChevronRight,
-  ListTodo,
-  LucideIcon
-} from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { usePathname } from "next/navigation"
+  type LucideIcon,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
+import {
+  getVisibleRouteGroups,
+  findProtectedRoute,
+  normalizeRoles,
+  type AppRole,
+  type RouteIconName,
+} from "@/lib/route-config";
 import {
   Sidebar,
   SidebarContent,
@@ -26,211 +31,123 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  useSidebar
-} from "@/components/ui/sidebar"
+  useSidebar,
+} from "@/components/ui/sidebar";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-
-type SubItem = {
-  title: string;
-  url: string;
+const icons: Record<RouteIconName, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  projects: FolderOpen,
+  tracking: ListTodo,
+  secretary: ClipboardCheck,
+  assignment: ClipboardCheck,
+  analyst: ClipboardCheck,
+  meetings: CalendarDays,
+  users: Users,
+  profile: Settings,
 };
 
-type NavItem = {
-  title: string;
-  icon: LucideIcon;
-  url?: string;
-  isActive?: boolean;
-  subItems?: SubItem[];
-};
-
-type NavGroup = {
-  title: string;
-  items: NavItem[];
-};
-
-const navGroups: NavGroup[] = [
-  {
-    title: "ภาพรวม",
-    items: [
-      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    ]
-  },
-  {
-    title: "โครงการ (Projects)",
-    items: [
-      { title: "จัดการโครงการ", url: "/projects", icon: FolderOpen },
-      { title: "ติดตามการดำเนินงาน", url: "/projects/active", icon: ListTodo },
-    ]
-  },
-  {
-    title: "งานตรวจสอบ (Tasks)",
-    items: [
-      {
-        title: "ตรวจสอบและประเมิน",
-        icon: ClipboardCheck,
-        subItems: [
-          { title: "รับหนังสือขอส่งโครงการ (เลขาฯ)", url: "/tasks/screening" },
-          { title: "ระบุผู้วิเคราะห์โครงการ (admin)", url: "/tasks/assignment" },
-          { title: "งานวิเคราะห์โครงการ", url: "/tasks/analyst" },
-        ]
-      }
-    ]
-  },
-  {
-    title: "การประชุม (Meetings)",
-    items: [
-      { title: "จัดการการประชุม", url: "/meetings", icon: CalendarDays }
-    ]
-  },
-  {
-    title: "ตั้งค่าระบบ",
-    items: [
-      { title: "จัดการผู้ใช้งาน", url: "/users", icon: Users },
-      { title: "ข้อมูลส่วนตัว", url: "/profile", icon: Settings },
-    ]
-  }
-];
-
-export function AppSidebar() {
-  const { toggleSidebar, state, isMobile } = useSidebar()
-  const pathname = usePathname()
-
+export function AppSidebar({ roles = [] }: { roles?: readonly string[] }) {
+  const { toggleSidebar, state, isMobile } = useSidebar();
+  const pathname = usePathname();
+  const normalizedRoles = normalizeRoles(roles);
+  const visibleGroups = getVisibleRouteGroups(normalizedRoles);
+  const activeRoute = findProtectedRoute(pathname);
   const isCollapsed = state === "collapsed" && !isMobile;
 
   return (
-    <Sidebar variant="sidebar" collapsible="offcanvas" className="border-r border-border/50 shadow-sm">
+    <Sidebar
+      variant="sidebar"
+      collapsible="offcanvas"
+      className="border-r border-border/50 shadow-sm"
+    >
       <SidebarContent className="bg-surface">
-
-        {/* --- ส่วน Header --- */}
-        <div className="flex items-center px-4 py-4 mb-2 border-border/50 transition-all group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
-          <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden w-full">
-            <div className="shrink-0 flex items-center justify-center w-8 h-8 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 transition-all duration-300">
+        <div className="mb-2 flex items-center border-border/50 px-4 py-4 transition-all group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2">
+          <Link href="/dashboard" className="flex w-full items-center gap-3 overflow-hidden">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center transition-all duration-300 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10">
               <Image
                 src="/pics/logo.png"
                 alt="Bangkok Logo"
                 width={40}
                 height={40}
-                className="object-contain w-full h-full"
+                className="h-full w-full object-contain"
                 priority
               />
             </div>
-            <div className={`flex flex-col whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto'}`}>
-              <span className="text-lg font-black text-primary leading-tight">
+            <div
+              className={`flex flex-col whitespace-nowrap transition-all duration-300 ${
+                isCollapsed ? "hidden w-0 opacity-0" : "w-auto opacity-100"
+              }`}
+            >
+              <span className="text-lg font-black leading-tight text-primary">
                 BMA Digital
               </span>
-              <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 Project Management
               </span>
             </div>
           </Link>
-          {isMobile && (
+          {isMobile ? (
             <button
+              type="button"
               onClick={toggleSidebar}
-              className="p-1.5 ml-auto text-muted-foreground hover:text-foreground hover:bg-surface-variant rounded-md transition-colors"
+              aria-label="ปิดเมนู"
+              className="ml-auto rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-variant hover:text-foreground"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
-          )}
+          ) : null}
         </div>
 
-        {/* --- ส่วน Menu --- */}
-        {navGroups.map((group) => (
-          <SidebarGroup key={group.title} className="mt-1 px-2 group-data-[collapsible=icon]:px-1">
-            {!isCollapsed && (
-              <SidebarGroupLabel className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 px-2">
+        {visibleGroups.map((group) => (
+          <SidebarGroup
+            key={group.title}
+            className="mt-1 px-2 group-data-[collapsible=icon]:px-1"
+          >
+            {!isCollapsed ? (
+              <SidebarGroupLabel className="mb-1 px-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 {group.title}
               </SidebarGroupLabel>
-            )}
-
+            ) : null}
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => {
-
-                  // -- แบบที่ 2.1: เมนูแบบมีลูก --
-                  if (item.subItems) {
-                    const isGroupActive = item.subItems.some((sub) => pathname.startsWith(sub.url));
-                    return (
-                      <Collapsible key={item.title} asChild defaultOpen={isGroupActive} className="group/collapsible">
-                        <SidebarMenuItem>
-                          <CollapsibleTrigger asChild>
-                            <SidebarMenuButton
-                              tooltip={item.title}
-                              className={`
-                                rounded-full transition-colors group-data-[collapsible=icon]:justify-center!
-                                ${isGroupActive
-                                  ? 'bg-[#00734b]/10 text-[#00734b] font-bold'
-                                  : 'hover:bg-[#00734b]/5 text-slate-600 font-medium border border-transparent'
-                                }
-                              `}
-                            >
-                              {item.icon && <item.icon className={`w-5 h-5 shrink-0 ${isGroupActive ? 'text-[#00734b]' : 'text-slate-500 group-data-[state=open]/collapsible:text-[#00734b]'}`} />}
-                              <span>{item.title}</span>
-                              <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-slate-400 group-data-[collapsible=icon]:hidden" />
-                            </SidebarMenuButton>
-                          </CollapsibleTrigger>
-
-                          <CollapsibleContent className="animate-in slide-in-from-top-1 fade-in-0 mt-1">
-                            <SidebarMenuSub className="border-[#00734b]/20 mr-0 pr-0 ml-4">
-                              {item.subItems.map((subItem) => {
-                                const isActive = pathname === subItem.url
-                                return (
-                                  <SidebarMenuSubItem key={subItem.title}>
-                                    <SidebarMenuSubButton asChild isActive={isActive} className={`rounded-full transition-colors ${isActive ? 'bg-[#00734b]/10' : 'hover:bg-[#00734b]/5'}`}>
-                                      <Link href={subItem.url} className={`text-sm ${isActive ? 'font-bold text-[#00734b]' : 'text-slate-500 hover:text-slate-700'}`}>
-                                        <span>{subItem.title}</span>
-                                      </Link>
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                )
-                              })}
-                            </SidebarMenuSub>
-                          </CollapsibleContent>
-                        </SidebarMenuItem>
-                      </Collapsible>
-                    )
-                  }
-
-                  // -- แบบที่ 2.2: เมนูเดี่ยว --
-                 const isSingleActive = item.url
-                    ? pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(item.url + "/"))
-                    : false;
+                {group.routes.map((route) => {
+                  const Icon = icons[route.icon];
+                  const isActive = activeRoute?.path === route.path;
 
                   return (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={route.path}>
                       <SidebarMenuButton
                         asChild
-                        tooltip={item.title}
-                        isActive={isSingleActive}
-                        className={`
-                          rounded-full transition-colors group-data-[collapsible=icon]:justify-center!
-                          ${isSingleActive
-                            ? 'bg-[#00734b]/10 text-[#00734b] font-bold'
-                            : 'hover:bg-[#00734b]/5 text-slate-600 font-medium'
-                          }
-                        `}
+                        isActive={isActive}
+                        tooltip={route.label}
+                        className={`rounded-full transition-colors group-data-[collapsible=icon]:justify-center! ${
+                          isActive
+                            ? "bg-[#00734b]/10 font-bold text-[#00734b]"
+                            : "font-medium text-slate-600 hover:bg-[#00734b]/5"
+                        }`}
                       >
-                        <Link href={item.url || "#"} className="flex items-center gap-2 w-full group-data-[collapsible=icon]:justify-center">
-                          {item.icon && <item.icon className={`w-5 h-5 shrink-0 ${isSingleActive ? 'text-[#00734b]' : 'text-slate-500'}`} />}
-                          <span>{item.title}</span>
+                        <Link
+                          href={route.path}
+                          className="flex w-full items-center gap-2 group-data-[collapsible=icon]:justify-center"
+                        >
+                          <Icon
+                            className={`h-5 w-5 shrink-0 ${
+                              isActive ? "text-[#00734b]" : "text-slate-500"
+                            }`}
+                          />
+                          <span>{route.label}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                  )
+                  );
                 })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
-
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }
+
+export type { AppRole };
