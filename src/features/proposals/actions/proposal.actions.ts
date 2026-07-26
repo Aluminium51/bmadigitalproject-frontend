@@ -4,11 +4,17 @@
 import { serverFetch } from "@/lib/server-fetch";
 import { revalidatePath } from "next/cache";
 
-type ActionResponse<T = any> = {
+type ActionResponse<T = unknown> = {
   success: boolean;
   message: string;
   data?: T;
 };
+
+type JsonRecord = Record<string, unknown>;
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 // ============================================================================
 // 1. Action สำหรับเริ่มต้นสร้างแบบร่าง (Initialize Draft)
@@ -20,8 +26,8 @@ export async function initializeDraftAction(projectId: string): Promise<ActionRe
     });
 
     return { success: true, message: "สร้างแบบร่างสำเร็จ", data: result };
-  } catch (error: any) {
-    return { success: false, message: error.message || "ไม่สามารถสร้างแบบร่างได้" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "ไม่สามารถสร้างแบบร่างได้") };
   }
 }
 
@@ -29,7 +35,7 @@ export async function initializeDraftAction(projectId: string): Promise<ActionRe
 // 2. Action สำหรับบันทึกแบบร่าง (Auto-Save / Upsert Draft)
 // ============================================================================
 // รองรับข้อมูลแบบ Loose Schema ตามที่ Backend กำหนดไว้ใน draftProposalSchema
-export async function saveDraftAction(projectId: string, payload: Record<string, any>): Promise<ActionResponse> {
+export async function saveDraftAction(projectId: string, payload: JsonRecord): Promise<ActionResponse> {
   try {
     const result = await serverFetch(`/api/v1/proposals/projects/${projectId}/draft`, {
       method: "PATCH",
@@ -37,8 +43,8 @@ export async function saveDraftAction(projectId: string, payload: Record<string,
     });
 
     return { success: true, message: "บันทึกแบบร่างสำเร็จ", data: result };
-  } catch (error: any) {
-    return { success: false, message: error.message || "ไม่สามารถบันทึกแบบร่างได้" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "ไม่สามารถบันทึกแบบร่างได้") };
   }
 }
 
@@ -62,8 +68,8 @@ export async function getDraftAction(projectId: string) {
 
     // หรือ serverFetch ทำ .json() มาให้แล้ว
     return response;
-  } catch (error: any) {
-    throw new Error(error.message || "ไม่สามารถดึงข้อมูลแบบร่างได้");
+  } catch (error: unknown) {
+    throw new Error(getErrorMessage(error, "ไม่สามารถดึงข้อมูลแบบร่างได้"));
   }
 }
 
@@ -71,7 +77,7 @@ export async function getDraftAction(projectId: string) {
 // 4. Action สำหรับยื่นเสนอโครงการ (Submit Proposal ตัวจริง)
 // ============================================================================
 // ต้องส่งข้อมูลที่ผ่านการ Validate ตาม submitProposalSchema (Strict)
-export async function submitProposalAction(projectId: string, payload: Record<string, any>): Promise<ActionResponse> {
+export async function submitProposalAction(projectId: string, payload: JsonRecord): Promise<ActionResponse> {
   try {
     const result = await serverFetch(`/api/v1/proposals/projects/${projectId}/submit`, {
       method: "POST",
@@ -84,7 +90,7 @@ export async function submitProposalAction(projectId: string, payload: Record<st
     revalidatePath(`/projects/${projectId}`);
 
     return { success: true, message: "ยื่นเสนอโครงการสำเร็จ", data: result };
-  } catch (error: any) {
-    return { success: false, message: error.message || "ไม่สามารถยื่นเสนอโครงการได้" };
+  } catch (error: unknown) {
+    return { success: false, message: getErrorMessage(error, "ไม่สามารถยื่นเสนอโครงการได้") };
   }
 }

@@ -42,9 +42,9 @@ export const ProposalStep4 = () => {
   const totalSupp = watchedSupp.reduce((acc, row) => acc + ((row.baseSalary || 0) * (row.personCount || 0) * (row.durationMonths || 0)), 0);
   const totalPersonnelCost = totalCore + totalAsst + totalSupp;
 
-  const totalTrainingCost = watchedCourses.reduce((acc: number, course: any) => {
-    const spkCost = (course.speakerCosts || []).reduce((sum: number, r: any) => sum + ((r.hours || 0) * (r.ratePerHour || 0) * (r.days || 0)), 0);
-    const foodCost = (course.foodCosts || []).reduce((sum: number, r: any) => sum + ((r.mealsCount || 0) * (r.ratePerMeal || 0) * (r.traineesCount || 0) * (r.days || 0)), 0);
+  const totalTrainingCost = watchedCourses.reduce((acc, course) => {
+    const spkCost = (course.speakerCosts || []).reduce((sum, r) => sum + ((r.hours || 0) * (r.ratePerHour || 0) * (r.days || 0)), 0);
+    const foodCost = (course.foodCosts || []).reduce((sum, r) => sum + ((r.mealsCount || 0) * (r.ratePerMeal || 0) * (r.traineesCount || 0) * (r.days || 0)), 0);
     return acc + spkCost + foodCost;
   }, 0);
 

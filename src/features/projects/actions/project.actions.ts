@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { schemas } from "@/types/api-schemas";
 import { z } from "zod";
 
-type ActionResponse<T = any> = {
+type ActionResponse<T = unknown> = {
   success: boolean;
   message: string;
   data?: T;
@@ -22,6 +22,10 @@ export type SecretaryReviewPayload =
 
 export type SecretaryReviewResponse = z.infer<typeof schemas.SecretaryReviewResponse>;
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 // --- Action สำหรับสร้างโครงการ ---
 export async function createProjectAction(payload: Record<string, unknown>): Promise<ActionResponse> {
   try {
@@ -34,8 +38,9 @@ export async function createProjectAction(payload: Record<string, unknown>): Pro
     revalidatePath("/projects");
 
     return { success: true, message: "สร้างโครงการสำเร็จ", data: result };
-  } catch (error: any) {
-    return { success: false, message: error.message || "ไม่สามารถสร้างโครงการได้" };
+  } catch (error: unknown) {
+    if (!(error instanceof Error)) error = new Error();
+    return { success: false, message: getErrorMessage(error, "ไม่สามารถสร้างโครงการได้") };
   }
 }
 
@@ -60,10 +65,11 @@ export async function getProjectsAction(queryString: string): Promise<PaginatedR
     // กรณีที่ 2: serverFetch ของคุณทำ .json() มาให้เรียบร้อยแล้ว
     return response as PaginatedResponse;
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (!(error instanceof Error)) error = new Error();
     // 3. 🚨 หากเกิด Error เราจะ throw กลับไปตรงๆ
     // เพื่อให้ตัวจัดการ State อย่าง TanStack Query (isError) ตรวจจับได้
-    throw new Error(error.message || "ไม่สามารถติดต่อฐานข้อมูลโครงการได้");
+    throw new Error(getErrorMessage(error, "ไม่สามารถติดต่อฐานข้อมูลโครงการได้"));
   }
 }
 
@@ -83,8 +89,9 @@ export async function getProjectByIdAction(id: string): Promise<ProjectResponse>
     }
 
     return response as ProjectResponse;
-  } catch (error: any) {
-    throw new Error(error.message || "ไม่สามารถดึงข้อมูลโครงการได้");
+  } catch (error: unknown) {
+    if (!(error instanceof Error)) error = new Error();
+    throw new Error(getErrorMessage(error, "ไม่สามารถดึงข้อมูลโครงการได้"));
   }
 }
 

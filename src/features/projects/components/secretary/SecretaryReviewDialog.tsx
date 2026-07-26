@@ -202,7 +202,7 @@ export function SecretaryReviewDialog({
             </section>
 
             {mode === "approve" && (
-              <div className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+              <div className="space-y-2 rounded-md border border-emerald-200 bg-emerald-50/50 p-4">
                 <Label htmlFor="secretary-project-type">ประเภทโครงการ *</Label>
                 <Select value={projectTypeId} onValueChange={setProjectTypeId}>
                   <SelectTrigger id="secretary-project-type" className="bg-background">

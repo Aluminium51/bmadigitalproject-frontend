@@ -1,9 +1,48 @@
 // src/features/proposals/utils/template-adapter.ts
 import { ProposalDraftValues } from "../types";
-import { toCheckbox, withPlaceholder, hasItems } from "./docx-formatters";
+import { withPlaceholder, hasItems } from "./docx-formatters";
+
+type TemplateItem = {
+  [key: string]: unknown;
+  quantity?: number | string | null;
+  unitPrice?: number | string | null;
+  referenceType?: string;
+  baseSalary?: number | string | null;
+  multiplier?: number | string | null;
+  personCount?: number | string | null;
+  durationMonths?: number | string | null;
+  speakerCosts?: TemplateItem[];
+  foodCosts?: TemplateItem[];
+  hasSpeakerCost?: boolean;
+  speakerReason?: string;
+  locationType?: string;
+  vms?: TemplateItem[];
+  vcpu?: number | string | null;
+  ramGb?: number | string | null;
+  gpuGb?: number | string | null;
+  storageGb?: number | string | null;
+  price?: number | string | null;
+  systemName?: string;
+  requestedServiceDate?: string | Date | null;
+  recordedRequestDate?: string | Date | null;
+};
 
 // กำหนดหน้าตาข้อมูล (Type) ให้ตรงกับคีย์แท็กดั้งเดิมในไฟล์ Word (.docx) ของคุณ
-export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
+type ProposalTemplateBase = Omit<
+  Partial<ProposalDraftValues>,
+  | "hardwareCosts"
+  | "softwareCosts"
+  | "personnelCoreCosts"
+  | "personnelAsstCosts"
+  | "personnelSuppCosts"
+  | "personnelResponsibilities"
+  | "trainingCourses"
+  | "otherCosts"
+  | "ictPersonnel"
+  | "cloudRequests"
+>;
+
+export interface ProposalTemplateData extends ProposalTemplateBase {
   chkNew: string;
   chkReplace: string;
   chkPhase: string;
@@ -28,14 +67,14 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
   hasTrainingCourses: boolean; 
   hasOtherCosts: boolean;
 
-  hardwareCosts: any[]; 
-  softwareCosts: any[];
-  personnelCoreCosts: any[];
-  personnelAsstCosts: any[];
-  personnelSuppCosts: any[];
-  personnelResponsibilities: any[];
-  trainingCourses: any[];
-  otherCosts: any[];
+  hardwareCosts: TemplateItem[];
+  softwareCosts: TemplateItem[];
+  personnelCoreCosts: TemplateItem[];
+  personnelAsstCosts: TemplateItem[];
+  personnelSuppCosts: TemplateItem[];
+  personnelResponsibilities: TemplateItem[];
+  trainingCourses: TemplateItem[];
+  otherCosts: TemplateItem[];
 
   // summaty variables for Word template
   totalHwCostStr: string;
@@ -60,12 +99,12 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
 
   // Step 5 
   hasIctPersonnel: boolean;
-  ictPersonnel: any[];
+  ictPersonnel: TemplateItem[];
   chkInRoadmap: string;
   chkNotInRoadmap: string;
   // --- Cloud / VM Requests ---
   hasCloudRequests: boolean;
-  cloudRequests: any[];
+  cloudRequests: TemplateItem[];
   grandTotalVcpu: number;
   grandTotalRam: number;
   grandTotalGpu: number;
@@ -78,7 +117,7 @@ export interface ProposalTemplateData extends Partial<ProposalDraftValues> {
 
 
 // ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word ตามที่คุณกำหนด
-const mapCostItemsForWord = (items: any[]) => {
+export const mapCostItemsForWord = (items: TemplateItem[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => {
     const quantity = Number(item.quantity) || 0;
@@ -111,7 +150,7 @@ const mapCostItemsForWord = (items: any[]) => {
   });
 };
 
-const mapStandardCosts = (items: any[]) => {
+const mapStandardCosts = (items: TemplateItem[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => {
     const quantity = Number(item.quantity) || 0;
@@ -137,7 +176,7 @@ const mapStandardCosts = (items: any[]) => {
   });
 };
 
-const mapPersonnelCoreAndAsst = (items: any[]) => {
+const mapPersonnelCoreAndAsst = (items: TemplateItem[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => {
     const baseSalary = Number(item.baseSalary) || 0;
@@ -158,7 +197,7 @@ const mapPersonnelCoreAndAsst = (items: any[]) => {
   });
 };
 
-const mapPersonnelSupport = (items: any[]) => {
+const mapPersonnelSupport = (items: TemplateItem[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => {
     const baseSalary = Number(item.baseSalary) || 0;
@@ -175,12 +214,12 @@ const mapPersonnelSupport = (items: any[]) => {
   });
 };
 
-const mapTrainingCourses = (items: any[]) => {
+const mapTrainingCourses = (items: TemplateItem[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => {
     // 4.1 คำนวณตารางวิทยากรย่อยในแต่ละคอร์ส (ชั่วโมง * อัตรา * วัน)
     let courseSpeakerTotal = 0;
-    const formattedSpeakerCosts = (item.speakerCosts || []).map((sp: any, spIndex: number) => {
+    const formattedSpeakerCosts = (item.speakerCosts || []).map((sp, spIndex) => {
       const spTotal = (Number(sp.hours) || 0) * (Number(sp.ratePerHour) || 0) * (Number(sp.days) || 0);
       courseSpeakerTotal += spTotal;
       return {
@@ -193,7 +232,7 @@ const mapTrainingCourses = (items: any[]) => {
 
     // 4.2 คำนวณตารางค่าอาหารย่อยในแต่ละคอร์ส (มื้อ * อัตรา * คน * วัน)
     let courseFoodTotal = 0;
-    const formattedFoodCosts = (item.foodCosts || []).map((fd: any, fdIndex: number) => {
+    const formattedFoodCosts = (item.foodCosts || []).map((fd, fdIndex) => {
       const fdTotal = (Number(fd.mealsCount) || 0) * (Number(fd.ratePerMeal) || 0) * (Number(fd.traineesCount) || 0) * (Number(fd.days) || 0);
       courseFoodTotal += fdTotal;
       return {
@@ -223,7 +262,7 @@ const mapTrainingCourses = (items: any[]) => {
   });
 };
 
-const mapOtherCosts = (items: any[]) => {
+const mapOtherCosts = (items: TemplateItem[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => {
     const quantity = Number(item.quantity) || 0;
@@ -241,7 +280,7 @@ const mapOtherCosts = (items: any[]) => {
 };
 
 // ฟังก์ชันจัดการตาราง Cloud / VM พร้อมคำนวณผลรวมรายระบบงานและผลรวมทั้งหมด
-const mapCloudRequests = (items: any[]) => {
+const mapCloudRequests = (items: TemplateItem[]) => {
   if (!items || items.length === 0) {
     return { formattedRequests: [], grandTotals: { vcpu: 0, ram: 0, gpu: 0, storage: 0, price: 0 } };
   }
@@ -249,19 +288,26 @@ const mapCloudRequests = (items: any[]) => {
   let gVcpu = 0, gRam = 0, gGpu = 0, gStorage = 0, gPrice = 0;
 
   // ฟังก์ชันช่วยแปลงวันที่ให้แสดงผลสวยงามใน Word
-  const formatThaiDate = (dateVal: any) => {
+  const formatThaiDate = (dateVal: unknown) => {
     if (!dateVal) return ".........................";
+    if (
+      typeof dateVal !== "string" &&
+      typeof dateVal !== "number" &&
+      !(dateVal instanceof Date)
+    ) {
+      return String(dateVal);
+    }
     try {
       const d = new Date(dateVal);
-      if (isNaN(d.getTime())) return dateVal;
+      if (isNaN(d.getTime())) return String(dateVal);
       return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-    } catch { return dateVal; }
+    } catch { return String(dateVal); }
   };
 
   const formattedRequests = items.map((req) => {
     let groupVcpu = 0, groupRam = 0, groupGpu = 0, groupStorage = 0, groupPrice = 0;
 
-    const formattedVms = (req.vms || []).map((vm: any, vmIndex: number) => {
+    const formattedVms = (req.vms || []).map((vm, vmIndex) => {
       const vcpu = Number(vm.vcpu) || 0;
       const ram = Number(vm.ramGb) || 0;
       const gpu = Number(vm.gpuGb) || 0;
@@ -333,9 +379,9 @@ export const prepareTemplateData = (
   const totalPersonnel = totalCore + totalAsst + totalSupp;
 
   // คำนวณหมวด 4 (ฝึกอบรม)
-  const totalTraining = courses.reduce((acc: number, course: any) => {
-    const spkCost = (course.speakerCosts || []).reduce((sum: number, r: any) => sum + ((Number(r.hours) || 0) * (Number(r.ratePerHour) || 0) * (Number(r.days) || 0)), 0);
-    const foodCost = (course.foodCosts || []).reduce((sum: number, r: any) => sum + ((Number(r.mealsCount) || 0) * (Number(r.ratePerMeal) || 0) * (Number(r.traineesCount) || 0) * (Number(r.days) || 0)), 0);
+  const totalTraining = courses.reduce((acc: number, course) => {
+    const spkCost = (course.speakerCosts || []).reduce((sum: number, r) => sum + ((Number(r.hours) || 0) * (Number(r.ratePerHour) || 0) * (Number(r.days) || 0)), 0);
+    const foodCost = (course.foodCosts || []).reduce((sum: number, r) => sum + ((Number(r.mealsCount) || 0) * (Number(r.ratePerMeal) || 0) * (Number(r.traineesCount) || 0) * (Number(r.days) || 0)), 0);
     return acc + spkCost + foodCost;
   }, 0);
 

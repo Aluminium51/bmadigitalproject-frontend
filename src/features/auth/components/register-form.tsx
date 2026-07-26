@@ -5,10 +5,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { schemas } from "@/types/api-schemas";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +27,8 @@ import {
   ComboboxEmpty,
 } from "@/components/ui/combobox";
 import { registerUserAction } from "@/features/auth/actions/auth.actions";
+import { schemas } from "@/types/api-schemas";
+import { z } from "zod";
 import { RegisterValues, RegisterFieldProps, registerSchema } from "../type";
 
 function RegisterField({
@@ -138,7 +138,6 @@ export function RegisterForm() {
     register,
     handleSubmit,
     control,
-    watch,
     setValue,
     reset,
     setError,
@@ -165,7 +164,7 @@ export function RegisterForm() {
   });
 
   // 1. สังเกตค่า Department ID ที่ถูกเลือก
-  const selectedDepartmentId = watch("departmentId");
+  const selectedDepartmentId = useWatch({ control, name: "departmentId" });
 
   // 2. เรียกใช้ Hook ดึงข้อมูลจาก API
   const { data: deptsRes } = useDepartments();
@@ -176,13 +175,17 @@ export function RegisterForm() {
 
   const onSubmit = async (values: RegisterValues) => {
     // โครงสร้าง values ตรงกับ CreateUserRequest แล้ว จึงลบฟิลด์ของ Frontend ออกได้เลย
-    const payload = { ...values, roleIds: [1] } as Record<string, any>;
+    const { confirmPassword, departmentId, ...requestValues } = values;
+    void confirmPassword;
+    void departmentId;
+    const payload: z.infer<typeof schemas.CreateUserRequest> = {
+      ...requestValues,
+      roleIds: [1],
+    };
 
     // ลบฟิลด์ที่มีเฉพาะหน้าจอออกก่อนส่ง API
-    delete payload.confirmPassword;
-    delete payload.departmentId;
     // ระบบจะนำ dataToSend ที่มี divisionId ไปยิง API ทันที
-    const response = await registerUserAction(payload as any);
+    const response = await registerUserAction(payload);
 
     if (response.success) {
       setStatusMessage({

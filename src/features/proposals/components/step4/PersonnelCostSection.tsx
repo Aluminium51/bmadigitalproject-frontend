@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import type { ProposalStep4Values } from "../../types";
 
 // ----------------------------------------------------------------------
 // 1. Types & Interfaces
@@ -38,8 +39,9 @@ const PersonnelTable = ({
   nameArray: "personnelCoreCosts" | "personnelAsstCosts" | "personnelSuppCosts"; 
   isSupport?: boolean;
 }) => {
-  const { control, register, formState: { errors } } = useFormContext();
+  const { control, register, formState: { errors } } = useFormContext<ProposalStep4Values>();
   const { fields, append, remove } = useFieldArray({ control, name: nameArray });
+  const appendPersonnel = append as unknown as (value: PersonnelCostItem) => void;
   
   // ดึงค่าปัจจุบันที่พิมพ์อยู่ (Real-time) เพื่อเอามาคำนวณเงินรวมรายแถว
   const watchedRows = useWatch({ control, name: nameArray }) as PersonnelCostItem[] || [];
@@ -60,7 +62,7 @@ const PersonnelTable = ({
           variant="default"
           size="sm"
           className="h-7 text-[11px]"
-          onClick={() => append(
+          onClick={() => appendPersonnel(
             isSupport 
               ? { position: "", degree: "", experienceYears: 0, baseSalary: 0, personCount: 1, durationMonths: 1 }
               : { position: "", degree: "", fieldOfStudy: "", experienceYears: 0, baseSalary: 0, multiplier: 1, personCount: 1, durationMonths: 1 }
@@ -103,6 +105,7 @@ const PersonnelTable = ({
             </thead>
             
             {/* --- 2.2.2 เนื้อหาตาราง (Tbody) --- */}
+            {/* eslint-disable react/no-unescaped-entities */}
             <tbody className="divide-y divide-slate-100">
               {/* กรณีไม่มีข้อมูล */}
               {fields.length === 0 && (
@@ -142,7 +145,7 @@ const PersonnelTable = ({
                     </td>
                     {!isSupport && (
                       <td className="p-1.5 bg-blue-50/10">
-                        <Input {...register(`${nameArray}.${index}.fieldOfStudy`)} className="h-8 text-[12px] bg-white border-blue-200 focus-visible:ring-blue-500" placeholder="ระบุสาขา" />
+                        <Input {...register(`${nameArray}.${index}.fieldOfStudy` as never)} className="h-8 text-[12px] bg-white border-blue-200 focus-visible:ring-blue-500" placeholder="ระบุสาขา" />
                       </td>
                     )}
                     
@@ -155,7 +158,7 @@ const PersonnelTable = ({
                     </td>
                     {!isSupport && (
                       <td className="p-1.5 bg-blue-50/10">
-                        <Input type="number" step="0.1" {...register(`${nameArray}.${index}.multiplier`)} className="h-8 text-[12px] text-center bg-white border-blue-200 focus-visible:ring-blue-500" />
+                        <Input type="number" step="0.1" {...register(`${nameArray}.${index}.multiplier` as never)} className="h-8 text-[12px] text-center bg-white border-blue-200 focus-visible:ring-blue-500" />
                       </td>
                     )}
                     <td className="p-1.5">
@@ -197,12 +200,13 @@ const PersonnelTable = ({
 // 3. Component หลัก: PersonnelCostSection (หมวดที่ 3)
 // ----------------------------------------------------------------------
 export const PersonnelCostSection = () => {
-  const { control, register, formState: { errors } } = useFormContext();
+  const { control, register, formState: { errors } } = useFormContext<ProposalStep4Values>();
 
   // Watch ตำแหน่งจากตารางทั้ง 3 เพื่อเอามาสร้างตาราง "หน้าที่ความรับผิดชอบ"
-  const watchedCore = useWatch({ control, name: "personnelCoreCosts" }) || [];
-  const watchedAsst = useWatch({ control, name: "personnelAsstCosts" }) || [];
-  const watchedSupp = useWatch({ control, name: "personnelSuppCosts" }) || [];
+  const watchedCore = useWatch({ control, name: "personnelCoreCosts" });
+  const watchedAsst = useWatch({ control, name: "personnelAsstCosts" });
+  const watchedSupp = useWatch({ control, name: "personnelSuppCosts" });
+  const currentRespValues = useWatch({ control, name: "personnelResponsibilities" });
 
   const { fields: respFields, replace: replaceResp } = useFieldArray({ 
     control, 
@@ -213,9 +217,9 @@ export const PersonnelCostSection = () => {
   useEffect(() => {
     // 1. กวาดชื่อตำแหน่งทั้งหมดมารวมกัน ตัดช่องว่าง และคัดเอาเฉพาะที่ไม่ใช่ค่าว่าง
     const allPositions = [
-      ...watchedCore.map((p: any) => p.position),
-      ...watchedAsst.map((p: any) => p.position),
-      ...watchedSupp.map((p: any) => p.position),
+      ...(watchedCore ?? []).map((p) => p.position),
+      ...(watchedAsst ?? []).map((p) => p.position),
+      ...(watchedSupp ?? []).map((p) => p.position),
     ]
     .map(p => p?.trim())
     .filter(p => p && p !== "");
@@ -224,11 +228,9 @@ export const PersonnelCostSection = () => {
     const uniquePositions = Array.from(new Set(allPositions));
 
     // 3. ดึงหน้าที่ที่เคยพิมพ์ไว้แล้วมาเก็บไว้ก่อน จะได้ไม่ลบของเก่าทิ้งเวลา User พิมพ์ตำแหน่งเพิ่ม
-    const currentRespValues = control._formValues.personnelResponsibilities || [];
-
     // 4. สร้าง Array ใหม่สำหรับการแสดงผล
     const newRespList = uniquePositions.map(pos => {
-      const existing = currentRespValues.find((r: any) => r.position === pos);
+      const existing = (currentRespValues ?? []).find((r) => r.position === pos);
       return {
         position: pos,
         responsibility: existing ? existing.responsibility : ""
@@ -236,13 +238,13 @@ export const PersonnelCostSection = () => {
     });
 
     // 5. เช็คว่ามีอะไรเปลี่ยนแปลงไหมก่อนสั่ง Replace (ป้องกัน React บ่นเรื่อง Infinite Loop)
-    const currentPosKey = JSON.stringify(respFields.map(f => (f as any).position));
+    const currentPosKey = JSON.stringify(respFields.map((f) => f.position));
     const newPosKey = JSON.stringify(uniquePositions);
 
     if (currentPosKey !== newPosKey) {
       replaceResp(newRespList);
     }
-  }, [watchedCore, watchedAsst, watchedSupp, replaceResp]); // ให้ทำงานทุกครั้งที่มีการพิมพ์ตำแหน่งใหม่
+  }, [watchedCore, watchedAsst, watchedSupp, currentRespValues, respFields, replaceResp]); // ให้ทำงานทุกครั้งที่มีการพิมพ์ตำแหน่งใหม่
 
   return (
     <div className="space-y-4">
@@ -272,8 +274,8 @@ export const PersonnelCostSection = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {respFields.map((field: any, index) => {
-                  const error = (errors.personnelResponsibilities as any)?.[index]?.responsibility;
+                {respFields.map((field, index) => {
+                  const error = errors.personnelResponsibilities?.[index]?.responsibility;
                   
                   return (
                     <tr key={field.id} className="hover:bg-slate-50/50">

@@ -2,7 +2,14 @@
 "use client";
 
 import { useState } from "react";
-import { useFormContext, useFieldArray } from "react-hook-form";
+import {
+  useFormContext,
+  useFieldArray,
+  type Control,
+  type FieldErrors,
+  type UseFormRegister,
+  type UseFormWatch,
+} from "react-hook-form";
 import { ProposalStep5Values } from "../types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +22,16 @@ import { generateProposalDocx } from "@/features/proposals/utils/documentGenerat
 // ---------------------------------------------------------------------------
 // Sub-Component: สำหรับจัดการตาราง VM ภายในแต่ละระบบงาน
 // ---------------------------------------------------------------------------
-const CloudSystemItem = ({ nestIndex, control, register, errors, watch, removeSystem }: any) => {
+type CloudSystemItemProps = {
+  nestIndex: number;
+  control: Control<ProposalStep5Values>;
+  register: UseFormRegister<ProposalStep5Values>;
+  errors: FieldErrors<ProposalStep5Values>;
+  watch: UseFormWatch<ProposalStep5Values>;
+  removeSystem: (index: number) => void;
+};
+
+const CloudSystemItem = ({ nestIndex, control, register, errors, watch, removeSystem }: CloudSystemItemProps) => {
   const { fields: vmFields, append: appendVm, remove: removeVm } = useFieldArray({
     control,
     name: `cloudRequests.${nestIndex}.vms`,
@@ -25,7 +41,7 @@ const CloudSystemItem = ({ nestIndex, control, register, errors, watch, removeSy
 
   // คำนวณผลรวมรายกลุ่ม (Group Total)
   const groupTotal = vms.reduce(
-    (acc: any, vm: any) => ({
+    (acc, vm) => ({
       vcpu: acc.vcpu + (Number(vm.vcpu) || 0),
       ramGb: acc.ramGb + (Number(vm.ramGb) || 0),
       gpuGb: acc.gpuGb + (Number(vm.gpuGb) || 0),
@@ -202,7 +218,7 @@ export const ProposalStep5 = () => {
   const handleGenerateDocument = async () => {
     setIsGenerating(true);
     try {
-      const allFormData = getValues() as any; 
+      const allFormData = getValues();
       const result = await generateProposalDocx(allFormData);
       if (!result.success) {
         alert("เกิดข้อผิดพลาดในการสร้างเอกสาร: " + result.error);
@@ -257,7 +273,7 @@ export const ProposalStep5 = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-3">
             <Label className="text-md font-medium text-foreground">บุคลากร ICT ที่มีอยู่ในปัจจุบัน</Label>
-            <Button type="button" onClick={() => appendPersonnel({ position: "", level: "", count: "" as any })} size="sm" className="rounded-full gap-2">
+            <Button type="button" onClick={() => appendPersonnel({ position: "", level: "", count: 0 })} size="sm" className="rounded-full gap-2">
               <Plus className="w-4 h-4"/> เพิ่มบุคลากร
             </Button>
           </div>
@@ -278,7 +294,7 @@ export const ProposalStep5 = () => {
                   <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">ไม่มีข้อมูลบุคลากร</td></tr>
                 )}
                 {personnelFields.map((field, index) => {
-                  const rowErrors = errors?.ictPersonnel?.[index] || {} as any;
+                  const rowErrors = errors?.ictPersonnel?.[index] || {};
                   return (
                     <tr key={field.id} className="border-t border-surface-variant">
                       <td className="p-2 text-center text-muted-foreground">{index + 1}</td>
@@ -347,7 +363,7 @@ export const ProposalStep5 = () => {
           </div>
           <Button 
             type="button" 
-            onClick={() => appendCloud({ systemName: "", requestedServiceDate: "" as any, recordedRequestDate: "" as any, vms: [] })} 
+            onClick={() => appendCloud({ systemName: "", requestedServiceDate: new Date(), recordedRequestDate: new Date(), vms: [] })} 
             className="gap-2 shadow-sm"
           >
             <Plus className="w-4 h-4" /> เพิ่มระบบงานใหม่
@@ -356,6 +372,7 @@ export const ProposalStep5 = () => {
 
         {cloudFields.length === 0 ? (
           <div className="text-center p-10 border-2 border-dashed border-border rounded-xl text-muted-foreground">
+            {/* eslint-disable react/no-unescaped-entities */}
             ยังไม่มีคำขอใช้บริการ Cloud <br/>
             <span className="text-sm">กด "เพิ่มระบบงานใหม่" เพื่อระบุรายละเอียด</span>
           </div>

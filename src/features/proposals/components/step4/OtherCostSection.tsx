@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import type { ProposalStep4Values } from "../../types";
 
 export const OtherCostSection = () => {
-  const { control, register, setValue, formState: { errors } } = useFormContext();
+  const { control, register, setValue, formState: { errors } } = useFormContext<ProposalStep4Values>();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "otherCosts",
@@ -14,7 +15,7 @@ export const OtherCostSection = () => {
 
   // Watch ข้อมูลเพื่อคำนวณยอดรวม (Real-time)
   const watchedRows = useWatch({ control, name: "otherCosts" }) || [];
-  const tableErrors = (errors.otherCosts as any) || [];
+  const tableErrors = errors.otherCosts || [];
 
   return (
     <div className="space-y-3 mt-4">
@@ -61,7 +62,7 @@ export const OtherCostSection = () => {
                 </tr>
               )}
 
-              {fields.map((field: any, index) => {
+              {fields.map((field, index) => {
                 const row = watchedRows[index] || {};
                 const rowErr = tableErrors[index] || {};
                 

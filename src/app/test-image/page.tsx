@@ -4,6 +4,7 @@ import { useState, useRef, ChangeEvent, useEffect } from "react";
 import imageCompression from "browser-image-compression";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, Image as ImageIcon, Download, Settings2 } from "lucide-react";
+import NextImage from "next/image";
 
 interface ImageStats {
   name: string;
@@ -243,7 +244,14 @@ export default function ClientImageCompressor() {
               <span className="text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md">{formatBytes(original.size)}</span>
             </h3>
             <div className="border border-slate-200 rounded-lg overflow-hidden bg-[url('https://grid.malven.co/assets/img/grid-bg.png')] flex items-center justify-center min-h-[350px]">
-              <img src={original.url} alt="Original" className="object-contain max-h-[400px]" />
+              <NextImage
+                src={original.url}
+                alt="Original"
+                width={original.width}
+                height={original.height}
+                unoptimized
+                className="object-contain max-h-[400px]"
+              />
             </div>
           </div>
 
@@ -276,7 +284,14 @@ export default function ClientImageCompressor() {
                 </div>
               ) : null}
               {compressed && (
-                <img src={compressed.url} alt="Compressed" className="object-contain max-h-[400px]" />
+                <NextImage
+                  src={compressed.url}
+                  alt="Compressed"
+                  width={compressed.width}
+                  height={compressed.height}
+                  unoptimized
+                  className="object-contain max-h-[400px]"
+                />
               )}
             </div>
           </div>

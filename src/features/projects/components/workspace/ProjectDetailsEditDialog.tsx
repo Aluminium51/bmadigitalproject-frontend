@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { schemas } from "@/types/api-schemas";
@@ -25,13 +25,6 @@ export function ProjectDetailsEditDialog({
   const mutation = useUpdateProject(project.id);
   const [projectName, setProjectName] = useState(project.projectName ?? "");
   const [isPublic, setIsPublic] = useState(project.isPublic);
-
-  useEffect(() => {
-    if (open) {
-      setProjectName(project.projectName ?? "");
-      setIsPublic(project.isPublic);
-    }
-  }, [open, project.projectName, project.isPublic]);
 
   const save = async () => {
     const normalizedName = projectName.trim();

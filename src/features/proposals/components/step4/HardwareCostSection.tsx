@@ -1,4 +1,5 @@
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
+/* eslint-disable react/no-unescaped-entities */
 import { Trash2, Plus, CornerDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

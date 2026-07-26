@@ -73,7 +73,7 @@ export function CreateProjectTemplate() {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<CreateProjectFormInput, any, CreateProjectValues>({
+  } = useForm<CreateProjectFormInput, undefined, CreateProjectValues>({
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
       projectName: "",
@@ -184,7 +184,7 @@ export function CreateProjectTemplate() {
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {quadrants.map((q: any) => (
+                    {quadrants.map((q) => (
                       <SelectItem key={q.id} value={q.id.toString()}>
                         {q.name}
                       </SelectItem>
@@ -232,7 +232,7 @@ export function CreateProjectTemplate() {
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {governors.map((gov: any) => (
+                    {governors.map((gov) => (
                       <SelectItem key={gov.id} value={gov.id.toString()}>
                         {gov.name}
                       </SelectItem>

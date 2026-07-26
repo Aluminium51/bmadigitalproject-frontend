@@ -10,6 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ProposalStep4Values } from "../../types";
 
+/* React Hook Form's nested dynamic field paths require these two compatibility casts. */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // กำหนด Type สำหรับแถวข้อมูลวิทยากรและอาหาร
 interface TrainingRowType {
   itemName?: string;
@@ -34,14 +37,17 @@ interface TrainingCourseItemProps {
 
 const TrainingCourseItem = ({ index, control, register, setValue, watch, remove, errors }: TrainingCourseItemProps) => {
   const coursePath = `trainingCourses.${index}` as const;
+  const speakerEnabledPath = `${coursePath}.hasSpeakerCost` as `trainingCourses.${number}.hasSpeakerCost`;
+  const speakerCostsPath = `${coursePath}.speakerCosts` as `trainingCourses.${number}.speakerCosts`;
+  const foodCostsPath = `${coursePath}.foodCosts` as `trainingCourses.${number}.foodCosts`;
   const rowErrors = errors?.trainingCourses?.[index] || {};
   
-  const hasSpeaker = useWatch({ control, name: `${coursePath}.hasSpeakerCost` as any });
-  const watchedSpeakerCosts = useWatch({ control, name: `${coursePath}.speakerCosts` as any }) || [];
-  const watchedFoodCosts = useWatch({ control, name: `${coursePath}.foodCosts` as any }) || [];
+  const hasSpeaker = useWatch({ control, name: speakerEnabledPath });
+  const watchedSpeakerCosts = useWatch({ control, name: speakerCostsPath }) || [];
+  const watchedFoodCosts = useWatch({ control, name: foodCostsPath }) || [];
 
-  const { fields: spkFields, append: appendSpk, remove: removeSpk } = useFieldArray({ control, name: `${coursePath}.speakerCosts` as any });
-  const { fields: foodFields } = useFieldArray({ control, name: `${coursePath}.foodCosts` as any });
+  const { fields: spkFields, append: appendSpk, remove: removeSpk } = useFieldArray({ control, name: speakerCostsPath });
+  const { fields: foodFields } = useFieldArray({ control, name: foodCostsPath });
 
   const totalSpkCost = watchedSpeakerCosts.reduce((acc: number, row: TrainingRowType) => acc + ((row.hours || 0) * (row.ratePerHour || 0) * (row.days || 0)), 0);
   const totalFoodCost = watchedFoodCosts.reduce((acc: number, row: TrainingRowType) => acc + ((row.mealsCount || 0) * (row.ratePerMeal || 0) * (row.traineesCount || 0) * (row.days || 0)), 0);

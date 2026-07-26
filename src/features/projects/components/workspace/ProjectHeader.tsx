@@ -30,9 +30,13 @@ import {
 import { ReturnedFeedbackBanner } from "./ReturnedFeedbackBanner";
 import { ProjectDetailsEditDialog } from "./ProjectDetailsEditDialog";
 
+type HeaderProposal = {
+  budgetsByYear?: Array<{ year?: number | string | null }>;
+};
+
 interface ProjectHeaderProps {
   project: ProjectDetail;
-  proposal?: any; // เผื่อรับข้อมูล Proposal เข้ามาเพื่อดึงปีงบประมาณ
+  proposal?: HeaderProposal;
 }
 
 export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
@@ -89,12 +93,12 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
     : (project.division?.name || "-");
 
   // 4. เทียบ ID ที่ได้จาก Project เข้ากับข้อมูล Lookup ของจริงเพื่อเอา `name` มาโชว์
-  const matchedGovernor = governors.find((g: any) => g.id === project.deputyGovernorId);
+  const matchedGovernor = governors.find((g) => g.id === project.deputyGovernorId);
   const deputyGovernorName = project.deputyGovernorId
     ? matchedGovernor?.name || `(ID: ${project.deputyGovernorId})`
     : "ยังไม่ระบุ";
 
-  const matchedQuadrant = quadrants.find((q: any) => q.id === project.fourQuadrantsId);
+  const matchedQuadrant = quadrants.find((q) => q.id === project.fourQuadrantsId);
   const fourQuadrantsName = project.fourQuadrantsId
     ? matchedQuadrant?.name || `(ID: ${project.fourQuadrantsId})`
     : "ยังไม่ระบุ";

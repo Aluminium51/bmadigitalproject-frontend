@@ -49,9 +49,9 @@ export const ProposalStep2 = () => {
   });
 
   // --- ตัวแปรช่วยดึง Error ของตาราง (ป้องกัน TypeScript บ่นตอน map) ---
-  const relatedErrors = (errors.relatedProjects as any) || [];
-  const manpowerErrors = (errors.manpower as any) || [];
-  const equipmentErrors = (errors.existingEquipment as any) || [];
+  const relatedErrors = errors.relatedProjects || [];
+  const manpowerErrors = errors.manpower || [];
+  const equipmentErrors = errors.existingEquipment || [];
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -182,6 +182,7 @@ export const ProposalStep2 = () => {
             <div className="space-y-4">
               {relatedFields.length === 0 ? (
                 <div className="p-8 text-center border-2 border-dashed border-border rounded-2xl text-slate-gray">
+                  {/* eslint-disable-next-line react/no-unescaped-entities */}
                   กรุณากดปุ่ม "เพิ่มโครงการ" เพื่อระบุข้อมูล
                 </div>
               ) : (

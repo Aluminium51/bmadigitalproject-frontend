@@ -1,7 +1,7 @@
 // ProjectStep3.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   useFormContext,
   UseFormWatch,
@@ -61,6 +61,7 @@ async function uploadImage(
 }
 
 // --- Component สำหรับอัปโหลด 1 ไฟล์รูปภาพ + คำอธิบาย ---
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, @typescript-eslint/no-unused-vars */
 const LegacySingleFileUploadWithDescBox = ({
   projectId,
   title,
@@ -94,9 +95,12 @@ const LegacySingleFileUploadWithDescBox = ({
 
   // ดึงค่ามาเช็คและ Cast ไทป์ให้ตรงตาม Interface
   const watchedFile = watch(name);
-  const currentFile = (typeof watchedFile === "string"
-    ? { id: `${String(name)}-server`, file: watchedFile, description: "" }
-    : watchedFile) as MappedFile | null | undefined;
+  const currentFile = useMemo(
+    () => (typeof watchedFile === "string"
+      ? { id: `${String(name)}-server`, file: watchedFile, description: "" }
+      : watchedFile) as MappedFile | null | undefined,
+    [name, watchedFile],
+  );
   const isFull = !!currentFile;
 
   // Effect: สำหรับคอยจัดการเปิด/ปิด Object URL เพื่อทำภาพพรีวิว
@@ -220,7 +224,7 @@ const LegacySingleFileUploadWithDescBox = ({
   };
 
   // ดึงข้อความ Error แบบปลอดภัยตามกลุ่มฟิลด์ฟอร์ม
-  const fieldError = errors[name] as Record<string, any> | undefined;
+  const fieldError = errors[name] as { description?: { message?: string } } | undefined;
 
   return (
     <div className="flex flex-col gap-3 p-4 border border-border rounded-xl bg-surface">
@@ -330,6 +334,7 @@ const LegacySingleFileUploadWithDescBox = ({
 };
 
 // --- Component หลัก ---
+/* eslint-enable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, @typescript-eslint/no-unused-vars */
 const SingleFileUploadWithDescBox = ({
   projectId,
   title,
@@ -344,7 +349,7 @@ const SingleFileUploadWithDescBox = ({
   const value = (typeof watchedFile === "string"
     ? { id: `${String(name)}-server`, name: "Uploaded image", url: watchedFile, file: watchedFile, type: "image", description: "" }
     : watchedFile) as SharedFileValue | null | undefined;
-  const fieldError = errors[name] as Record<string, any> | undefined;
+  const fieldError = errors[name] as { description?: { message?: string } } | undefined;
   const urlField = `${String(name).replace("File", "Url")}` as keyof ProposalStep3Values;
 
   return (
@@ -360,12 +365,12 @@ const SingleFileUploadWithDescBox = ({
       onUploadingChange={onUploadingChange}
       onChange={(uploaded) => {
         if (!uploaded) {
-          setValue(name, null as any, { shouldValidate: true });
-          setValue(urlField, null as any, { shouldValidate: true });
+          setValue(name, null as never, { shouldValidate: true });
+          setValue(urlField, null as never, { shouldValidate: true });
           return;
         }
-        setValue(name, { ...uploaded, file: uploaded.url || uploaded.file || "" } as any, { shouldValidate: true });
-        if (uploaded.url) setValue(urlField, uploaded.url as any, { shouldValidate: true });
+        setValue(name, { ...uploaded, file: uploaded.url || uploaded.file || "" } as never, { shouldValidate: true });
+        if (uploaded.url) setValue(urlField, uploaded.url as never, { shouldValidate: true });
       }}
     />
   );

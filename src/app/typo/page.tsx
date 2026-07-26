@@ -1,6 +1,7 @@
 "use client"; // มั่นใจว่าเป็น Client Component เพื่อให้ทำงานกับ Toast ได้
 
 import { Badge } from "@/components/ui/badge";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -23,7 +24,7 @@ import { toast } from "sonner";
 export default function TypographyPage() {
   // ฟังก์ชันจำลองสำหรับการทดสอบ Toast แบบ Promise (Loading -> Success/Error)
   const handlePromiseToast = () => {
-    const myPromise = new Promise((resolve, reject) => {
+    const myPromise = new Promise<{ name: string }>((resolve) => {
       setTimeout(() => resolve({ name: "ข้อมูลโครงการ" }), 2000); // จำลองโหลด 2 วินาที
     });
 

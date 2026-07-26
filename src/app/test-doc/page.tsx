@@ -100,7 +100,21 @@ const mockProjectData = {
 
 // Custom logic สำหรับแปลงข้อมูลก่อนหยอดลงใน Word
 // เพิ่มจุดที่ 1: ฟังก์ชันช่วยแปลงข้อมูล Array ตารางราคาให้ออกมาเป็นโครงสร้างของ Word
-const mapCostItemsForWord = (items: any[]) => {
+type MockCostItem = {
+  quantity: number;
+  unitPrice: number;
+  referenceType?: string;
+  mdesMonth?: string;
+  mdesYear?: string;
+  mdesItemNo?: string;
+  marketCount?: number;
+  marketCompany?: string;
+  prevProject?: string;
+  prevYear?: string;
+  otherDetail?: string;
+};
+
+const mapCostItemsForWord = (items: MockCostItem[]) => {
   if (!items || items.length === 0) return [];
   return items.map((item, index) => ({
     ...item,
@@ -168,7 +182,9 @@ export default function TestDocPage() {
   const handleTestDownload = async () => {
     setIsGenerating(true);
     try {
-      await generateProposalDocx(templateData as any);
+      await generateProposalDocx(
+        templateData as unknown as Parameters<typeof generateProposalDocx>[0],
+      );
       console.log("Mock Data ที่ส่งไปทำ Word:", templateData);
     } catch (error) {
       console.error(error);

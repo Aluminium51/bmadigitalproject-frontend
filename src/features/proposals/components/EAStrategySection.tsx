@@ -5,9 +5,10 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { ProposalStep3Values } from "../types";
 
 export const EAStrategySection = () => {
-  const { register, setValue, control, formState: { errors } } = useFormContext<any>(); // ใช้ any ชั่วคราว หรือ import Type มา
+  const { register, setValue, control, formState: { errors } } = useFormContext<ProposalStep3Values>();
 
   const isBmaPlan = useWatch({ control, name: "isBmaPlan" });
   const isAgencyPlan = useWatch({ control, name: "isAgencyPlan" });
