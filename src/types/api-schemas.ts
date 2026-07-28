@@ -23,8 +23,10 @@ const UserProfileResponse = z
     division: z
       .object({
         divisionId: z.number(),
+        divisionCode: z.string().min(8).max(8),
         divisionName: z.string(),
         departmentId: z.number(),
+        departmentCode: z.string().min(8).max(8),
         departmentName: z.string(),
       })
       .passthrough()
@@ -156,8 +158,10 @@ const Project = z
     division: z
       .object({
         id: z.number(),
+        code: z.string().min(8).max(8),
         name: z.string(),
         departmentId: z.number().nullable(),
+        departmentCode: z.string().min(8).max(8).nullable(),
         departmentName: z.string().nullable(),
       })
       .passthrough()
@@ -281,8 +285,10 @@ const AssignmentProject = z
     division: z
       .object({
         id: z.number(),
+        code: z.string().min(8).max(8),
         name: z.string(),
         departmentId: z.number().nullable(),
+        departmentCode: z.string().min(8).max(8).nullable(),
         departmentName: z.string().nullable(),
       })
       .passthrough()
@@ -351,8 +357,10 @@ const AnalystAssignedProject = z
     division: z
       .object({
         id: z.number(),
+        code: z.string().min(8).max(8),
         name: z.string(),
         departmentId: z.number().nullable(),
+        departmentCode: z.string().min(8).max(8).nullable(),
         departmentName: z.string().nullable(),
       })
       .passthrough()
@@ -623,7 +631,6 @@ const SubmittedProposalPatchRequest = z
         z
           .object({
             id: z.string().uuid().optional(),
-            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
             position: z.string().min(1),
             degree: z.string().min(1),
             fieldOfStudy: z.string().optional(),
@@ -641,7 +648,6 @@ const SubmittedProposalPatchRequest = z
         z
           .object({
             id: z.string().uuid().optional(),
-            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
             position: z.string().min(1),
             degree: z.string().min(1),
             fieldOfStudy: z.string().optional(),
@@ -659,7 +665,6 @@ const SubmittedProposalPatchRequest = z
         z
           .object({
             id: z.string().uuid().optional(),
-            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
             position: z.string().min(1),
             degree: z.string().min(1),
             fieldOfStudy: z.string().optional(),
@@ -764,14 +769,8 @@ const SubmittedProposalPatchRequest = z
           .object({
             id: z.string().uuid().optional(),
             systemName: z.string().min(1),
-            requestedServiceDate: z
-              .string()
-              .datetime({ offset: true })
-              .nullable(),
-            recordedRequestDate: z
-              .string()
-              .datetime({ offset: true })
-              .nullable(),
+            requestedServiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            recordedRequestDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
             vms: z
               .array(
                 z
@@ -793,6 +792,8 @@ const SubmittedProposalPatchRequest = z
           .passthrough()
       )
       .default([]),
+    isReady: z.boolean().default(false),
+    readinessDetails: z.string(),
     otherReadiness: z.string(),
     expectedBenefits: z.string().min(1),
     isInRoadmap: z.boolean(),
@@ -993,7 +994,6 @@ const SubmitProposalRequest = z
         z
           .object({
             id: z.string().uuid().optional(),
-            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
             position: z.string().min(1),
             degree: z.string().min(1),
             fieldOfStudy: z.string().optional(),
@@ -1012,7 +1012,6 @@ const SubmitProposalRequest = z
         z
           .object({
             id: z.string().uuid().optional(),
-            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
             position: z.string().min(1),
             degree: z.string().min(1),
             fieldOfStudy: z.string().optional(),
@@ -1031,7 +1030,6 @@ const SubmitProposalRequest = z
         z
           .object({
             id: z.string().uuid().optional(),
-            personnelType: z.enum(["CORE", "ASST", "SUPP"]),
             position: z.string().min(1),
             degree: z.string().min(1),
             fieldOfStudy: z.string().optional(),
@@ -1141,14 +1139,8 @@ const SubmitProposalRequest = z
           .object({
             id: z.string().uuid().optional(),
             systemName: z.string().min(1),
-            requestedServiceDate: z
-              .string()
-              .datetime({ offset: true })
-              .nullable(),
-            recordedRequestDate: z
-              .string()
-              .datetime({ offset: true })
-              .nullable(),
+            requestedServiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            recordedRequestDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
             vms: z
               .array(
                 z
@@ -1171,6 +1163,8 @@ const SubmitProposalRequest = z
       )
       .optional()
       .default([]),
+    isReady: z.boolean().optional().default(false),
+    readinessDetails: z.string().optional(),
     otherReadiness: z.string().optional(),
     expectedBenefits: z.string().min(1),
     isInRoadmap: z.boolean(),
@@ -1312,12 +1306,23 @@ const CloudRequest = z
 const DivisionItem = z
   .object({
     id: z.number().int(),
+    code: z.string().min(8).max(8),
     departmentId: z.number().int(),
     name: z.string().max(255),
   })
   .passthrough();
 const DivisionResponse = z
   .object({ data: z.array(DivisionItem) })
+  .passthrough();
+const DepartmentItem = z
+  .object({
+    id: z.number().int(),
+    code: z.string().min(8).max(8),
+    name: z.string().max(255),
+  })
+  .passthrough();
+const DepartmentResponse = z
+  .object({ data: z.array(DepartmentItem) })
   .passthrough();
 const LookupItem = z
   .object({ id: z.number().int(), name: z.string().max(255) })
@@ -1396,6 +1401,8 @@ export const schemas = {
   CloudRequest,
   DivisionItem,
   DivisionResponse,
+  DepartmentItem,
+  DepartmentResponse,
   LookupItem,
   LookupResponse,
   ProjectStatusItem,
@@ -1590,7 +1597,7 @@ const endpoints = makeApi([
     path: "/api/v1/lookups/departments",
     alias: "getApiv1lookupsdepartments",
     requestFormat: "json",
-    response: LookupResponse,
+    response: DepartmentResponse,
   },
   {
     method: "get",
@@ -1935,7 +1942,7 @@ const endpoints = makeApi([
     errors: [
       {
         status: 401,
-        description: `Unauthorized`,
+        description: `ไม่ได้รับอนุญาต`,
         schema: ErrorResponse,
       },
     ],
@@ -2034,12 +2041,12 @@ const endpoints = makeApi([
     errors: [
       {
         status: 403,
-        description: `Forbidden`,
+        description: `ไม่ได้รับอนุญาต`,
         schema: ErrorResponse,
       },
       {
         status: 409,
-        description: `Stale project state`,
+        description: `สถานะโครงการไม่เป็นปัจจุบัน`,
         schema: ErrorResponse,
       },
     ],
@@ -2065,17 +2072,17 @@ const endpoints = makeApi([
     errors: [
       {
         status: 400,
-        description: `Invalid review`,
+        description: `ผลการวิเคราะห์ไม่ถูกต้อง`,
         schema: ErrorResponse,
       },
       {
         status: 403,
-        description: `Forbidden`,
+        description: `ไม่ได้รับอนุญาต`,
         schema: ErrorResponse,
       },
       {
         status: 409,
-        description: `Stale project state`,
+        description: `สถานะโครงการไม่เป็นปัจจุบัน`,
         schema: ErrorResponse,
       },
     ],
@@ -2151,22 +2158,22 @@ const endpoints = makeApi([
     errors: [
       {
         status: 400,
-        description: `Invalid decision or missing required data`,
+        description: `ผลการพิจารณาไม่ถูกต้องหรือข้อมูลที่จำเป็นไม่ครบถ้วน`,
         schema: ErrorResponse,
       },
       {
         status: 403,
-        description: `Only Secretaries may review projects`,
+        description: `เฉพาะเลขานุการเท่านั้นที่ตรวจสอบโครงการได้`,
         schema: ErrorResponse,
       },
       {
         status: 404,
-        description: `Project not found`,
+        description: `ไม่พบโครงการ`,
         schema: ErrorResponse,
       },
       {
         status: 409,
-        description: `Project is no longer pending Secretary review`,
+        description: `โครงการไม่อยู่ในสถานะรอเลขานุการตรวจสอบแล้ว`,
         schema: ErrorResponse,
       },
     ],
@@ -2266,7 +2273,7 @@ const endpoints = makeApi([
     errors: [
       {
         status: 403,
-        description: `Only Analysts may access this queue`,
+        description: `เฉพาะผู้วิเคราะห์เท่านั้นที่เข้าถึงรายการนี้ได้`,
         schema: ErrorResponse,
       },
     ],
@@ -2287,17 +2294,17 @@ const endpoints = makeApi([
     errors: [
       {
         status: 400,
-        description: `Invalid Analyst`,
+        description: `ผู้วิเคราะห์ไม่ถูกต้อง`,
         schema: ErrorResponse,
       },
       {
         status: 403,
-        description: `Forbidden`,
+        description: `ไม่ได้รับอนุญาต`,
         schema: ErrorResponse,
       },
       {
         status: 409,
-        description: `A project is no longer pending assignment`,
+        description: `โครงการไม่อยู่ในสถานะรอมอบหมายแล้ว`,
         schema: ErrorResponse,
       },
     ],
@@ -2328,7 +2335,7 @@ const endpoints = makeApi([
     errors: [
       {
         status: 403,
-        description: `Only Admin users may access the assignment queue`,
+        description: `เฉพาะผู้ดูแลระบบเท่านั้นที่เข้าถึงรายการมอบหมายงานได้`,
         schema: ErrorResponse,
       },
     ],
@@ -2359,7 +2366,7 @@ const endpoints = makeApi([
     errors: [
       {
         status: 403,
-        description: `Only Secretaries may access this queue`,
+        description: `เฉพาะเลขานุการเท่านั้นที่เข้าถึงรายการนี้ได้`,
         schema: ErrorResponse,
       },
     ],

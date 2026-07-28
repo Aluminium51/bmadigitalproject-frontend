@@ -1102,7 +1102,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Unauthorized */
+                /** @description ไม่ได้รับอนุญาต */
                 401: {
                     headers: {
                         [name: string]: unknown;
@@ -1140,7 +1140,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Projects pending Secretary review */
+                /** @description โครงการที่รอการตรวจสอบจากเลขานุการ */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1149,7 +1149,7 @@ export interface paths {
                         "application/json": components["schemas"]["PaginatedProjectResponse"];
                     };
                 };
-                /** @description Only Secretaries may access this queue */
+                /** @description เฉพาะเลขานุการเท่านั้นที่เข้าถึงรายการนี้ได้ */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1175,7 +1175,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get projects waiting for Analyst assignment */
+        /** ดึงรายชื่อโครงการที่รอมอบหมายผู้วิเคราะห์ */
         get: {
             parameters: {
                 query?: {
@@ -1189,7 +1189,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Projects waiting for assignment */
+                /** @description โครงการที่รอมอบหมายผู้วิเคราะห์ */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1198,7 +1198,7 @@ export interface paths {
                         "application/json": components["schemas"]["PaginatedAssignmentProjectResponse"];
                     };
                 };
-                /** @description Only Admin users may access the assignment queue */
+                /** @description เฉพาะผู้ดูแลระบบเท่านั้นที่เข้าถึงรายการมอบหมายงานได้ */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1226,7 +1226,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Assign multiple projects to an Analyst */
+        /** มอบหมายโครงการหลายรายการให้ผู้วิเคราะห์ */
         post: {
             parameters: {
                 query?: never;
@@ -1240,7 +1240,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Projects assigned successfully */
+                /** @description มอบหมายโครงการสำเร็จ */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1249,7 +1249,7 @@ export interface paths {
                         "application/json": components["schemas"]["BulkAssignProjectResponse"];
                     };
                 };
-                /** @description Invalid Analyst */
+                /** @description ผู้วิเคราะห์ไม่ถูกต้อง */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1258,7 +1258,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Forbidden */
+                /** @description ไม่ได้รับอนุญาต */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1267,7 +1267,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description A project is no longer pending assignment */
+                /** @description โครงการไม่อยู่ในสถานะรอมอบหมายแล้ว */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -1291,7 +1291,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get projects assigned to the authenticated Analyst */
+        /** ดึงโครงการที่มอบหมายให้ผู้วิเคราะห์ที่เข้าสู่ระบบ */
         get: {
             parameters: {
                 query?: {
@@ -1305,7 +1305,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Assigned Analyst projects */
+                /** @description โครงการที่มอบหมายให้ผู้วิเคราะห์ */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1314,7 +1314,7 @@ export interface paths {
                         "application/json": components["schemas"]["PaginatedAnalystAssignedProjectResponse"];
                     };
                 };
-                /** @description Only Analysts may access this queue */
+                /** @description เฉพาะผู้วิเคราะห์เท่านั้นที่เข้าถึงรายการนี้ได้ */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1579,7 +1579,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Request Analyst reassignment */
+        /** ขอเปลี่ยนผู้วิเคราะห์ที่รับผิดชอบ */
         post: {
             parameters: {
                 query?: never;
@@ -1596,7 +1596,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Reassignment requested */
+                /** @description ส่งคำขอเปลี่ยนผู้รับผิดชอบแล้ว */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1605,7 +1605,7 @@ export interface paths {
                         "application/json": components["schemas"]["AnalystWorkflowResponse"];
                     };
                 };
-                /** @description Forbidden */
+                /** @description ไม่ได้รับอนุญาต */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1614,7 +1614,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Stale project state */
+                /** @description สถานะโครงการไม่เป็นปัจจุบัน */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -1640,7 +1640,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Complete Analyst project review */
+        /** บันทึกผลการวิเคราะห์โครงการ */
         post: {
             parameters: {
                 query?: never;
@@ -1657,7 +1657,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Analyst review completed */
+                /** @description บันทึกผลการวิเคราะห์เรียบร้อยแล้ว */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1666,7 +1666,7 @@ export interface paths {
                         "application/json": components["schemas"]["AnalystWorkflowResponse"];
                     };
                 };
-                /** @description Invalid review */
+                /** @description ผลการวิเคราะห์ไม่ถูกต้อง */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1675,7 +1675,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Forbidden */
+                /** @description ไม่ได้รับอนุญาต */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1684,7 +1684,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Stale project state */
+                /** @description สถานะโครงการไม่เป็นปัจจุบัน */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -1710,7 +1710,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Review a project waiting for Secretary verification */
+        /** ตรวจสอบโครงการที่รอเลขานุการพิจารณา */
         post: {
             parameters: {
                 query?: never;
@@ -1727,7 +1727,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Secretary review completed */
+                /** @description บันทึกผลการตรวจสอบโดยเลขานุการเรียบร้อยแล้ว */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1736,7 +1736,7 @@ export interface paths {
                         "application/json": components["schemas"]["SecretaryReviewResponse"];
                     };
                 };
-                /** @description Invalid decision or missing required data */
+                /** @description ผลการพิจารณาไม่ถูกต้องหรือข้อมูลที่จำเป็นไม่ครบถ้วน */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1745,7 +1745,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Only Secretaries may review projects */
+                /** @description เฉพาะเลขานุการเท่านั้นที่ตรวจสอบโครงการได้ */
                 403: {
                     headers: {
                         [name: string]: unknown;
@@ -1754,7 +1754,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Project not found */
+                /** @description ไม่พบโครงการ */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -1763,7 +1763,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Project is no longer pending Secretary review */
+                /** @description โครงการไม่อยู่ในสถานะรอเลขานุการตรวจสอบแล้ว */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -2913,7 +2913,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["LookupResponse"];
+                        "application/json": components["schemas"]["DepartmentResponse"];
                     };
                 };
             };
@@ -3184,10 +3184,14 @@ export interface components {
             division: {
                 /** @example 1 */
                 divisionId: number;
+                /** @example 26020000 */
+                divisionCode: string;
                 /** @example กองยุทธศาสตร์ดิจิทัล */
                 divisionName: string;
                 /** @example 1 */
                 departmentId: number;
+                /** @example 26000000 */
+                departmentCode: string;
                 /** @example สำนักดิจิทัล */
                 departmentName: string;
             } | null;
@@ -3376,8 +3380,10 @@ export interface components {
             /** @description ข้อมูลส่วนราชการเจ้าของโครงการ */
             division: {
                 id: number;
+                code: string;
                 name: string;
                 departmentId: number | null;
+                departmentCode: string | null;
                 departmentName: string | null;
             } | null;
             /** @description สถานะโครงการ */
@@ -3473,8 +3479,10 @@ export interface components {
             } | null;
             division: {
                 id: number;
+                code: string;
                 name: string;
                 departmentId: number | null;
+                departmentCode: string | null;
                 departmentName: string | null;
             } | null;
             owner: {
@@ -3530,8 +3538,10 @@ export interface components {
             } | null;
             division: {
                 id: number;
+                code: string;
                 name: string;
                 departmentId: number | null;
+                departmentCode: string | null;
                 departmentName: string | null;
             } | null;
             owner: {
@@ -3766,8 +3776,6 @@ export interface components {
             personnelCoreCosts: {
                 /** Format: uuid */
                 id?: string;
-                /** @enum {string} */
-                personnelType: "CORE" | "ASST" | "SUPP";
                 position: string;
                 degree: string;
                 fieldOfStudy?: string;
@@ -3781,8 +3789,6 @@ export interface components {
             personnelAsstCosts: {
                 /** Format: uuid */
                 id?: string;
-                /** @enum {string} */
-                personnelType: "CORE" | "ASST" | "SUPP";
                 position: string;
                 degree: string;
                 fieldOfStudy?: string;
@@ -3796,8 +3802,6 @@ export interface components {
             personnelSuppCosts: {
                 /** Format: uuid */
                 id?: string;
-                /** @enum {string} */
-                personnelType: "CORE" | "ASST" | "SUPP";
                 position: string;
                 degree: string;
                 fieldOfStudy?: string;
@@ -3871,10 +3875,8 @@ export interface components {
                 /** Format: uuid */
                 id?: string;
                 systemName: string;
-                /** Format: date-time */
-                requestedServiceDate: string | null;
-                /** Format: date-time */
-                recordedRequestDate: string | null;
+                requestedServiceDate: string;
+                recordedRequestDate: string;
                 /** @default [] */
                 vms: {
                     /** Format: uuid */
@@ -3888,6 +3890,9 @@ export interface components {
                     price: number | null;
                 }[];
             }[];
+            /** @default false */
+            isReady: boolean;
+            readinessDetails?: string;
             otherReadiness?: string;
             expectedBenefits?: string;
             isInRoadmap?: boolean;
@@ -4270,8 +4275,6 @@ export interface components {
             personnelCoreCosts: {
                 /** Format: uuid */
                 id?: string;
-                /** @enum {string} */
-                personnelType: "CORE" | "ASST" | "SUPP";
                 position: string;
                 degree: string;
                 fieldOfStudy?: string;
@@ -4285,8 +4288,6 @@ export interface components {
             personnelAsstCosts: {
                 /** Format: uuid */
                 id?: string;
-                /** @enum {string} */
-                personnelType: "CORE" | "ASST" | "SUPP";
                 position: string;
                 degree: string;
                 fieldOfStudy?: string;
@@ -4300,8 +4301,6 @@ export interface components {
             personnelSuppCosts: {
                 /** Format: uuid */
                 id?: string;
-                /** @enum {string} */
-                personnelType: "CORE" | "ASST" | "SUPP";
                 position: string;
                 degree: string;
                 fieldOfStudy?: string;
@@ -4375,10 +4374,8 @@ export interface components {
                 /** Format: uuid */
                 id?: string;
                 systemName: string;
-                /** Format: date-time */
-                requestedServiceDate: string | null;
-                /** Format: date-time */
-                recordedRequestDate: string | null;
+                requestedServiceDate: string;
+                recordedRequestDate: string;
                 /** @default [] */
                 vms: {
                     /** Format: uuid */
@@ -4392,6 +4389,9 @@ export interface components {
                     price: number | null;
                 }[];
             }[];
+            /** @default false */
+            isReady: boolean;
+            readinessDetails?: string;
             otherReadiness?: string;
             expectedBenefits: string;
             isInRoadmap: boolean;
@@ -4531,7 +4531,16 @@ export interface components {
         };
         DivisionItem: {
             id: number;
+            code: string;
             departmentId: number;
+            name: string;
+        };
+        DepartmentResponse: {
+            data: components["schemas"]["DepartmentItem"][];
+        };
+        DepartmentItem: {
+            id: number;
+            code: string;
             name: string;
         };
         LookupResponse: {
