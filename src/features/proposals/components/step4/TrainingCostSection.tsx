@@ -35,6 +35,13 @@ interface TrainingCourseItemProps {
   errors: FieldErrors<ProposalStep4Values>;
 }
 
+const foodTypeLabels: Record<string, string> = {
+  PARTIAL_MEAL: "ค่าอาหาร (ไม่ครบมื้อ)",
+  FULL_MEAL: "ค่าอาหารและเครื่องดื่ม",
+  SNACK: "ค่าอาหารว่าง",
+  OTHER: "ค่าอาหารอื่น ๆ",
+};
+
 const TrainingCourseItem = ({ index, control, register, setValue, watch, remove, errors }: TrainingCourseItemProps) => {
   const coursePath = `trainingCourses.${index}` as const;
   const speakerEnabledPath = `${coursePath}.hasSpeakerCost` as `trainingCourses.${number}.hasSpeakerCost`;
@@ -71,12 +78,12 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
         <div>
           <Label className="mb-2 block">สถานที่ฝึกอบรม <span className="text-status-orange">*</span></Label>
           <RadioGroup 
-            defaultValue={watch(`${coursePath}.locationType`)} 
-            onValueChange={(val) => setValue(`${coursePath}.locationType`, val as "สถานที่ราชการ" | "สถานที่เอกชน")} 
+            value={watch(`${coursePath}.locationType`)}
+            onValueChange={(val) => setValue(`${coursePath}.locationType`, val as "GOVERNMENT" | "PRIVATE", { shouldValidate: true })}
             className="flex flex-col sm:flex-row gap-4"
           >
-            <div className="flex items-center space-x-2"><RadioGroupItem value="สถานที่ราชการ" id={`loc-gov-${index}`} /><Label htmlFor={`loc-gov-${index}`}>สถานที่ราชการ</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="สถานที่เอกชน" id={`loc-prv-${index}`} /><Label htmlFor={`loc-prv-${index}`}>สถานที่เอกชน</Label></div>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="GOVERNMENT" id={`loc-gov-${index}`} /><Label htmlFor={`loc-gov-${index}`}>สถานที่ราชการ</Label></div>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="PRIVATE" id={`loc-prv-${index}`} /><Label htmlFor={`loc-prv-${index}`}>สถานที่เอกชน</Label></div>
           </RadioGroup>
         </div>
       </div>
@@ -172,7 +179,7 @@ const TrainingCourseItem = ({ index, control, register, setValue, watch, remove,
                 return (
                   <tr key={field.id} className="border-t border-surface-variant">
                     <td className="p-2 text-center text-muted-foreground">{fIdx + 1}</td>
-                    <td className="p-2 font-medium">{row.itemName} <input type="hidden" {...register(`${coursePath}.foodCosts.${fIdx}.itemName`)} value={row.itemName} /></td>
+                    <td className="p-2 font-medium">{foodTypeLabels[row.itemName] ?? row.itemName} <input type="hidden" {...register(`${coursePath}.foodCosts.${fIdx}.itemName`)} value={row.itemName} /></td>
                     <td className="p-1"><Input type="number" {...register(`${coursePath}.foodCosts.${fIdx}.mealsCount`, { valueAsNumber: true })} className="h-8 text-xs bg-surface text-center" /></td>
                     <td className="p-1"><Input type="number" {...register(`${coursePath}.foodCosts.${fIdx}.ratePerMeal`, { valueAsNumber: true })} className="h-8 text-xs bg-surface text-center" /></td>
                     <td className="p-1"><Input type="number" {...register(`${coursePath}.foodCosts.${fIdx}.traineesCount`, { valueAsNumber: true })} className="h-8 text-xs bg-surface text-center" /></td>
@@ -206,12 +213,12 @@ export const TrainingCostSection = () => {
         <Button 
           type="button" 
           onClick={() => appendCourse({ 
-            courseName: "", trainingMethod: "", locationType: "สถานที่ราชการ", 
+            courseName: "", trainingMethod: "", locationType: "GOVERNMENT",
             hasSpeakerCost: false, speakerReason: "", speakerCosts: [], 
             foodCosts: [
-              { itemName: "ค่าอาหาร (ไม่ครบมื้อ)", mealsCount: "", ratePerMeal: "", traineesCount: "", days: "" },
-              { itemName: "ค่าอาหารและเครื่องดื่ม", mealsCount: "", ratePerMeal: "", traineesCount: "", days: "" },
-              { itemName: "ค่าอาหารว่าง", mealsCount: "", ratePerMeal: "", traineesCount: "", days: "" }
+              { itemName: "PARTIAL_MEAL", mealsCount: "", ratePerMeal: "", traineesCount: "", days: "" },
+              { itemName: "FULL_MEAL", mealsCount: "", ratePerMeal: "", traineesCount: "", days: "" },
+              { itemName: "SNACK", mealsCount: "", ratePerMeal: "", traineesCount: "", days: "" }
             ] 
           } as any)} 
           size="sm" 

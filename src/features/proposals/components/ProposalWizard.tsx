@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useProjectWorkspace } from "@/features/projects/hooks/useProjectWorkspace";
 import { useProjectAttachmentTypes } from "@/features/projects/hooks/useProjectAttachmentTypes";
+import { normalizeProposalForForm } from "../utils/proposal-payload";
 
 // ---------------------------------------------------------------------------
 // AutoSaveWatcher — renders null, just triggers the auto-save side-effect
@@ -136,9 +137,7 @@ const WizardForm = ({
     ) return;
 
     const sourceValues = mode === "submitted" ? existingProposal : existingDraft;
-    const hydratedDraft: Record<string, unknown> = sourceValues
-      ? { ...sourceValues }
-      : {};
+    const hydratedDraft: Record<string, unknown> = normalizeProposalForForm(sourceValues ?? {});
     Object.assign(hydratedDraft, getProposalStep1ContextValues(projectDetail));
 
     const fileFields = [
@@ -229,13 +228,15 @@ const WizardForm = ({
   };
 
   const handleNext = async () => {
-    void validateCurrentStep();
+    const isValid = await validateCurrentStep();
+    if (!isValid) return;
     nextStep();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePrev = async () => {
-    void validateCurrentStep();
+    const isValid = await validateCurrentStep();
+    if (!isValid) return;
     prevStep();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

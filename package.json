@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "bun test",
     "clean": "rimraf .next && next dev",
     "generate:types": "node scripts/generate-openapi.mjs types",
     "generate:schemas": "node scripts/generate-openapi.mjs schemas"

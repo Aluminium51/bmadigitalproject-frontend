@@ -1,10 +1,8 @@
 // src/features/proposals/hooks/useProposalDraftQuery.ts
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
 import { schemas } from "@/types/api-schemas";
 import { CLIENT_API_BASE } from "@/lib/client-api";
-
-export type SubmittedProposalResponse = z.infer<typeof schemas.ProposalResponse>;
+import { normalizeProposalForForm } from "../utils/proposal-payload";
 
 const API_BASE = CLIENT_API_BASE;
 
@@ -55,7 +53,7 @@ export function useGetDraft(projectId: string | undefined) {
       };
       // The API returns the draft metadata and the actual form values in
       // draftPayload. Keep the hook contract focused on form values.
-      return draft.draftPayload ?? draft;
+      return normalizeProposalForForm(draft.draftPayload ?? draft);
     },
   });
 }
@@ -68,14 +66,7 @@ export function useGetProposal(projectId: string | undefined) {
     refetchOnMount: "always",
     select: (res) => {
       if (!res.data) return null;
-      const proposal = res.data as SubmittedProposalResponse & {
-        budgets?: unknown;
-        budgetsByYear?: unknown;
-      };
-      return {
-        ...proposal,
-        budgetsByYear: proposal.budgetsByYear ?? proposal.budgets,
-      };
+      return normalizeProposalForForm(res.data);
     },
   });
 }

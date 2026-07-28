@@ -29,8 +29,8 @@ export const ProposalStep2 = () => {
   });
 
   const showRelatedProjects =
-    selectedProjectType === "ทดแทนระบบเดิม" ||
-    selectedProjectType === "โครงการต่อเนื่อง";
+    selectedProjectType === "REPLACEMENT" ||
+    selectedProjectType === "CONTINUOUS";
 
   // --- Field Arrays สำหรับจัดการตาราง ---
   const { fields: relatedFields, append: appendRelated, remove: removeRelated } = useFieldArray({
@@ -149,11 +149,15 @@ export const ProposalStep2 = () => {
             control={control}
             name="projectType"
             render={({ field }) => (
-              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col sm:flex-row gap-6">
-                {["จัดหาใหม่", "ทดแทนระบบเดิม", "โครงการต่อเนื่อง"].map((type) => (
-                  <div key={type} className="flex items-center space-x-2">
-                    <RadioGroupItem value={type} id={type} />
-                    <Label htmlFor={type} className="font-normal cursor-pointer text-foreground">{type}</Label>
+              <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-col sm:flex-row gap-6">
+                {[
+                  { value: "NEW", label: "จัดหาใหม่" },
+                  { value: "REPLACEMENT", label: "ทดแทนระบบเดิม" },
+                  { value: "CONTINUOUS", label: "โครงการต่อเนื่อง" },
+                ].map((type) => (
+                  <div key={type.value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={type.value} id={`project-type-${type.value}`} />
+                    <Label htmlFor={`project-type-${type.value}`} className="font-normal cursor-pointer text-foreground">{type.label}</Label>
                   </div>
                 ))}
               </RadioGroup>

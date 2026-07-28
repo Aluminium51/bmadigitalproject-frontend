@@ -363,7 +363,10 @@ export const ProposalStep5 = () => {
           </div>
           <Button 
             type="button" 
-            onClick={() => appendCloud({ systemName: "", requestedServiceDate: new Date(), recordedRequestDate: new Date(), vms: [] })} 
+            onClick={() => {
+              const today = new Date().toISOString().slice(0, 10);
+              appendCloud({ systemName: "", requestedServiceDate: today, recordedRequestDate: today, vms: [] });
+            }}
             className="gap-2 shadow-sm"
           >
             <Plus className="w-4 h-4" /> เพิ่มระบบงานใหม่

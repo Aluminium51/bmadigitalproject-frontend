@@ -3,6 +3,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useProposalFormStore } from "../stores/useProposalFormStore";
 import { CLIENT_API_BASE } from "@/lib/client-api";
+import {
+  normalizeProposalPatchPayload,
+  proposalSubmitPayloadSchema,
+  toProposalSubmitPayload,
+} from "../utils/proposal-payload";
 
 const API_BASE = CLIENT_API_BASE;
 
@@ -64,94 +69,8 @@ function requireProjectId(projectId: string | undefined) {
   return projectId;
 }
 
-const projectTypeMap: Record<string, string> = {
-  "จัดหาใหม่": "NEW",
-  "ทดแทนระบบเดิม": "REPLACEMENT",
-  "โครงการต่อเนื่อง": "CONTINUOUS",
-};
-
-const locationTypeMap: Record<string, string> = {
-  "สถานที่ราชการ": "GOVERNMENT",
-  "สถานที่เอกชน": "PRIVATE",
-};
-
-const foodItemMap: Record<string, string> = {
-  "ค่าอาหาร (ไม่ครบมื้อ)": "PARTIAL_MEAL",
-  "ค่าอาหารและเครื่องดื่ม": "FULL_MEAL",
-  "ค่าอาหารว่าง": "SNACK",
-};
-
-const personnelTypeByField = {
-  personnelCoreCosts: "CORE",
-  personnelAsstCosts: "ASST",
-  personnelSuppCosts: "SUPP",
-} as const;
-
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function stripClientOnlyIds(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stripClientOnlyIds);
-  if (!value || typeof value !== "object") return value;
-
-  return Object.fromEntries(
-    Object.entries(value).flatMap(([key, child]) => {
-      // React Hook Form's useFieldArray adds local IDs such as "abc123".
-      // The submit API only accepts persisted UUIDs for relational rows.
-      if (key === "id" && (typeof child !== "string" || !UUID_PATTERN.test(child))) {
-        return [];
-      }
-      return [[key, stripClientOnlyIds(child)]];
-    }),
-  );
-}
-
 export function normalizeProposalSubmissionPayload(payload: Record<string, unknown>) {
-  // Draft data can be incomplete and is persisted in the backend JSON shape.
-  // Do not run it through the frontend's strict form schema here; the submit
-  // endpoint owns final validation and strips unknown fields.
-  const normalized = stripClientOnlyIds(payload) as Record<string, unknown>;
-
-  if (typeof normalized.projectType === "string") {
-    normalized.projectType = projectTypeMap[normalized.projectType] ?? normalized.projectType;
-  }
-
-  if (Array.isArray(normalized.trainingCourses)) {
-    normalized.trainingCourses = normalized.trainingCourses.map((course) => {
-      if (!course || typeof course !== "object") return course;
-      const normalizedCourse = { ...(course as Record<string, unknown>) };
-
-      if (typeof normalizedCourse.locationType === "string") {
-        normalizedCourse.locationType =
-          locationTypeMap[normalizedCourse.locationType] ?? normalizedCourse.locationType;
-      }
-
-      if (Array.isArray(normalizedCourse.foodCosts)) {
-        normalizedCourse.foodCosts = normalizedCourse.foodCosts.map((food) => {
-          if (!food || typeof food !== "object") return food;
-          const normalizedFood = { ...(food as Record<string, unknown>) };
-          if (typeof normalizedFood.itemName === "string") {
-            normalizedFood.itemName = foodItemMap[normalizedFood.itemName] ?? normalizedFood.itemName;
-          }
-          return normalizedFood;
-        });
-      }
-
-      return normalizedCourse;
-    });
-  }
-
-  for (const [field, personnelType] of Object.entries(personnelTypeByField)) {
-    if (!Array.isArray(normalized[field])) continue;
-    normalized[field] = normalized[field].map((personnel) => {
-      if (!personnel || typeof personnel !== "object") return personnel;
-      return {
-        ...(personnel as Record<string, unknown>),
-        personnelType,
-      };
-    });
-  }
-
-  return normalized;
+  return toProposalSubmitPayload(payload);
 }
 
 // ---------------------------------------------------------------------------
@@ -223,7 +142,7 @@ export function useUpdateSubmittedProposal(projectId: string | undefined) {
     mutationFn: (payload: Record<string, unknown>) =>
       apiFetch(`${API_BASE}/proposals/projects/${requireProjectId(projectId)}`, {
         method: "PATCH",
-        body: JSON.stringify(normalizeProposalSubmissionPayload(payload)),
+        body: JSON.stringify(normalizeProposalPatchPayload(payload)),
       }),
     onSuccess: async (response) => {
       if (!projectId) return;
@@ -250,11 +169,21 @@ export function useSubmitProposal(projectId: string | undefined) {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: (payload: Record<string, unknown>) =>
-      apiFetch(`${API_BASE}/proposals/projects/${requireProjectId(projectId)}/submit`, {
+    mutationFn: (payload: Record<string, unknown>) => {
+      const normalized = normalizeProposalSubmissionPayload(payload);
+      const parsed = proposalSubmitPayloadSchema.safeParse(normalized);
+      if (!parsed.success) {
+        const details = parsed.error.issues
+          .map((issue) => `${issue.path.join(".") || "form"}: ${issue.message}`)
+          .join("; ");
+        throw new Error(`Submission validation failed: ${details}`);
+      }
+
+      return apiFetch(`${API_BASE}/proposals/projects/${requireProjectId(projectId)}/submit`, {
         method: "POST",
-        body: JSON.stringify(normalizeProposalSubmissionPayload(payload)),
-      }),
+        body: JSON.stringify(parsed.data),
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["proposals", "draft", projectId] });
       qc.invalidateQueries({ queryKey: ["proposals", "submitted", projectId] });

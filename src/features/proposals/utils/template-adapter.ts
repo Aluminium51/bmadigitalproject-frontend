@@ -250,7 +250,9 @@ const mapTrainingCourses = (items: TemplateItem[]) => {
       index: index + 1,
       chkHasSpeaker: item.hasSpeakerCost ? "จำเป็น" : "ไม่จำเป็น",
       speakerReason: item.speakerReason || "................................",
-      locationStr: item.locationType=== "สถานที่ราชการ" ? "☑ สถานที่ราชการ 	☐ สถานที่เอกชน" : "☐ สถานที่ราชการ 	☑ สถานที่เอกชน",
+      locationStr: item.locationType === "GOVERNMENT" || item.locationType === "สถานที่ราชการ"
+        ? "☑ สถานที่ราชการ \t☐ สถานที่เอกชน"
+        : "☐ สถานที่ราชการ \t☑ สถานที่เอกชน",
       speakerCosts: formattedSpeakerCosts,
       foodCosts: formattedFoodCosts,
       // ยอดรวมย่อยแยกของแต่ละตารางในหลักสูตร
@@ -413,9 +415,9 @@ export const prepareTemplateData = (
     ...rawData, // โยนข้อมูลพื้นฐานไปก่อน
 
     // --- Step 2: Checkbox ประเภทโครงการ ---
-    chkNew: currentType === "จัดหาใหม่" ? "☑" : "☐",
-    chkReplace: currentType === "ทดแทนระบบเดิม" ? "☑" : "☐",
-    chkPhase: currentType.includes("ต่อเนื่อง") ? "☑" : "☐",
+    chkNew: currentType === "NEW" ? "☑" : "☐",
+    chkReplace: currentType === "REPLACEMENT" ? "☑" : "☐",
+    chkPhase: currentType === "CONTINUOUS" || currentType.includes("ต่อเนื่อง") ? "☑" : "☐",
 
     // --- Step 2 (ต่อ): เช็กข้อมูล Array สำหรับเปิด/ปิดตารางข้อมูลเดิม ---
     hasManpower: hasItems(rawData.manpower),

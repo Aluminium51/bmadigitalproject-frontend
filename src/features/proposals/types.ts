@@ -33,7 +33,7 @@ export const proposalStep2Schema = z.object({
   objective: z.string().min(10, "กรุณาระบุวัตถุประสงค์"),
   target: z.string().min(10, "กรุณาระบุเป้าหมาย"),
   scope: z.string().min(10, "กรุณาระบุขอบเขตการดำเนินงาน"),
-  projectType: z.enum(["จัดหาใหม่", "ทดแทนระบบเดิม", "โครงการต่อเนื่อง"], "กรุณาเลือกลักษณะโครงการ"),
+  projectType: z.enum(["NEW", "REPLACEMENT", "CONTINUOUS"], "กรุณาเลือกลักษณะโครงการ"),
   currentSystemStatus: z.string().min(5, "อธิบายสถานภาพระบบงานปัจจุบัน"),
   currentProblems: z.string().min(5, "อธิบายสภาพปัญหาปัจจุบัน"),
 
@@ -269,7 +269,7 @@ const speakerCostSchema = z.object({
 });
 
 const foodCostSchema = z.object({
-  itemName: z.enum(["ค่าอาหาร (ไม่ครบมื้อ)", "ค่าอาหารและเครื่องดื่ม", "ค่าอาหารว่าง"]),
+  itemName: z.enum(["PARTIAL_MEAL", "FULL_MEAL", "SNACK", "OTHER"]),
   mealsCount: z.coerce.number().min(0),
   ratePerMeal: z.coerce.number().min(0),
   traineesCount: z.coerce.number().min(0),
@@ -279,7 +279,7 @@ const foodCostSchema = z.object({
 const trainingCourseSchema = z.object({
   courseName: z.string().min(1, "กรุณาระบุหลักสูตร"),
   trainingMethod: z.string().min(1, "กรุณาระบุวิธีการฝึกอบรม"),
-  locationType: z.enum(["สถานที่ราชการ", "สถานที่เอกชน"]),
+  locationType: z.enum(["GOVERNMENT", "PRIVATE"]),
 
   // ตารางวิทยากร (แสดง/ซ่อน ผ่าน UI แต่ข้อมูลเก็บตรงนี้)
   hasSpeakerCost: z.boolean().default(false),
@@ -288,9 +288,9 @@ const trainingCourseSchema = z.object({
 
   // ตารางค่าอาหาร (Fixed 3 รายการเสมอ แต่สร้าง schema ไว้รองรับการเก็บค่า)
   foodCosts: z.array(foodCostSchema).default([
-    { itemName: "ค่าอาหาร (ไม่ครบมื้อ)", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
-    { itemName: "ค่าอาหารและเครื่องดื่ม", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
-    { itemName: "ค่าอาหารว่าง", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
+    { itemName: "PARTIAL_MEAL", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
+    { itemName: "FULL_MEAL", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
+    { itemName: "SNACK", mealsCount: 0, ratePerMeal: 0, traineesCount: 0, days: 0 },
   ]),
 }).superRefine((data, ctx) => {
   // ดักว่าถ้าติ๊ก "มีวิทยากร" ต้องกรอกเหตุผล
@@ -342,15 +342,21 @@ const vmRequirementSchema = z.object({
 });
 
 // Schema สำหรับระบบงาน 1 ระบบ (ประกอบด้วยหลาย VM)
+const dateOnlySchema = z.string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "กรุณาระบุวันที่ในรูปแบบ YYYY-MM-DD")
+  .refine((value) => {
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day;
+  }, "วันที่ไม่ถูกต้อง");
+
 const cloudRequestSchema = z.object({
   id: z.string().optional(),
   systemName: z.string().min(1, "ระบุชื่อโครงการ/ระบบงาน"),
-  requestedServiceDate: z.coerce.date({
-    message: "กรุณาระบุวันที่ต้องการขอใช้บริการ (รูปแบบวันที่ให้ถูกต้อง)"
-  }),
-  recordedRequestDate: z.coerce.date({
-    message: "กรุณาระบุวันที่บันทึกคำขอ (รูปแบบวันที่ให้ถูกต้อง)"
-  }),
+  requestedServiceDate: dateOnlySchema,
+  recordedRequestDate: dateOnlySchema,
   vms: z.array(vmRequirementSchema).default([]),
 });
 
@@ -367,6 +373,8 @@ export const proposalStep5Schema = z.object({
 
   cloudRequests: z.array(cloudRequestSchema).default([]),
 
+  isReady: z.boolean().default(false),
+  readinessDetails: z.string().optional(),
   otherReadiness: z.string().optional(),
   expectedBenefits: z.string().min(1, "กรุณาระบุประโยชน์ที่คาดว่าจะได้รับ"),
   isInRoadmap: z.boolean({ message: "กรุณาเลือกสถานะ Roadmap" }),
