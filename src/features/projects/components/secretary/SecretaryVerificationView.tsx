@@ -17,7 +17,9 @@ type Project = z.infer<typeof schemas.Project>;
 function TableSkeleton() {
   return (
     <div className="space-y-3 p-6">
-      {Array.from({ length: 6 }, (_, index) => <div key={index} className="h-12 animate-pulse rounded-md bg-muted" />)}
+      {Array.from({ length: 6 }, (_, index) => (
+        <div key={index} className="h-12 animate-pulse rounded-md bg-muted" />
+      ))}
     </div>
   );
 }
@@ -32,18 +34,30 @@ export function SecretaryVerificationView() {
   const pagination = query.data?.pagination;
   const totalPages = pagination?.totalPages ?? 1;
 
-  const countLabel = useMemo(() => query.isLoading ? "กำลังโหลด" : `${pagination?.total ?? 0} โครงการ`, [pagination?.total, query.isLoading]);
+  const countLabel = useMemo(
+    () => query.isLoading ? "กำลังโหลด" : `${pagination?.total ?? 0} โครงการ`,
+    [pagination?.total, query.isLoading],
+  );
 
   return (
     <div className="mx-auto flex h-full w-full flex-col p-6 lg:p-8">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-sm font-bold text-primary"><ClipboardCheck className="h-4 w-4" /> งานตรวจสอบโครงการ</div>
+          <div className="mb-2 flex items-center gap-2 text-sm font-bold text-primary">
+            <ClipboardCheck className="h-4 w-4" />
+            งานตรวจสอบโครงการ
+          </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#191c20]">รับหนังสือขอส่งโครงการ</h1>
           <p className="mt-1 text-sm text-[#3f4942]">ตรวจสอบโครงการที่ส่งมาจากทุกส่วนราชการ</p>
         </div>
-        <Button variant="outline" className="gap-2 rounded-full" onClick={() => void query.refetch()} disabled={query.isFetching}>
-          <RefreshCw className={query.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> โหลดข้อมูลใหม่
+        <Button
+          variant="outline"
+          className="gap-2 rounded-full"
+          onClick={() => void query.refetch()}
+          disabled={query.isFetching}
+        >
+          <RefreshCw className={query.isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+          โหลดข้อมูลใหม่
         </Button>
       </div>
 
@@ -55,7 +69,15 @@ export function SecretaryVerificationView() {
           </div>
           <div className="relative w-full sm:max-w-md">
             <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="ค้นหารหัสโครงการ ชื่อโครงการ หรือเจ้าของโครงการ" className="h-11 rounded-full pl-10" />
+            <Input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder="ค้นหารหัสโครงการ ชื่อโครงการ หรือเจ้าของโครงการ"
+              className="h-11 rounded-full pl-10"
+            />
           </div>
         </div>
 
@@ -83,7 +105,10 @@ export function SecretaryVerificationView() {
                   variant="outline"
                   size="sm"
                   className="w-full min-w-20"
-                  onClick={() => { setSelectedProject(project); setIsReviewOpen(true); }}
+                  onClick={() => {
+                    setSelectedProject(project);
+                    setIsReviewOpen(true);
+                  }}
                 >
                   ตรวจสอบ
                 </Button>
@@ -93,13 +118,18 @@ export function SecretaryVerificationView() {
           </>
         )}
 
-        {query.isFetching && !query.isLoading && <Loader2 className="absolute bottom-5 left-1/2 h-5 w-5 -translate-x-1/2 animate-spin text-primary" />}
+        {query.isFetching && !query.isLoading && (
+          <Loader2 className="absolute bottom-5 left-1/2 h-5 w-5 -translate-x-1/2 animate-spin text-primary" />
+        )}
       </Card>
 
       <SecretaryReviewDialog
         project={selectedProject}
         open={isReviewOpen}
-        onOpenChange={(open) => { setIsReviewOpen(open); if (!open) setSelectedProject(null); }}
+        onOpenChange={(open) => {
+          setIsReviewOpen(open);
+          if (!open) setSelectedProject(null);
+        }}
       />
     </div>
   );

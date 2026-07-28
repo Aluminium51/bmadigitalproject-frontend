@@ -4,51 +4,6 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** ตรวจสอบสถานะการทำงานของระบบ (Health Check) */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description ระบบทำงานปกติและเชื่อมต่อฐานข้อมูลได้ */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["HealthSuccess"];
-                    };
-                };
-                /** @description ระบบมีปัญหาหรือไม่สามารถเชื่อมต่อฐานข้อมูลได้ */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["HealthError"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/users": {
         parameters: {
             query?: never;
@@ -1549,6 +1504,72 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/projects/{id}/cancel-submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ยกเลิกการส่งโครงการก่อนเลขานุการตรวจสอบ */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description รหัสโครงการ (UUID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description ยกเลิกการส่งและคืนแบบร่างสำเร็จ */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CancelSubmitResponse"];
+                    };
+                };
+                /** @description เฉพาะเจ้าของโครงการเท่านั้น */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description ไม่พบโครงการ */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description สถานะโครงการเปลี่ยนระหว่างดำเนินการ */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{id}/analyst-reassignment": {
         parameters: {
             query?: never;
@@ -1759,6 +1780,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{id}/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** เปลี่ยนสถานะการเผยแพร่โครงการ */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description รหัสโครงการ (UUID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateProjectVisibilityRequest"];
+                };
+            };
+            responses: {
+                /** @description เปลี่ยนสถานะการเผยแพร่สำเร็จ */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProjectVisibilityResponse"];
+                    };
+                };
+                /** @description เฉพาะผู้ดูแลระบบเท่านั้น */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description ไม่พบโครงการ */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/projects/{id}/type": {
         parameters: {
             query?: never;
@@ -1839,6 +1921,94 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/api/v1/public/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** แสดงรายการโครงการที่เผยแพร่สู่สาธารณะ */
+        get: {
+            parameters: {
+                query?: {
+                    page?: number;
+                    limit?: number;
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description รายการโครงการสาธารณะ */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaginatedPublicProjectResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/projects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** แสดงรายละเอียดโครงการที่เผยแพร่สู่สาธารณะ */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description รหัสโครงการ (UUID) */
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description รายละเอียดโครงการสาธารณะ */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PublicProject"];
+                    };
+                };
+                /** @description ไม่พบโครงการสาธารณะ */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/proposals/drafts/my": {
@@ -2976,20 +3146,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        HealthSuccess: {
-            /** @example ok */
-            status: string;
-            /** @example connected */
-            database: string;
-            /** @example 2026-06-12T12:00:00.000Z */
-            timestamp: string;
-        };
-        HealthError: {
-            /** @example error */
-            status: string;
-            /** @example disconnected */
-            database: string;
-        };
         PaginatedUserResponse: {
             data: components["schemas"]["UserProfileResponse"][];
             pagination: {
@@ -3279,6 +3435,8 @@ export interface components {
                 canUpdateProject: boolean;
                 canEditProposal: boolean;
                 canSubmitProposal: boolean;
+                canCancelSubmit: boolean;
+                canChangeVisibility: boolean;
             };
             /** @default null */
             latestReturnFeedback: {
@@ -3393,11 +3551,6 @@ export interface components {
             projectName: string;
             /** @example 2 */
             projectTypeId?: number;
-            /**
-             * @default false
-             * @example false
-             */
-            isPublic: boolean;
             /** @example 1 */
             fourQuadrantsId: number | null;
             /** @example 3 */
@@ -3408,11 +3561,6 @@ export interface components {
             projectName?: string;
             /** @example 2 */
             projectTypeId?: number;
-            /**
-             * @default false
-             * @example false
-             */
-            isPublic: boolean;
             /** @example 1 */
             fourQuadrantsId?: number | null;
             /** @example 3 */
@@ -3425,6 +3573,12 @@ export interface components {
             projectTypeId?: number;
             /** @example ผ่านการอนุมัติขั้นต้น */
             remark?: string;
+        };
+        CancelSubmitResponse: {
+            message: string;
+            /** Format: uuid */
+            projectId: string;
+            project: components["schemas"]["Project"];
         };
         AnalystWorkflowResponse: {
             message: string;
@@ -3457,6 +3611,15 @@ export interface components {
             decision: "reject";
             remark: string;
         };
+        ProjectVisibilityResponse: {
+            message: string;
+            /** Format: uuid */
+            projectId: string;
+            isPublic: boolean;
+        };
+        UpdateProjectVisibilityRequest: {
+            isPublic: boolean;
+        };
         UpdateProjectTypeRequest: {
             /** @example 3 */
             projectTypeId: number;
@@ -3467,6 +3630,32 @@ export interface components {
              * @description UUID ของนักวิเคราะห์
              */
             analystId: string;
+        };
+        PaginatedPublicProjectResponse: {
+            data: components["schemas"]["PublicProject"][];
+            pagination: {
+                total: number;
+                page: number;
+                limit: number;
+                totalPages: number;
+            };
+        };
+        PublicProject: {
+            /** Format: uuid */
+            id: string;
+            projectCode: string | null;
+            projectName: string | null;
+            projectNameOriginal: string | null;
+            projectStatus: {
+                id: number;
+                name: string;
+            } | null;
+            projectType: {
+                id: number;
+                name: string;
+            } | null;
+            createdAt: string;
+            updatedAt: string;
         };
         /** @description Partial update for a submitted proposal by an authorized Secretary */
         SubmittedProposalPatchRequest: {

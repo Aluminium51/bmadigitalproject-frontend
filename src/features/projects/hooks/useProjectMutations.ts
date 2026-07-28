@@ -2,7 +2,12 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { updateProjectAction, type UpdateProjectPayload } from "../actions/project.actions";
+import {
+  cancelSubmitProjectAction,
+  updateProjectAction,
+  updateProjectVisibilityAction,
+  type UpdateProjectPayload,
+} from "../actions/project.actions";
 import { CLIENT_API_BASE } from "@/lib/client-api";
 
 const API_BASE = CLIENT_API_BASE;
@@ -42,6 +47,41 @@ export function useUpdateProject(projectId: string) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      ]);
+    },
+  });
+}
+
+export function useCancelSubmitProject(projectId: string) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: () => cancelSubmitProjectAction(projectId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals", "submitted", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["timeline", projectId] }),
+      ]);
+      router.push(`/projects/${projectId}/proposal/create`);
+      router.refresh();
+    },
+  });
+}
+
+export function useUpdateProjectVisibility(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (isPublic: boolean) => updateProjectVisibilityAction(projectId, isPublic),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["public-projects"] }),
       ]);
     },
   });

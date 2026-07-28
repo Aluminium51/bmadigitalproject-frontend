@@ -16,6 +16,8 @@ type PaginatedResponse = z.infer<typeof schemas.PaginatedProjectResponse>;
 type ProjectResponse = z.infer<typeof schemas.Project>;
 type LookupResponse = z.infer<typeof schemas.LookupResponse>;
 export type UpdateProjectPayload = z.infer<typeof schemas.UpdateProjectRequest>;
+export type CancelSubmitResponse = z.infer<typeof schemas.CancelSubmitResponse>;
+export type ProjectVisibilityResponse = z.infer<typeof schemas.ProjectVisibilityResponse>;
 
 export type SecretaryReviewPayload =
   z.infer<typeof schemas.SecretaryReviewRequest>;
@@ -130,5 +132,27 @@ export async function updateProjectAction(
   return serverFetch<{ message: string; project: ProjectResponse }>(
     `/api/v1/projects/${projectId}`,
     { method: "PATCH", body: JSON.stringify(payload) },
+  );
+}
+
+export async function cancelSubmitProjectAction(
+  projectId: string,
+): Promise<CancelSubmitResponse> {
+  return serverFetch<CancelSubmitResponse>(
+    `/api/v1/projects/${projectId}/cancel-submit`,
+    { method: "POST" },
+  );
+}
+
+export async function updateProjectVisibilityAction(
+  projectId: string,
+  isPublic: boolean,
+): Promise<ProjectVisibilityResponse> {
+  return serverFetch<ProjectVisibilityResponse>(
+    `/api/v1/projects/${projectId}/visibility`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ isPublic }),
+    },
   );
 }

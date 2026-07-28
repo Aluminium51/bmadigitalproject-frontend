@@ -90,6 +90,9 @@ export default function Home() {
                   <ExternalLink className="size-4 text-background" />
                 </a>
               </Button>
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto px-5">
+                <Link href="/projects/public">ดูโครงการที่เผยแพร่สู่สาธารณะ</Link>
+              </Button>
             </div>
           </div>
 

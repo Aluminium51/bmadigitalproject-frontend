@@ -14,6 +14,8 @@ export interface ProjectDetail extends ProjectResponse {
     canUpdateProject: boolean;
     canEditProposal: boolean;
     canSubmitProposal: boolean;
+    canCancelSubmit: boolean;
+    canChangeVisibility: boolean;
   };
 }
 

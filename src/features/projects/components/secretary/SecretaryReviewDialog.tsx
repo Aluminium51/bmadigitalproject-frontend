@@ -25,7 +25,6 @@ import {
 import type { SecretaryReviewPayload } from "../../actions/project.actions";
 
 type Project = z.infer<typeof schemas.Project>;
-
 type ReviewMode = "approve" | "return" | "reject" | null;
 
 type SecretaryReviewDialogProps = {
@@ -129,34 +128,34 @@ export function SecretaryReviewDialog({
           <div className="space-y-5">
             <section className="min-w-0 rounded-md border bg-muted/30 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-mono text-xs font-semibold text-muted-foreground">
+                <span className="break-all font-mono text-xs font-semibold text-muted-foreground">
                   {project.projectCode ?? "ไม่มีรหัสโครงการ"}
                 </span>
                 <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
                   รอตรวจสอบโดยเลขานุการ
                 </Badge>
               </div>
-              <h3 className="mt-3 warp-break-word text-lg font-semibold text-foreground">
+              <h3 className="mt-3 break-words text-lg font-semibold text-foreground">
                 {project.projectName ?? "ไม่ระบุชื่อโครงการ"}
               </h3>
               <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">ผู้เสนอโครงการ</p>
-                  <p className="font-medium">
+                  <p className="break-words font-medium">
                     {project.owner
                       ? `${project.owner.firstName} ${project.owner.lastName}`.trim()
                       : "-"}
                   </p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">หน่วยงาน</p>
-                  <p className="font-medium">{project.division?.departmentName ?? "-"}</p>
+                  <p className="break-words font-medium">{project.division?.departmentName ?? "-"}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">ส่วนงาน</p>
-                  <p className="font-medium">{project.division?.name ?? "-"}</p>
+                  <p className="break-words font-medium">{project.division?.name ?? "-"}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">วันที่ส่งโครงการ</p>
                   <p className="font-medium">{formatDate(project.createdAt)}</p>
                 </div>
@@ -228,7 +227,7 @@ export function SecretaryReviewDialog({
             {(mode === "return" || mode === "reject") && (
               <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
                 <Label htmlFor="secretary-review-remark">
-                  เหตุผล{mode === "return" ? "การส่งกลับแก้ไข" : "การไม่อนุมัติ"} *
+                  {mode === "return" ? "เหตุผลการส่งกลับแก้ไข" : "เหตุผลการไม่อนุมัติ"} *
                 </Label>
                 <Textarea
                   id="secretary-review-remark"

@@ -1,12 +1,6 @@
 import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
 import { z } from "zod";
 
-const HealthSuccess = z
-  .object({ status: z.string(), database: z.string(), timestamp: z.string() })
-  .passthrough();
-const HealthError = z
-  .object({ status: z.string(), database: z.string() })
-  .passthrough();
 const UserProfileResponse = z
   .object({
     userId: z.string().uuid(),
@@ -228,6 +222,8 @@ const Project = z
         canUpdateProject: z.boolean(),
         canEditProposal: z.boolean(),
         canSubmitProposal: z.boolean(),
+        canCancelSubmit: z.boolean(),
+        canChangeVisibility: z.boolean(),
       })
       .passthrough()
       .optional(),
@@ -269,7 +265,6 @@ const CreateProjectRequest = z
   .object({
     projectName: z.string().min(1).max(600),
     projectTypeId: z.number().int().optional(),
-    isPublic: z.boolean().optional().default(false),
     fourQuadrantsId: z.number().int().nullable(),
     deputyGovernorId: z.number().int().nullable(),
   })
@@ -393,17 +388,22 @@ const UpdateProjectRequest = z
   .object({
     projectName: z.string().min(1).max(600),
     projectTypeId: z.number().int(),
-    isPublic: z.boolean().default(false),
     fourQuadrantsId: z.number().int().nullable(),
     deputyGovernorId: z.number().int().nullable(),
   })
-  .partial()
-  .passthrough();
+  .partial();
 const UpdateProjectStatusRequest = z
   .object({
     projectStatusId: z.number().int(),
     projectTypeId: z.number().int().optional(),
     remark: z.string().optional(),
+  })
+  .passthrough();
+const CancelSubmitResponse = z
+  .object({
+    message: z.string(),
+    projectId: z.string().uuid(),
+    project: Project,
   })
   .passthrough();
 const AnalystReassignmentRequest = z
@@ -439,11 +439,50 @@ const SecretaryReviewResponse = z
     project: Project,
   })
   .passthrough();
+const UpdateProjectVisibilityRequest = z.object({ isPublic: z.boolean() });
+const ProjectVisibilityResponse = z
+  .object({
+    message: z.string(),
+    projectId: z.string().uuid(),
+    isPublic: z.boolean(),
+  })
+  .passthrough();
 const UpdateProjectTypeRequest = z
   .object({ projectTypeId: z.number().int() })
   .passthrough();
 const AssignProjectRequest = z
   .object({ analystId: z.string().uuid() })
+  .passthrough();
+const PublicProject = z
+  .object({
+    id: z.string().uuid(),
+    projectCode: z.string().nullable(),
+    projectName: z.string().nullable(),
+    projectNameOriginal: z.string().nullable(),
+    projectStatus: z
+      .object({ id: z.number(), name: z.string() })
+      .passthrough()
+      .nullable(),
+    projectType: z
+      .object({ id: z.number(), name: z.string() })
+      .passthrough()
+      .nullable(),
+    createdAt: z.union([z.string(), z.string()]),
+    updatedAt: z.union([z.string(), z.string()]),
+  })
+  .passthrough();
+const PaginatedPublicProjectResponse = z
+  .object({
+    data: z.array(PublicProject),
+    pagination: z
+      .object({
+        total: z.number(),
+        page: z.number(),
+        limit: z.number(),
+        totalPages: z.number(),
+      })
+      .passthrough(),
+  })
   .passthrough();
 const DraftProposalRequest = z
   .object({
@@ -1302,8 +1341,6 @@ const ProjectAttachmentTypeLookupResponse = z
   .passthrough();
 
 export const schemas = {
-  HealthSuccess,
-  HealthError,
   UserProfileResponse,
   PaginatedUserResponse,
   ErrorResponse,
@@ -1332,13 +1369,18 @@ export const schemas = {
   PaginatedAnalystAssignedProjectResponse,
   UpdateProjectRequest,
   UpdateProjectStatusRequest,
+  CancelSubmitResponse,
   AnalystReassignmentRequest,
   AnalystWorkflowResponse,
   AnalystReviewRequest,
   SecretaryReviewRequest,
   SecretaryReviewResponse,
+  UpdateProjectVisibilityRequest,
+  ProjectVisibilityResponse,
   UpdateProjectTypeRequest,
   AssignProjectRequest,
+  PublicProject,
+  PaginatedPublicProjectResponse,
   DraftProposalRequest,
   SubmittedProposalPatchRequest,
   ProposalResponse,
@@ -2059,6 +2101,37 @@ const endpoints = makeApi([
   },
   {
     method: "post",
+    path: "/api/v1/projects/:id/cancel-submit",
+    alias: "postApiv1projectsIdcancelSubmit",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: CancelSubmitResponse,
+    errors: [
+      {
+        status: 403,
+        description: `เฉพาะเจ้าของโครงการเท่านั้น`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 404,
+        description: `ไม่พบโครงการ`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 409,
+        description: `สถานะโครงการเปลี่ยนระหว่างดำเนินการ`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "post",
     path: "/api/v1/projects/:id/secretary-review",
     alias: "postApiv1projectsIdsecretaryReview",
     requestFormat: "json",
@@ -2135,6 +2208,37 @@ const endpoints = makeApi([
       },
     ],
     response: z.void(),
+  },
+  {
+    method: "patch",
+    path: "/api/v1/projects/:id/visibility",
+    alias: "patchApiv1projectsIdvisibility",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ isPublic: z.boolean() }),
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProjectVisibilityResponse,
+    errors: [
+      {
+        status: 403,
+        description: `เฉพาะผู้ดูแลระบบเท่านั้น`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 404,
+        description: `ไม่พบโครงการ`,
+        schema: ErrorResponse,
+      },
+    ],
   },
   {
     method: "get",
@@ -2447,6 +2551,51 @@ const endpoints = makeApi([
         status: 400,
         description: `Invalid request`,
         schema: z.object({ message: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/public/projects",
+    alias: "getApiv1publicprojects",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "page",
+        type: "Query",
+        schema: z.number().int().gte(1).optional().default(1),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().int().gte(1).lte(100).optional().default(12),
+      },
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string().max(200).optional(),
+      },
+    ],
+    response: PaginatedPublicProjectResponse,
+  },
+  {
+    method: "get",
+    path: "/api/v1/public/projects/:id",
+    alias: "getApiv1publicprojectsId",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PublicProject,
+    errors: [
+      {
+        status: 404,
+        description: `ไม่พบโครงการสาธารณะ`,
+        schema: ErrorResponse,
       },
     ],
   },
@@ -2849,20 +2998,6 @@ const endpoints = makeApi([
         status: 500,
         description: `ข้อผิดพลาดทางเซิร์ฟเวอร์`,
         schema: ErrorResponse,
-      },
-    ],
-  },
-  {
-    method: "get",
-    path: "/health",
-    alias: "getHealth",
-    requestFormat: "json",
-    response: HealthSuccess,
-    errors: [
-      {
-        status: 503,
-        description: `ระบบมีปัญหาหรือไม่สามารถเชื่อมต่อฐานข้อมูลได้`,
-        schema: HealthError,
       },
     ],
   },

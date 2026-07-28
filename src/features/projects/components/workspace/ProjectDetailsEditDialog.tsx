@@ -24,12 +24,11 @@ export function ProjectDetailsEditDialog({
 }) {
   const mutation = useUpdateProject(project.id);
   const [projectName, setProjectName] = useState(project.projectName ?? "");
-  const [isPublic, setIsPublic] = useState(project.isPublic);
 
   const save = async () => {
     const normalizedName = projectName.trim();
     if (!normalizedName) return;
-    const payload: UpdateProjectPayload = { projectName: normalizedName, isPublic };
+    const payload: UpdateProjectPayload = { projectName: normalizedName };
     try {
       await mutation.mutateAsync(payload);
       toast.success("บันทึกข้อมูลโครงการแล้ว");
@@ -51,10 +50,6 @@ export function ProjectDetailsEditDialog({
             <Label htmlFor="analyst-project-name">ชื่อโครงการ</Label>
             <Input id="analyst-project-name" value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={600} />
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={isPublic} onChange={(event) => setIsPublic(event.target.checked)} />
-            เผยแพร่ข้อมูลโครงการ
-          </label>
         </div>
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
           <Button variant="outline" className="w-full sm:w-auto" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>ยกเลิก</Button>

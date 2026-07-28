@@ -77,7 +77,6 @@ export function CreateProjectTemplate() {
     resolver: zodResolver(createProjectSchema),
     defaultValues: {
       projectName: "",
-      isPublic: false,
       fourQuadrantsId: undefined,
       deputyGovernorId: undefined,
     },
