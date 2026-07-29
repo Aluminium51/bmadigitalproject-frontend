@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AgendaDragDropList } from "@/features/meetings/components/AgendaDragDropList";
 import { CreateAgendaDialog } from "@/features/meetings/components/CreateAgendaDialog";
 import { MeetingWorkspaceHeader } from "@/features/meetings/components/MeetingWorkspaceHeader";
+import { MeetingFilesPanel } from "@/features/meetings/components/MeetingFilesPanel";
 import { useAgendas, useDeleteAgenda } from "@/features/meetings/hooks/useAgendas";
 import { useMeeting } from "@/features/meetings/hooks/useMeetings";
 
@@ -84,6 +85,8 @@ export default function AgendasPage({ params }: { params: Promise<{ id: string }
         onOpenChange={setCreateOpen}
         availableProjects={agendas.availableProjects}
       />
+
+      <MeetingFilesPanel meetingId={id} />
 
       <AlertDialog open={Boolean(deleteAgendaId)} onOpenChange={(open) => !open && setDeleteAgendaId(null)}>
         <AlertDialogContent>

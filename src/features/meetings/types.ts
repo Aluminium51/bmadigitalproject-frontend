@@ -1,4 +1,3 @@
-// src/features/meetings/types.ts
 export enum MeetingStatus {
   DRAFT = "DRAFT",
   SCHEDULED = "SCHEDULED",
@@ -18,54 +17,56 @@ export enum AgendaType {
 export enum ResolutionStatus {
   APPROVED = "APPROVED",
   ACKNOWLEDGED = "ACKNOWLEDGED",
-  NEED_REVISION = "NEED_REVISION",
-  REJECTED = "REJECTED",
+  CONDITIONAL_APPROVAL = "CONDITIONAL_APPROVAL",
+  RECONSIDER = "RECONSIDER",
+  NOT_APPROVED = "NOT_APPROVED",
+  NOT_CONSIDERED = "NOT_CONSIDERED",
 }
 
 export const MEETING_STATUS_LABELS: Record<MeetingStatus, string> = {
-  [MeetingStatus.DRAFT]: "ร่าง",
-  [MeetingStatus.SCHEDULED]: "นัดหมายแล้ว",
-  [MeetingStatus.IN_PROGRESS]: "กำลังประชุม",
-  [MeetingStatus.COMPLETED]: "เสร็จสิ้น",
-  [MeetingStatus.CANCELLED]: "ยกเลิก",
+  DRAFT: "ฉบับร่าง",
+  SCHEDULED: "กำหนดประชุมแล้ว",
+  IN_PROGRESS: "กำลังประชุม",
+  COMPLETED: "เสร็จสิ้น",
+  CANCELLED: "ยกเลิก",
 };
 
 export const MEETING_STATUS_COLORS: Record<MeetingStatus, { bg: string; text: string; border: string }> = {
-  [MeetingStatus.DRAFT]: { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-200" },
-  [MeetingStatus.SCHEDULED]: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-  [MeetingStatus.IN_PROGRESS]: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
-  [MeetingStatus.COMPLETED]: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  [MeetingStatus.CANCELLED]: { bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+  DRAFT: { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-200" },
+  SCHEDULED: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
+  IN_PROGRESS: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  COMPLETED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  CANCELLED: { bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
 };
 
 export const AGENDA_TYPE_LABELS: Record<AgendaType, string> = {
-  [AgendaType.FOR_INFORMATION]: "วาระที่ 1: เรื่องประธานแจ้งให้ที่ประชุมทราบ",
-  [AgendaType.APPROVE_MINUTES]: "วาระที่ 2: เรื่องการรับรองรายงานการประชุม",
-  [AgendaType.FOLLOW_UP]: "วาระที่ 3: เรื่องสืบเนื่อง",
-  [AgendaType.FOR_CONSIDERATION]: "วาระที่ 4: เรื่องเพื่อพิจารณา",
-  [AgendaType.OTHER]: "วาระที่ 5: เรื่องอื่น ๆ",
+  1: "วาระแจ้งเพื่อทราบ",
+  2: "วาระรับรองรายงานการประชุม",
+  3: "วาระสืบเนื่อง",
+  4: "วาระเพื่อพิจารณา",
+  5: "วาระอื่น ๆ",
 };
 
-export const AGENDA_TYPE_ORDER: AgendaType[] = [
-  AgendaType.FOR_INFORMATION,
-  AgendaType.APPROVE_MINUTES,
-  AgendaType.FOLLOW_UP,
-  AgendaType.FOR_CONSIDERATION,
-  AgendaType.OTHER,
-];
+export const AGENDA_TYPE_ORDER = Object.values(AgendaType).filter(
+  (value): value is AgendaType => typeof value === "number",
+);
 
 export const RESOLUTION_STATUS_LABELS: Record<ResolutionStatus, string> = {
-  [ResolutionStatus.APPROVED]: "เห็นชอบ",
-  [ResolutionStatus.ACKNOWLEDGED]: "รับทราบ",
-  [ResolutionStatus.NEED_REVISION]: "ให้ทบทวน",
-  [ResolutionStatus.REJECTED]: "ไม่เห็นชอบ",
+  APPROVED: "เห็นชอบ",
+  ACKNOWLEDGED: "รับทราบ",
+  CONDITIONAL_APPROVAL: "เห็นชอบแบบมีเงื่อนไข",
+  RECONSIDER: "ให้นำกลับมาพิจารณาใหม่",
+  NOT_APPROVED: "ไม่เห็นชอบ",
+  NOT_CONSIDERED: "ไม่รับพิจารณา",
 };
 
 export const RESOLUTION_STATUS_COLORS: Record<ResolutionStatus, { bg: string; text: string; border: string }> = {
-  [ResolutionStatus.APPROVED]: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  [ResolutionStatus.ACKNOWLEDGED]: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-  [ResolutionStatus.NEED_REVISION]: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
-  [ResolutionStatus.REJECTED]: { bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+  APPROVED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  ACKNOWLEDGED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+  CONDITIONAL_APPROVAL: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  RECONSIDER: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  NOT_APPROVED: { bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
+  NOT_CONSIDERED: { bg: "bg-red-50", text: "text-red-600", border: "border-red-200" },
 };
 
 export interface Project {
@@ -86,6 +87,7 @@ export interface Resolution {
   agenda_id: string;
   resolution_status: ResolutionStatus | null;
   comment: string;
+  version?: number;
 }
 
 export interface Agenda {
@@ -111,6 +113,8 @@ export interface Meeting {
   meeting_status: MeetingStatus;
   meeting_status_id?: number;
   meeting_type_id?: number;
+  meeting_type?: "SMALL_BOARD" | "BIG_BOARD";
+  unresolved_resolution_count?: number;
   created_by?: string;
   agendas?: Agenda[];
 }

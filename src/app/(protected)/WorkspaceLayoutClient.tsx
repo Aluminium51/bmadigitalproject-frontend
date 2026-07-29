@@ -11,6 +11,7 @@ import { UserMenu } from "@/components/custom/user-menu";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { findProtectedRoute } from "@/lib/route-config";
+import { RoleProvider } from "@/features/auth/RoleContext";
 
 function Breadcrumbs() {
   const pathname = usePathname();
@@ -46,6 +47,7 @@ export default function WorkspaceLayoutClient({
   roles: readonly string[];
 }) {
   return (
+    <RoleProvider roles={roles}>
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar roles={roles} />
@@ -65,5 +67,6 @@ export default function WorkspaceLayoutClient({
         </main>
       </SidebarProvider>
     </TooltipProvider>
+    </RoleProvider>
   );
 }

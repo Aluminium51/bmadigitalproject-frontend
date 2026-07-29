@@ -19,8 +19,10 @@ type ApiMeeting = {
   createdAt: string;
   updatedAt: string;
   updatedBy?: string | null;
+  unresolvedResolutionCount?: number;
   creator?: { userId: string; firstName: string; lastName: string } | null;
-  meetingStatus?: { id: number; name: string } | null;
+  meetingStatus?: { id: number; code?: string | null; name: string } | null;
+  meetingType?: { id: number; code?: string | null; name: string } | null;
 };
 
 export type CreateMeetingPayload = {
@@ -29,7 +31,10 @@ export type CreateMeetingPayload = {
   meetingTypeId: number;
   meetingDate: string;
   location?: string | null;
-  meetingStatusId: number;
+  description?: string | null;
+  startTime?: string;
+  endTime?: string | null;
+  meetingStatusId?: number;
 };
 
 export type UpdateMeetingPayload = Partial<CreateMeetingPayload>;
@@ -61,6 +66,13 @@ function statusFromId(id: number): MeetingStatus {
   }
 }
 
+function statusFromApi(meeting: ApiMeeting): MeetingStatus {
+  const code = meeting.meetingStatus?.code;
+  return code && Object.values(MeetingStatus).includes(code as MeetingStatus)
+    ? code as MeetingStatus
+    : statusFromId(meeting.meetingStatusId ?? 5);
+}
+
 export function normalizeMeeting(meeting: ApiMeeting): Meeting {
   const creatorName = meeting.creator
     ? `${meeting.creator.firstName} ${meeting.creator.lastName}`.trim()
@@ -73,9 +85,11 @@ export function normalizeMeeting(meeting: ApiMeeting): Meeting {
     meeting_date: meeting.meetingDate,
     location: meeting.location ?? "-",
     chairman: creatorName || "-",
-    meeting_status: statusFromId(meeting.meetingStatusId),
+    meeting_status: statusFromApi(meeting),
     meeting_status_id: meeting.meetingStatusId,
     meeting_type_id: meeting.meetingTypeId,
+    meeting_type: meeting.meetingType?.code === "BIG_BOARD" ? "BIG_BOARD" : "SMALL_BOARD",
+    unresolved_resolution_count: meeting.unresolvedResolutionCount ?? 0,
     created_by: meeting.createdBy,
   };
 }
@@ -152,7 +166,7 @@ export function useUpdateMeeting(id: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: UpdateMeetingPayload) =>
-      request<{ data: ApiMeeting }>(`/meetings/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+      request<{ data: ApiMeeting }>(`/meetings/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
     onSuccess: async (response) => {
       queryClient.setQueryData(["meetings", id], normalizeMeeting(response.data));
       await queryClient.invalidateQueries({ queryKey: ["meetings"] });
@@ -169,6 +183,40 @@ export function useDeleteMeeting(id: string) {
         queryClient.invalidateQueries({ queryKey: ["meetings"] }),
         queryClient.removeQueries({ queryKey: ["meetings", id] }),
         queryClient.removeQueries({ queryKey: ["meetings", id, "agendas"] }),
+      ]);
+    },
+  });
+}
+
+export function useTransitionMeeting(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED") =>
+      request<{ data: ApiMeeting }>(`/meetings/${id}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status }),
+      }),
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", id] }),
+      ]);
+    },
+  });
+}
+
+export function useCancelMeeting(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reason: string) => request<{ data: ApiMeeting }>(`/meetings/${id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", id] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", id, "agendas"] }),
       ]);
     },
   });

@@ -118,7 +118,7 @@ export const mockResolutions: Resolution[] = [
   {
     resolution_id: "RES-005",
     agenda_id: "AGD-001-05",
-    resolution_status: ResolutionStatus.NEED_REVISION,
+    resolution_status: ResolutionStatus.RECONSIDER,
     comment:
       "ที่ประชุมมีมติให้ทบทวนงบประมาณโครงการ Smart City Dashboard ใหม่ โดยให้ลดงบประมาณลง 20% และปรับแผนการดำเนินงานให้สอดคล้องกับแผนแม่บท IT ของ กทม. แล้วนำเสนอใหม่ในการประชุมครั้งถัดไป",
   },

@@ -27,7 +27,14 @@ type ApiAgenda = {
     id: string;
     projectCode: string | null;
     projectName: string | null;
-    initialRequestedBudget: string | null;
+    latestApprovedBudget: string | null;
+    projectStatusId: number;
+  } | null;
+  resolution?: {
+    id: string;
+    resolutionType: import("../types").ResolutionStatus | null;
+    remark: string | null;
+    version: number;
   } | null;
 };
 
@@ -66,7 +73,7 @@ function normalizeProject(project: ApiAgenda["project"]): Project | null {
     project_code: project.projectCode ?? "-",
     name: project.projectName ?? "Untitled project",
     agency: "-",
-    budget: Number(project.initialRequestedBudget ?? 0),
+    budget: Number(project.latestApprovedBudget ?? 0),
     description: "",
     objective: "",
     start_date: "",
@@ -86,6 +93,13 @@ function normalizeAgenda(agenda: ApiAgenda): Agenda {
     title: agenda.title,
     description: agenda.description ?? "",
     project: normalizeProject(agenda.project),
+    resolution: agenda.resolution ? {
+      resolution_id: agenda.resolution.id,
+      agenda_id: agenda.id,
+      resolution_status: agenda.resolution.resolutionType,
+      comment: agenda.resolution.remark ?? "",
+      version: agenda.resolution.version,
+    } : null,
   };
 }
 
@@ -94,27 +108,26 @@ async function fetchAgendas(meetingId: string) {
   return response.data.map(normalizeAgenda);
 }
 
-async function fetchProjects() {
+async function fetchProjects(meetingId: string) {
   const response = await request<{ data: Array<{
     id: string;
     projectCode?: string | null;
     projectName?: string | null;
-    initialRequestedBudget?: string | null;
-    division?: { name?: string; departmentName?: string } | null;
-    status?: { name?: string } | null;
-  }> }>("/projects?page=1&limit=100&status=all&ownership=all");
+    latestApprovedBudget?: string | null;
+    projectStatusId: number;
+  }> }>(`/meetings/${meetingId}/eligible-projects`);
 
   return response.data.map((project) => ({
     project_id: project.id,
     project_code: project.projectCode ?? "-",
     name: project.projectName ?? "Untitled project",
-    agency: project.division?.departmentName ?? project.division?.name ?? "-",
-    budget: Number(project.initialRequestedBudget ?? 0),
+    agency: "-",
+    budget: Number(project.latestApprovedBudget ?? 0),
     description: "",
     objective: "",
     start_date: "",
     end_date: "",
-    status: project.status?.name ?? "",
+    status: String(project.projectStatusId),
   }));
 }
 
@@ -147,8 +160,8 @@ export function useAgendas(meetingId: string): {
     refetchOnMount: "always",
   });
   const projectQuery = useQuery({
-    queryKey: ["meeting-project-options"],
-    queryFn: fetchProjects,
+    queryKey: ["meetings", meetingId, "eligible-projects"],
+    queryFn: () => fetchProjects(meetingId),
     staleTime: 30_000,
   });
 
@@ -158,8 +171,8 @@ export function useAgendas(meetingId: string): {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateAgendaPayload }) =>
-      request<{ data: ApiAgenda }>(`/meetings/agendas/${id}`, {
-        method: "PUT",
+      request<{ data: ApiAgenda }>(`/meetings/${meetingId}/agendas/${id}`, {
+        method: "PATCH",
         body: JSON.stringify(payload),
       }),
     onSuccess: invalidate,
@@ -167,10 +180,10 @@ export function useAgendas(meetingId: string): {
 
   const reorderMutation = useMutation({
     mutationFn: async (changes: Array<{ id: string; sortOrder: number }>) => {
-      await Promise.all(changes.map(({ id, sortOrder }) => request(`/meetings/agendas/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ sortOrder }),
-      })));
+      await request(`/meetings/${meetingId}/agendas/reorder`, {
+        method: "POST",
+        body: JSON.stringify({ items: changes.map(({ id, sortOrder }) => ({ agendaId: id, sortOrder })) }),
+      });
     },
     onSuccess: invalidate,
   });
@@ -247,9 +260,9 @@ export function useAgendas(meetingId: string): {
 export function useCreateAgenda(meetingId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: Omit<CreateAgendaPayload, "meetingId">) => request<{ data: ApiAgenda }>("/meetings/agendas", {
+    mutationFn: (payload: Omit<CreateAgendaPayload, "meetingId">) => request<{ data: ApiAgenda }>(`/meetings/${meetingId}/agendas`, {
       method: "POST",
-      body: JSON.stringify({ ...payload, meetingId }),
+      body: JSON.stringify(payload),
     }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
@@ -260,7 +273,7 @@ export function useCreateAgenda(meetingId: string) {
 export function useDeleteAgenda(meetingId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (agendaId: string) => request(`/meetings/agendas/${agendaId}`, { method: "DELETE" }),
+    mutationFn: (agendaId: string) => request(`/meetings/${meetingId}/agendas/${agendaId}`, { method: "DELETE" }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
     },

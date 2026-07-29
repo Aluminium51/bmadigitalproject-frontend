@@ -86,3 +86,33 @@ export function useUpdateProjectVisibility(projectId: string) {
     },
   });
 }
+
+export function useReopenRejectedProject(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (reason: string) => {
+      const response = await fetch(`${API_BASE}/admin/projects/${projectId}/reopen-rejected`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw Object.assign(new Error(payload.message ?? "ไม่สามารถเปิดโครงการเพื่อแก้ไขได้"), {
+          status: response.status,
+          dependencies: payload.dependencies,
+        });
+      }
+      return payload;
+    },
+    onSettled: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["timeline", projectId] }),
+      ]);
+    },
+  });
+}

@@ -138,6 +138,8 @@ const Project = z
     userId: z.string().uuid(),
     divisionId: z.number(),
     projectStatusId: z.number().nullable(),
+    returnStage: z.enum(["SMALL_BOARD", "BIG_BOARD"]).nullable(),
+    workflowVersion: z.number().int(),
     projectTypeId: z.number().nullable(),
     fourQuadrantsId: z.number().nullable(),
     deputyGovernorId: z.number().nullable(),
@@ -147,6 +149,7 @@ const Project = z
     initialRequestedBudget: z.string().nullable(),
     latestApprovedBudget: z.string().nullable(),
     analystId: z.string().uuid().nullable(),
+    assignedAnalystId: z.string().uuid().nullish(),
     assignedBy: z.string().uuid().nullable(),
     assignedAt: z.string().datetime({ offset: true }),
     isPublic: z.boolean(),
@@ -1168,37 +1171,53 @@ const SubmitProposalRequest = z
     isInRoadmap: z.boolean(),
   })
   .passthrough();
-const CreateMeeting = z
-  .object({
-    meetingNo: z.string().min(1).max(100),
-    title: z.string().min(1).max(500),
-    meetingTypeId: z.number().int().gt(0),
-    meetingDate: z.string().datetime({ offset: true }),
-    location: z.string().max(500).nullish(),
-    meetingStatusId: z.number().int().gt(0),
-  })
-  .passthrough();
+const CreateMeeting = z.object({
+  meetingNo: z.string().min(1).max(100),
+  title: z.string().min(1).max(500),
+  meetingTypeId: z.number().int().gte(1).lte(2),
+  meetingDate: z.string().datetime({ offset: true }),
+  startTime: z.string().datetime({ offset: true }).optional(),
+  endTime: z.string().datetime({ offset: true }).nullish(),
+  location: z.string().max(500).nullish(),
+  description: z.string().max(5000).nullish(),
+  meetingStatusId: z.number().int().optional(),
+});
 const Meeting = z
   .object({
     id: z.string().uuid(),
-    meetingNo: z.string().max(100),
-    title: z.string().max(500),
+    meetingNo: z.string(),
+    title: z.string(),
     meetingTypeId: z.number().int(),
-    meetingDate: z.string().datetime({ offset: true }),
-    location: z.string().max(500).nullish(),
-    meetingStatusId: z.number().int(),
-    createdBy: z.string().uuid(),
-    createdAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
-    updatedBy: z.string().uuid().nullish(),
     meetingType: z
-      .object({ id: z.number().int(), name: z.string() })
+      .object({
+        id: z.number().int(),
+        code: z.string().nullable(),
+        name: z.string(),
+      })
       .passthrough()
-      .nullish(),
+      .nullable(),
+    meetingDate: z.union([z.string(), z.string()]),
+    startTime: z.union([z.string(), z.string(), z.unknown()]),
+    endTime: z.union([z.string(), z.string(), z.unknown()]),
+    location: z.string().nullable(),
+    description: z.string().nullable(),
+    meetingStatusId: z.number().int(),
     meetingStatus: z
-      .object({ id: z.number().int(), name: z.string() })
+      .object({
+        id: z.number().int(),
+        code: z.string().nullable(),
+        name: z.string(),
+      })
       .passthrough()
-      .nullish(),
+      .nullable(),
+    createdBy: z.string().uuid(),
+    createdAt: z.union([z.string(), z.string()]),
+    updatedAt: z.union([z.string(), z.string()]),
+    updatedBy: z.string().uuid().nullable(),
+    completedAt: z.union([z.string(), z.string(), z.unknown()]),
+    cancelledAt: z.union([z.string(), z.string(), z.unknown()]),
+    cancelReason: z.string().nullable(),
+    unresolvedResolutionCount: z.number().int().optional().default(0),
     creator: z
       .object({
         userId: z.string().uuid(),
@@ -1206,54 +1225,76 @@ const Meeting = z
         lastName: z.string(),
       })
       .passthrough()
-      .nullish(),
-  })
-  .passthrough();
-const UpdateMeeting = z
-  .object({
-    meetingNo: z.string().min(1).max(100),
-    title: z.string().min(1).max(500),
-    meetingTypeId: z.number().int().gt(0),
-    meetingDate: z.string().datetime({ offset: true }),
-    location: z.string().max(500).nullable(),
-    meetingStatusId: z.number().int().gt(0),
-  })
-  .partial()
-  .passthrough();
-const CreateAgenda = z
-  .object({
-    meetingId: z.string().uuid(),
-    projectId: z.string().uuid().nullish(),
-    agendaNumber: z.string().min(1).max(50),
-    sortOrder: z.number().int().gt(0).optional(),
-    agendaTypeId: z.number().int().gte(1).lte(5),
-    title: z.string().min(1).max(500),
-    description: z.string().max(5000).nullish(),
+      .nullable(),
   })
   .passthrough();
 const Agenda = z
   .object({
     id: z.string().uuid(),
     meetingId: z.string().uuid(),
-    projectId: z.string().uuid().nullish(),
-    agendaNumber: z.string().max(50),
+    projectId: z.string().uuid().nullable(),
+    agendaNumber: z.string(),
     sortOrder: z.number().int(),
     agendaTypeId: z.number().int().gte(1).lte(5),
-    title: z.string().max(500),
-    description: z.string().nullish(),
+    title: z.string(),
+    description: z.string().nullable(),
     project: z
       .object({
         id: z.string().uuid(),
-        projectCode: z.string().nullish(),
-        projectName: z.string().nullish(),
-        initialRequestedBudget: z.string().nullish(),
+        projectCode: z.string().nullable(),
+        projectName: z.string().nullable(),
+        latestApprovedBudget: z.string().nullable(),
+        projectStatusId: z.number().int(),
       })
       .passthrough()
-      .nullish(),
-    createdAt: z.string().datetime({ offset: true }),
-    updatedAt: z.string().datetime({ offset: true }),
+      .nullable(),
+    resolution: z
+      .object({
+        id: z.string().uuid(),
+        resolutionType: z
+          .enum([
+            "APPROVED",
+            "ACKNOWLEDGED",
+            "CONDITIONAL_APPROVAL",
+            "RECONSIDER",
+            "NOT_APPROVED",
+            "NOT_CONSIDERED"])
+          .nullable(),
+        remark: z.string().nullable(),
+        version: z.number().int(),
+        resolvedAt: z.union([z.string(), z.string(), z.unknown()]),
+      })
+      .passthrough()
+      .nullable(),
+    createdAt: z.union([z.string(), z.string()]),
+    updatedAt: z.union([z.string(), z.string()]),
   })
   .passthrough();
+const UpdateMeeting = z
+  .object({
+    meetingNo: z.string().min(1).max(100),
+    title: z.string().min(1).max(500),
+    meetingTypeId: z.number().int().gte(1).lte(2),
+    meetingDate: z.string().datetime({ offset: true }),
+    startTime: z.string().datetime({ offset: true }),
+    endTime: z.string().datetime({ offset: true }).nullable(),
+    location: z.string().max(500).nullable(),
+    description: z.string().max(5000).nullable(),
+    meetingStatusId: z.number().int(),
+  })
+  .partial();
+const TransitionMeetingStatus = z.object({
+  status: z.enum(["SCHEDULED", "IN_PROGRESS", "COMPLETED"]),
+});
+const CancelMeeting = z.object({ reason: z.string().min(1).max(5000) });
+const CreateAgenda = z.object({
+  projectId: z.string().uuid().nullish(),
+  agendaNumber: z.string().min(1).max(50),
+  sortOrder: z.number().int().gt(0).optional(),
+  agendaTypeId: z.number().int().gte(1).lte(5),
+  title: z.string().min(1).max(500),
+  description: z.string().max(5000).nullish(),
+});
 const UpdateAgenda = z
   .object({
     projectId: z.string().uuid().nullable(),
@@ -1263,14 +1304,115 @@ const UpdateAgenda = z
     title: z.string().min(1).max(500),
     description: z.string().max(5000).nullable(),
   })
-  .partial()
-  .passthrough();
-const RecordResolution = z
+  .partial();
+const ReorderAgendas = z.object({
+  items: z
+    .array(
+      z
+        .object({
+          agendaId: z.string().uuid(),
+          sortOrder: z.number().int().gt(0),
+        })
+        .passthrough()
+    )
+    .min(1),
+});
+const RecordResolution = z.object({
+  resolutionType: z.enum([
+    "APPROVED",
+    "ACKNOWLEDGED",
+    "CONDITIONAL_APPROVAL",
+    "RECONSIDER",
+    "NOT_APPROVED",
+    "NOT_CONSIDERED",
+  ]),
+  remark: z.string().max(5000).nullish(),
+});
+const Resolution = z
   .object({
-    resolutionStatusId: z.number().int().gte(1).lte(4),
-    comment: z.string().optional(),
+    id: z.string().uuid(),
+    agendaId: z.string().uuid(),
+    resolutionType: z
+      .enum([
+        "APPROVED",
+        "ACKNOWLEDGED",
+        "CONDITIONAL_APPROVAL",
+        "RECONSIDER",
+        "NOT_APPROVED",
+        "NOT_CONSIDERED"])
+      .nullable(),
+    remark: z.string().nullable(),
+    recordedBy: z.string().uuid(),
+    resolvedAt: z.union([z.string(), z.string(), z.unknown()]),
+    version: z.number().int(),
+    createdAt: z.union([z.string(), z.string()]),
+    updatedAt: z.union([z.string(), z.string()]),
   })
   .passthrough();
+const EditResolution = z.object({
+  resolutionType: z.enum([
+    "APPROVED",
+    "ACKNOWLEDGED",
+    "CONDITIONAL_APPROVAL",
+    "RECONSIDER",
+    "NOT_APPROVED",
+    "NOT_CONSIDERED",
+  ]),
+  remark: z.string().max(5000).nullish(),
+  version: z.number().int().gt(0),
+});
+const ResolutionRevision = z
+  .object({
+    id: z.string().uuid(),
+    resolutionId: z.string().uuid(),
+    revisionNumber: z.number().int(),
+    previousResolutionType: z.string().nullable(),
+    newResolutionType: z.string(),
+    previousRemark: z.string().nullable(),
+    newRemark: z.string().nullable(),
+    previousProjectStatusId: z.number().int().nullable(),
+    newProjectStatusId: z.number().int(),
+    previousLatestApprovedBudget: z.string().nullable(),
+    newLatestApprovedBudget: z.string().nullable(),
+    reason: z.string().nullable(),
+    changeMode: z.string(),
+    changedAt: z.union([z.string(), z.string()]),
+  })
+  .passthrough();
+const postApiv1meetingsMeetingIdfiles_Body = z
+  .object({
+    file: z.unknown().nullish(),
+    documentType: z.enum(["MEETING_DOCUMENT", "MEETING_MINUTES"]),
+  })
+  .passthrough();
+const MeetingFile = z
+  .object({
+    id: z.string().uuid(),
+    meetingId: z.string().uuid(),
+    documentType: z.enum(["MEETING_DOCUMENT", "MEETING_MINUTES"]),
+    originalFileName: z.string().nullable(),
+    mimeType: z.string().nullable(),
+    sizeBytes: z.number().int().nullable(),
+    uploadedBy: z.string().uuid(),
+    createdAt: z.union([z.string(), z.string()]),
+  })
+  .passthrough();
+const CorrectResolution = z.object({
+  resolutionType: z.enum([
+    "APPROVED",
+    "ACKNOWLEDGED",
+    "CONDITIONAL_APPROVAL",
+    "RECONSIDER",
+    "NOT_APPROVED",
+    "NOT_CONSIDERED",
+  ]),
+  remark: z.string().max(5000).nullish(),
+  reason: z.string().min(1).max(5000),
+  version: z.number().int().gt(0),
+});
+const ReopenRejectedProjectRequest = z.object({
+  reason: z.string().min(1).max(5000),
+});
 const CloudRequest = z
   .object({
     id: z.string().uuid(),
@@ -1391,11 +1533,21 @@ export const schemas = {
   SubmitProposalRequest,
   CreateMeeting,
   Meeting,
-  UpdateMeeting,
-  CreateAgenda,
   Agenda,
+  UpdateMeeting,
+  TransitionMeetingStatus,
+  CancelMeeting,
+  CreateAgenda,
   UpdateAgenda,
+  ReorderAgendas,
   RecordResolution,
+  Resolution,
+  EditResolution,
+  ResolutionRevision,
+  postApiv1meetingsMeetingIdfiles_Body,
+  MeetingFile,
+  CorrectResolution,
+  ReopenRejectedProjectRequest,
   CloudRequest,
   DivisionItem,
   DivisionResponse,
@@ -1410,6 +1562,128 @@ export const schemas = {
 };
 
 const endpoints = makeApi([
+  {
+    method: "post",
+    path: "/api/v1/admin/projects/:id/reopen-rejected",
+    alias: "postApiv1adminprojectsIdreopenRejected",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ reason: z.string().min(1).max(5000) }),
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.unknown().nullable(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/admin/resolutions/:id/correct",
+    alias: "postApiv1adminresolutionsIdcorrect",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: CorrectResolution,
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: Resolution }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
   {
     method: "post",
     path: "/api/v1/auth/forgot-password",
@@ -1669,8 +1943,43 @@ const endpoints = makeApi([
     errors: [
       {
         status: 401,
-        description: `Unauthorized`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
       },
     ],
   },
@@ -1683,8 +1992,43 @@ const endpoints = makeApi([
     errors: [
       {
         status: 401,
-        description: `Unauthorized`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
       },
     ],
   },
@@ -1700,19 +2044,63 @@ const endpoints = makeApi([
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ data: Meeting }).passthrough(),
+    response: z
+      .object({
+        data: Meeting.and(
+          z
+            .object({ agendas: z.array(Agenda) })
+            .partial()
+            .passthrough()
+        ),
+      })
+      .passthrough(),
     errors: [
       {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
         status: 404,
-        description: `ไม่พบข้อมูล`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
       },
     ],
   },
   {
-    method: "put",
+    method: "patch",
     path: "/api/v1/meetings/:id",
-    alias: "putApiv1meetingsId",
+    alias: "patchApiv1meetingsId",
     requestFormat: "json",
     parameters: [
       {
@@ -1726,19 +2114,118 @@ const endpoints = makeApi([
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ data: Meeting }).passthrough(),
+    response: z
+      .object({ data: z.unknown().nullable() })
+      .partial()
+      .passthrough(),
     errors: [
       {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
         status: 404,
-        description: `ไม่พบข้อมูล`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
       },
     ],
   },
   {
-    method: "delete",
-    path: "/api/v1/meetings/:id",
-    alias: "deleteApiv1meetingsId",
+    method: "post",
+    path: "/api/v1/meetings/:id/cancel",
+    alias: "postApiv1meetingsIdcancel",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ reason: z.string().min(1).max(5000) }),
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: Meeting }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/meetings/:id/eligible-projects",
+    alias: "getApiv1meetingsIdeligibleProjects",
     requestFormat: "json",
     parameters: [
       {
@@ -1747,12 +2234,122 @@ const endpoints = makeApi([
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ message: z.string() }).passthrough(),
+    response: z
+      .object({
+        data: z.array(
+          z
+            .object({
+              id: z.string().uuid(),
+              projectCode: z.string().nullable(),
+              projectName: z.string().nullable(),
+              latestApprovedBudget: z.string().nullable(),
+              projectStatusId: z.number().int(),
+            })
+            .passthrough()
+        ),
+      })
+      .passthrough(),
     errors: [
       {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
         status: 404,
-        description: `ไม่พบข้อมูล`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/meetings/:id/status",
+    alias: "postApiv1meetingsIdstatus",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: TransitionMeetingStatus,
+      },
+      {
+        name: "id",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: Meeting }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
       },
     ],
   },
@@ -1769,11 +2366,53 @@ const endpoints = makeApi([
       },
     ],
     response: z.object({ data: z.array(Agenda) }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
   },
   {
     method: "post",
-    path: "/api/v1/meetings/agendas",
-    alias: "postApiv1meetingsagendas",
+    path: "/api/v1/meetings/:meetingId/agendas",
+    alias: "postApiv1meetingsMeetingIdagendas",
     requestFormat: "json",
     parameters: [
       {
@@ -1781,76 +2420,8 @@ const endpoints = makeApi([
         type: "Body",
         schema: CreateAgenda,
       },
-    ],
-    response: z.object({ data: Agenda }).passthrough(),
-    errors: [
       {
-        status: 404,
-        description: `ไม่พบการประชุม`,
-        schema: z.object({ message: z.string() }).passthrough(),
-      },
-    ],
-  },
-  {
-    method: "put",
-    path: "/api/v1/meetings/agendas/:id",
-    alias: "putApiv1meetingsagendasId",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "body",
-        type: "Body",
-        schema: UpdateAgenda,
-      },
-      {
-        name: "id",
-        type: "Path",
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.object({ data: Agenda }).passthrough(),
-    errors: [
-      {
-        status: 404,
-        description: `ไม่พบข้อมูล`,
-        schema: z.object({ message: z.string() }).passthrough(),
-      },
-    ],
-  },
-  {
-    method: "delete",
-    path: "/api/v1/meetings/agendas/:id",
-    alias: "deleteApiv1meetingsagendasId",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "id",
-        type: "Path",
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.object({ message: z.string() }).passthrough(),
-    errors: [
-      {
-        status: 404,
-        description: `ไม่พบข้อมูล`,
-        schema: z.object({ message: z.string() }).passthrough(),
-      },
-    ],
-  },
-  {
-    method: "post",
-    path: "/api/v1/meetings/agendas/:id/resolution",
-    alias: "postApiv1meetingsagendasIdresolution",
-    requestFormat: "json",
-    parameters: [
-      {
-        name: "body",
-        type: "Body",
-        schema: RecordResolution,
-      },
-      {
-        name: "id",
+        name: "meetingId",
         type: "Path",
         schema: z.string().uuid(),
       },
@@ -1861,14 +2432,667 @@ const endpoints = makeApi([
       .passthrough(),
     errors: [
       {
-        status: 400,
-        description: `Invalid resolution`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
       },
       {
         status: 409,
-        description: `Invalid workflow state`,
-        schema: z.object({ message: z.string() }).passthrough(),
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/meetings/:meetingId/agendas/:agendaId",
+    alias: "patchApiv1meetingsMeetingIdagendasAgendaId",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: UpdateAgenda,
+      },
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "agendaId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z
+      .object({ data: z.unknown().nullable() })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/api/v1/meetings/:meetingId/agendas/:agendaId",
+    alias: "deleteApiv1meetingsMeetingIdagendasAgendaId",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "agendaId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ success: z.boolean() }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/meetings/:meetingId/agendas/:agendaId/resolution",
+    alias: "postApiv1meetingsMeetingIdagendasAgendaIdresolution",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: RecordResolution,
+      },
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "agendaId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: Resolution }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "patch",
+    path: "/api/v1/meetings/:meetingId/agendas/:agendaId/resolution",
+    alias: "patchApiv1meetingsMeetingIdagendasAgendaIdresolution",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: EditResolution,
+      },
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "agendaId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: Resolution }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/meetings/:meetingId/agendas/:agendaId/resolution/history",
+    alias: "getApiv1meetingsMeetingIdagendasAgendaIdresolutionhistory",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "agendaId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: z.array(ResolutionRevision) }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/meetings/:meetingId/agendas/reorder",
+    alias: "postApiv1meetingsMeetingIdagendasreorder",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: ReorderAgendas,
+      },
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: z.array(Agenda) }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/v1/meetings/:meetingId/files",
+    alias: "postApiv1meetingsMeetingIdfiles",
+    requestFormat: "form-data",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: postApiv1meetingsMeetingIdfiles_Body,
+      },
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: MeetingFile }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/meetings/:meetingId/files",
+    alias: "getApiv1meetingsMeetingIdfiles",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: z.array(MeetingFile) }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/api/v1/meetings/:meetingId/files/:fileId",
+    alias: "deleteApiv1meetingsMeetingIdfilesFileId",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "fileId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ success: z.boolean() }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/meetings/:meetingId/files/:fileId/download",
+    alias: "getApiv1meetingsMeetingIdfilesFileIddownload",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+      {
+        name: "fileId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
       },
     ],
   },

@@ -72,9 +72,11 @@ export const useUserManagement = (options: { currentUserId?: string | null } = {
       updateUserStatusAction(userId, isActive),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast.success("User status updated");
+      // toast.success("User status updated");
+      toast.success("อัปเดตสถานะผู้ใช้เรียบร้อยแล้ว");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to update user status"),
+    // onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to update user status"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "ไม่สามารถอัปเดตสถานะผู้ใช้ได้"),
   });
 
   const rolesMutation = useMutation({
@@ -90,16 +92,19 @@ export const useUserManagement = (options: { currentUserId?: string | null } = {
       if (currentUserId && currentUserId === variables.userId) {
         const refreshedSession = await refreshSessionAction();
         if (refreshedSession.success) {
-          toast.success("Your roles were updated and your session was refreshed.");
+          // toast.success("Your roles were updated and your session was refreshed.");
+          toast.success("อัปเดตสิทธิ์ของคุณเรียบร้อยแล้ว และเซสชันของคุณได้รับการรีเฟรช");
         } else {
           toast.warning(refreshedSession.message);
         }
         return;
       }
 
-      toast.success("User roles updated");
+      // toast.success("User roles updated");
+      toast.success("อัปเดตสิทธิ์ผู้ใช้เรียบร้อยแล้ว");
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to update user roles"),
+    // onError: (error) => toast.error(error instanceof Error ? error.message : "Unable to update user roles"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : "ไม่สามารถอัปเดตสิทธิ์ผู้ใช้ได้"),
   });
 
   const handleToggleActive = useCallback((userId: string | number) => {

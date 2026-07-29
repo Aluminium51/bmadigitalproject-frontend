@@ -26,10 +26,12 @@ import {
   useCancelSubmitProject,
   useDeleteProject,
   useUpdateProjectVisibility,
+  useReopenRejectedProject,
 } from "../../hooks/useProjectMutations";
 import { getProjectStatusMeta } from "../../utils/projectStatus";
 import { ReturnedFeedbackBanner } from "./ReturnedFeedbackBanner";
 import { ProjectDetailsEditDialog } from "./ProjectDetailsEditDialog";
+import { useHasRole } from "@/features/auth/RoleContext";
 
 type HeaderProposal = {
   budgetsByYear?: Array<{ year?: number | string | null }>;
@@ -51,6 +53,8 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const deleteMutation = useDeleteProject(projectId);
   const cancelSubmitMutation = useCancelSubmitProject(projectId);
   const visibilityMutation = useUpdateProjectVisibility(projectId);
+  const reopenMutation = useReopenRejectedProject(projectId);
+  const isSuperAdmin = useHasRole("super_admin");
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [cancelSubmitConfirmOpen, setCancelSubmitConfirmOpen] = useState(false);
@@ -159,6 +163,28 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
             </div>
 
             <div className="flex w-full shrink-0 flex-col items-stretch gap-2 xl:w-auto xl:self-start">
+              {isSuperAdmin && [11, 14].includes(project.projectStatusId ?? -1) && (
+                <Button
+                  variant="outline"
+                  disabled={reopenMutation.isPending}
+                  className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+                  onClick={async () => {
+                    const reason = window.prompt("กรุณาระบุเหตุผลที่เปิดโครงการกลับมาแก้ไข");
+                    if (!reason?.trim()) return;
+                    try {
+                      await reopenMutation.mutateAsync(reason.trim());
+                      toast.success("เปิดโครงการกลับมาแก้ไขสำเร็จ");
+                    } catch (error) {
+                      toast.error("ไม่สามารถเปิดโครงการกลับมาแก้ไขได้", {
+                        description: error instanceof Error ? error.message : undefined,
+                      });
+                    }
+                  }}
+                >
+                  <RotateCcw className="size-4" />
+                  {reopenMutation.isPending ? "กำลังดำเนินการ..." : "เปิดโครงการกลับมาแก้ไข"}
+                </Button>
+              )}
               {project.permissions?.canUpdateProject && (
                 <Button
                   variant="outline"
