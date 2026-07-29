@@ -97,6 +97,7 @@ export function normalizeMeeting(meeting: ApiMeeting): Meeting {
     meeting_type: meeting.meetingType?.code === "BIG_BOARD" ? "BIG_BOARD" : "SMALL_BOARD",
     unresolved_resolution_count: meeting.unresolvedResolutionCount ?? 0,
     created_by: meeting.createdBy,
+    updated_at: meeting.updatedAt,
   };
 }
 
@@ -224,6 +225,7 @@ export function useTransitionMeeting(id: string) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["meetings"] }),
         queryClient.invalidateQueries({ queryKey: ["meetings", id] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", id, "eligible-projects"] }),
       ]);
     },
   });
@@ -241,6 +243,7 @@ export function useCancelMeeting(id: string) {
         queryClient.invalidateQueries({ queryKey: ["meetings"] }),
         queryClient.invalidateQueries({ queryKey: ["meetings", id] }),
         queryClient.invalidateQueries({ queryKey: ["meetings", id, "agendas"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", id, "eligible-projects"] }),
       ]);
     },
   });

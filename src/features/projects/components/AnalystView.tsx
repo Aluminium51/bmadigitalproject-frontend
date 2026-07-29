@@ -21,7 +21,7 @@ import { useAnalystAssignedProjects, useAnalystDecision, useRequestAnalystReassi
 
 type AnalystProject = z.infer<typeof schemas.AnalystAssignedProject>;
 type Decision = "approve" | "return" | "reject";
-type DialogMode = "reassign" | "decision" | "approve" | "return" | "reject" | null;
+type DialogMode = "reassign" | "decision" | null;
 
 const statusLabels: Record<number, string> = {
   6: "อยู่ระหว่างการวิเคราะห์",
@@ -75,7 +75,7 @@ export function AnalystView() {
   const analysisCount = useMemo(() => projects.filter((project) => project.projectStatusId === 6).length, [projects]);
   const waitingCount = projects.filter((project) => [7, 10, 13].includes(project.projectStatusId)).length;
 
-  const openDialog = (project: AnalystProject, nextMode: "reassign" | "decision" | "approve") => {
+  const openDialog = (project: AnalystProject, nextMode: "reassign" | "decision") => {
     setSelectedProject(project);
     setMode(nextMode === "reassign" ? "reassign" : "decision");
     setDecision(null);
@@ -94,7 +94,7 @@ export function AnalystView() {
 
   const submitAction = async () => {
     if (!selectedProject || !mode) return;
-    const selectedDecision = decision ?? (mode === "approve" || mode === "return" || mode === "reject" ? mode : null);
+    const selectedDecision = decision;
     if (mode !== "reassign" && !selectedDecision) {
       setValidationError("กรุณาเลือกผลการวิเคราะห์");
       return;
@@ -127,11 +127,15 @@ export function AnalystView() {
   const isPending = reassignmentMutation.isPending || decisionMutation.isPending;
   const dialogTitle = mode === "reassign"
     ? "ขอเปลี่ยนผู้รับผิดชอบโครงการ"
-    : mode === "approve"
-      ? "ยืนยันการอนุมัติผลการวิเคราะห์"
-      : mode === "return"
-        ? "ส่งโครงการกลับแก้ไข"
-        : "ยืนยันการไม่อนุมัติโครงการ";
+    : "ยืนยันผลการวิเคราะห์โครงการ";
+
+  const decisionLabel = decision === "approve"
+    ? "อนุมัติ"
+    : decision === "return"
+      ? "ส่งกลับแก้ไข"
+      : decision === "reject"
+        ? "ปฏิเสธ"
+        : "ยืนยันการดำเนินการ";
 
   return (
     <main className="flex min-h-full w-full flex-col gap-6 p-4 sm:p-6 lg:p-8">
@@ -175,7 +179,7 @@ export function AnalystView() {
                     <TableCell className="text-sm">{project.division?.departmentName ?? project.division?.name ?? "-"}</TableCell>
                     <TableCell><Badge variant="outline" className={statusClass(project.projectStatusId)}>{statusLabels[project.projectStatusId] ?? "ไม่ทราบสถานะ"}</Badge></TableCell>
                     <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{formatDate(project.assignedAt)}</TableCell>
-                    <TableCell><div className="flex justify-end gap-2"><Button size="sm" variant="outline" disabled={!canAct} onClick={() => openDialog(project, "reassign")}>ขอเปลี่ยนผู้รับผิดชอบ</Button><Button size="sm" disabled={!canAct} onClick={() => openDialog(project, "approve")}>พิจารณา</Button></div></TableCell>
+                    <TableCell><div className="flex justify-end gap-2"><Button size="sm" variant="outline" disabled={!canAct} onClick={() => openDialog(project, "reassign")}>ขอเปลี่ยนผู้รับผิดชอบ</Button><Button size="sm" disabled={!canAct} onClick={() => openDialog(project, "decision")}>พิจารณา</Button></div></TableCell>
                   </TableRow>;
                 })}</TableBody>
               </Table>
@@ -187,8 +191,9 @@ export function AnalystView() {
 
       <Dialog open={Boolean(selectedProject)} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="w-[calc(100%-1rem)] max-w-lg">
-          <DialogHeader><DialogTitle>{dialogTitle}</DialogTitle><DialogDescription>{selectedProject?.projectName ?? "โครงการ"}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{dialogTitle}</DialogTitle><DialogDescription>ตรวจสอบข้อมูลและเลือกผลการวิเคราะห์ให้ครบถ้วน</DialogDescription></DialogHeader>
           <div className="space-y-4">
+            <div className="rounded-xl border bg-muted/30 p-4 text-sm"><p className="font-mono text-xs text-muted-foreground">{selectedProject?.projectCode ?? "-"}</p><p className="mt-2 font-semibold">{selectedProject?.projectName ?? "-"}</p></div>
             {mode !== "reassign" && (
               <div className="space-y-2">
                 <Label>ผลการวิเคราะห์ *</Label>
@@ -201,12 +206,10 @@ export function AnalystView() {
                 </RadioGroup>
               </div>
             )}
-            <div className="rounded-xl border bg-muted/30 p-4 text-sm"><p className="font-mono text-xs text-muted-foreground">{selectedProject?.projectCode ?? "-"}</p><p className="mt-2 font-semibold">{selectedProject?.projectName ?? "-"}</p></div>
             <div className="space-y-2"><Label htmlFor="analyst-action-remark">เหตุผล/ความคิดเห็น *</Label><Textarea id="analyst-action-remark" value={remark} onChange={(event) => setRemark(event.target.value)} rows={5} placeholder="กรุณาระบุเหตุผลหรือความคิดเห็น" /></div>
             {validationError && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{validationError}</p>}
           </div>
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row"><Button variant="outline" className="w-full sm:w-auto" disabled={isPending} onClick={closeDialog}>ยกเลิก</Button><Button variant={mode === "reject" ? "destructive" : "default"} className="w-full sm:w-auto" disabled={isPending || !remark.trim()} onClick={() => void submitAction()}>{isPending && <Loader2 className="mr-2 size-4 animate-spin" />}ยืนยันการดำเนินการ</Button></DialogFooter>
-          <div className="grid grid-cols-3 gap-2 border-t pt-4"><Button size="sm" variant={mode === "approve" ? "default" : "outline"} disabled={isPending} onClick={() => setMode("approve")}>อนุมัติ</Button><Button size="sm" variant={mode === "return" ? "default" : "outline"} disabled={isPending} onClick={() => setMode("return")}>ส่งกลับ</Button><Button size="sm" variant={mode === "reject" ? "destructive" : "outline"} disabled={isPending} onClick={() => setMode("reject")}>ปฏิเสธ</Button></div>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row"><Button variant="outline" className="w-full sm:w-auto" disabled={isPending} onClick={closeDialog}>ยกเลิก</Button><Button variant={decision === "reject" ? "destructive" : "default"} className="w-full sm:w-auto" disabled={isPending || mode !== "reassign" && (!decision || !remark.trim())} onClick={() => void submitAction()}>{isPending && <Loader2 className="mr-2 size-4 animate-spin" />}{mode === "reassign" ? "ส่งคำขอ" : decisionLabel}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </main>

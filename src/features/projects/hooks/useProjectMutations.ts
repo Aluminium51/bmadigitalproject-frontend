@@ -43,7 +43,10 @@ export function useUpdateProject(projectId: string) {
 
   return useMutation({
     mutationFn: (payload: UpdateProjectPayload) => updateProjectAction(projectId, payload),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (result?.project) {
+        queryClient.setQueryData(["project", projectId], result.project);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
@@ -58,13 +61,17 @@ export function useCancelSubmitProject(projectId: string) {
 
   return useMutation({
     mutationFn: () => cancelSubmitProjectAction(projectId),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (result?.project) {
+        queryClient.setQueryData(["project", projectId], result.project);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
         queryClient.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["proposals", "submitted", projectId] }),
         queryClient.invalidateQueries({ queryKey: ["timeline", projectId] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings"] }),
       ]);
       router.push(`/projects/${projectId}/proposal/create`);
       router.refresh();

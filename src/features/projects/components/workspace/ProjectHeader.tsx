@@ -47,7 +47,9 @@ const fallbackError = "ระบบไม่สามารถดำเนิน
 export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const router = useRouter();
   const projectId = String(project.id);
-  const proposalState = useProposalState(projectId);
+  const proposalState = useProposalState(projectId, {
+    preferEditableDraft: project.permissions?.canSubmitProposal === true,
+  });
   const { data: currentDraft, isLoading: isDraftLoading } = useGetDraft(projectId);
   const { mutate: submitProposal, isPending: isSubmitting } = useSubmitProposal(projectId);
   const deleteMutation = useDeleteProject(projectId);

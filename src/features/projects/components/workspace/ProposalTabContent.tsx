@@ -17,7 +17,9 @@ interface ProposalTabContentProps {
 export function ProposalTabContent({ project }: ProposalTabContentProps) {
   const projectId = String(project.id);
   const router = useRouter();
-  const proposalState = useProposalState(projectId);
+  const proposalState = useProposalState(projectId, {
+    preferEditableDraft: project.permissions?.canSubmitProposal === true,
+  });
   const { mutate: initializeDraft, isPending: isCreatingDraft } = useInitializeDraft(projectId);
 
   if (proposalState.status === "loading") {

@@ -49,6 +49,11 @@ export type CreateAgendaPayload = {
 };
 
 export type UpdateAgendaPayload = Partial<Omit<CreateAgendaPayload, "meetingId">>;
+export type EligibleProjectQuery = {
+  search?: string;
+  sortBy?: "projectCode" | "projectName" | "latestRequestedBudget";
+  sortOrder?: "asc" | "desc";
+};
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -58,7 +63,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw Object.assign(new Error(payload.message ?? payload.error ?? "Agenda request failed"), {
+    throw Object.assign(new Error(payload.message ?? payload.error ?? "ไม่สามารถจัดการวาระการประชุมได้"), {
       status: response.status,
       data: payload,
     });
@@ -71,7 +76,7 @@ function normalizeProject(project: ApiAgenda["project"]): Project | null {
   return {
     project_id: project.id,
     project_code: project.projectCode ?? "-",
-    name: project.projectName ?? "Untitled project",
+    name: project.projectName ?? "ไม่ระบุชื่อโครงการ",
     agency: "-",
     budget: Number(project.latestRequestedBudget ?? 0),
     description: "",
@@ -108,19 +113,24 @@ async function fetchAgendas(meetingId: string) {
   return response.data.map(normalizeAgenda);
 }
 
-async function fetchProjects(meetingId: string) {
+async function fetchProjects(meetingId: string, query: EligibleProjectQuery) {
+  const params = new URLSearchParams();
+  if (query.search?.trim()) params.set("search", query.search.trim());
+  if (query.sortBy) params.set("sortBy", query.sortBy);
+  if (query.sortOrder) params.set("sortOrder", query.sortOrder);
+  const suffix = params.toString() ? `?${params.toString()}` : "";
   const response = await request<{ data: Array<{
     id: string;
     projectCode?: string | null;
     projectName?: string | null;
     latestRequestedBudget?: string | null;
     projectStatusId: number;
-  }> }>(`/meetings/${meetingId}/eligible-projects`);
+  }> }>(`/meetings/${meetingId}/eligible-projects${suffix}`);
 
   return response.data.map((project) => ({
     project_id: project.id,
     project_code: project.projectCode ?? "-",
-    name: project.projectName ?? "Untitled project",
+    name: project.projectName ?? "ไม่ระบุชื่อโครงการ",
     agency: "-",
     budget: Number(project.latestRequestedBudget ?? 0),
     description: "",
@@ -135,7 +145,7 @@ export function useAgendaTypeOptions() {
   return AGENDA_TYPE_ORDER.map((id) => ({ id, label: AGENDA_TYPE_LABELS[id] }));
 }
 
-export function useAgendas(meetingId: string): {
+export function useAgendas(meetingId: string, eligibleQuery: EligibleProjectQuery = {}): {
   agendas: Agenda[];
   groupedAgendas: GroupedAgendas[];
   availableProjects: Project[];
@@ -151,6 +161,7 @@ export function useAgendas(meetingId: string): {
   isError: boolean;
   error: Error | null;
   isMutating: boolean;
+  refetch: () => Promise<unknown>;
 } {
   const queryClient = useQueryClient();
   const agendaQuery = useQuery({
@@ -160,13 +171,17 @@ export function useAgendas(meetingId: string): {
     refetchOnMount: "always",
   });
   const projectQuery = useQuery({
-    queryKey: ["meetings", meetingId, "eligible-projects"],
-    queryFn: () => fetchProjects(meetingId),
-    staleTime: 30_000,
+    queryKey: ["meetings", meetingId, "eligible-projects", eligibleQuery],
+    queryFn: () => fetchProjects(meetingId, eligibleQuery),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const invalidate = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] }),
+      queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "eligible-projects"] }),
+    ]);
   }, [meetingId, queryClient]);
 
   const updateMutation = useMutation({
@@ -254,6 +269,7 @@ export function useAgendas(meetingId: string): {
     isError: agendaQuery.isError || projectQuery.isError,
     error: (agendaQuery.error ?? projectQuery.error) as Error | null,
     isMutating: updateMutation.isPending || reorderMutation.isPending,
+    refetch: async () => { await agendaQuery.refetch(); },
   };
 }
 
@@ -265,7 +281,10 @@ export function useCreateAgenda(meetingId: string) {
       body: JSON.stringify(payload),
     }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "eligible-projects"] }),
+      ]);
     },
   });
 }
@@ -275,7 +294,45 @@ export function useDeleteAgenda(meetingId: string) {
   return useMutation({
     mutationFn: (agendaId: string) => request(`/meetings/${meetingId}/agendas/${agendaId}`, { method: "DELETE" }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "eligible-projects"] }),
+      ]);
+    },
+  });
+}
+
+export function useBulkCreateAgendas(meetingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { projectIds: string[]; agendaTypeId: AgendaType }) =>
+      request<{ data: ApiAgenda[] }>(`/meetings/${meetingId}/agendas/bulk`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "eligible-projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId] }),
+      ]);
+    },
+  });
+}
+
+export function useReorderAgendas(meetingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { expectedUpdatedAt: string; items: Array<{ agendaId: string; sortOrder: number }> }) =>
+      request<{ data: ApiAgenda[] }>(`/meetings/${meetingId}/agendas/reorder`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId, "agendas"] }),
+        queryClient.invalidateQueries({ queryKey: ["meetings", meetingId] }),
+      ]);
     },
   });
 }

@@ -2857,7 +2857,11 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    search?: string;
+                    sortBy?: "projectCode" | "projectName" | "latestRequestedBudget";
+                    sortOrder?: "asc" | "desc";
+                };
                 header?: never;
                 path: {
                     id: string;
@@ -3045,6 +3049,97 @@ export interface paths {
                     content: {
                         "application/json": {
                             data?: unknown;
+                        };
+                    };
+                };
+                /** @description Unauthenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+                /** @description Workflow conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meetingId}/agendas/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    meetingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["BulkCreateAgendas"];
+                };
+            };
+            responses: {
+                /** @description Agendas created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Agenda"][];
                         };
                     };
                 };
@@ -3554,6 +3649,93 @@ export interface paths {
                     content: {
                         "application/json": {
                             data: components["schemas"]["ResolutionRevision"][];
+                        };
+                    };
+                };
+                /** @description Unauthenticated */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+                /** @description Not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+                /** @description Workflow conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                            dependencies?: string[];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/meetings/{meetingId}/files/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    meetingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Meeting file policy */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["MeetingFilePolicy"];
                         };
                     };
                 };
@@ -5651,6 +5833,10 @@ export interface components {
             title: string;
             description?: string | null;
         };
+        BulkCreateAgendas: {
+            projectIds: string[];
+            agendaTypeId: number;
+        };
         UpdateAgenda: {
             /** Format: uuid */
             projectId?: string | null;
@@ -5666,6 +5852,8 @@ export interface components {
                 agendaId: string;
                 sortOrder: number;
             }[];
+            /** Format: date-time */
+            expectedUpdatedAt: string;
         };
         Resolution: {
             /** Format: uuid */
@@ -5710,6 +5898,15 @@ export interface components {
             reason: string | null;
             changeMode: string;
             changedAt: string;
+        };
+        MeetingFilePolicy: {
+            acceptedExtensions: string[];
+            acceptedMimeTypes: string[];
+            limits: {
+                pdfBytes: number;
+                imageBytes: number;
+                documentBytes: number;
+            };
         };
         MeetingFile: {
             /** Format: uuid */

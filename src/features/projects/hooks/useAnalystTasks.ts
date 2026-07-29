@@ -22,6 +22,7 @@ const invalidateAnalystQueries = async (
           queryClient.invalidateQueries({ queryKey: ["project", projectId] }),
           queryClient.invalidateQueries({ queryKey: ["proposals", "draft", projectId] }),
           queryClient.invalidateQueries({ queryKey: ["proposals", "submitted", projectId] }),
+          queryClient.invalidateQueries({ queryKey: ["meetings"] }),
         ]
       : []),
   ]);

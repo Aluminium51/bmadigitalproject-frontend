@@ -116,6 +116,7 @@ export interface Meeting {
   meeting_type?: "SMALL_BOARD" | "BIG_BOARD";
   unresolved_resolution_count?: number;
   created_by?: string;
+  updated_at?: string;
   agendas?: Agenda[];
 }
 

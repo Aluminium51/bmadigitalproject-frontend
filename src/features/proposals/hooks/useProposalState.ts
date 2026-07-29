@@ -1,20 +1,26 @@
 import { useGetDraft, useGetProposal } from "./useProposalDraftQuery";
+import { chooseProposalState, type ProposalState as ProposalDataState } from "./proposal-state";
 
 export type ProposalState =
   | { status: "loading" }
   | { status: "error"; error: unknown }
-  | { status: "empty" }
-  | { status: "draft"; data: Record<string, unknown> }
-  | { status: "submitted"; data: Record<string, unknown> };
+  | ProposalDataState;
 
-export function useProposalState(projectId: string | undefined): ProposalState {
+export { chooseProposalState } from "./proposal-state";
+
+export function useProposalState(
+  projectId: string | undefined,
+  options: { preferEditableDraft?: boolean } = {},
+): ProposalState {
   const draftQuery = useGetDraft(projectId);
   const proposalQuery = useGetProposal(projectId);
 
   if (draftQuery.isLoading || proposalQuery.isLoading) return { status: "loading" };
   if (draftQuery.isError) return { status: "error", error: draftQuery.error };
   if (proposalQuery.isError) return { status: "error", error: proposalQuery.error };
-  if (proposalQuery.data) return { status: "submitted", data: proposalQuery.data };
-  if (draftQuery.data) return { status: "draft", data: draftQuery.data };
-  return { status: "empty" };
+  return chooseProposalState({
+    draft: draftQuery.data,
+    submitted: proposalQuery.data,
+    preferEditableDraft: options.preferEditableDraft,
+  });
 }

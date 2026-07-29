@@ -1008,6 +1008,10 @@ const CreateAgenda = z.object({
   title: z.string().min(1).max(500),
   description: z.string().max(5000).nullish(),
 });
+const BulkCreateAgendas = z.object({
+  projectIds: z.array(z.string().uuid()).min(1).max(100),
+  agendaTypeId: z.number().int().gte(3).lte(4),
+});
 const UpdateAgenda = z
   .object({
     projectId: z.string().uuid().nullable(),
@@ -1029,6 +1033,7 @@ const ReorderAgendas = z.object({
         .passthrough()
     )
     .min(1),
+  expectedUpdatedAt: z.string().datetime({ offset: true }),
 });
 const RecordResolution = z.object({
   resolutionType: z.enum([
@@ -1090,6 +1095,19 @@ const ResolutionRevision = z
     reason: z.string().nullable(),
     changeMode: z.string(),
     changedAt: z.union([z.string(), z.string()]),
+  })
+  .passthrough();
+const MeetingFilePolicy = z
+  .object({
+    acceptedExtensions: z.array(z.string()),
+    acceptedMimeTypes: z.array(z.string()),
+    limits: z
+      .object({
+        pdfBytes: z.number().int(),
+        imageBytes: z.number().int(),
+        documentBytes: z.number().int(),
+      })
+      .passthrough(),
   })
   .passthrough();
 const postApiv1meetingsMeetingIdfiles_Body = z
@@ -1251,12 +1269,14 @@ export const schemas = {
   TransitionMeetingStatus,
   CancelMeeting,
   CreateAgenda,
+  BulkCreateAgendas,
   UpdateAgenda,
   ReorderAgendas,
   RecordResolution,
   Resolution,
   EditResolution,
   ResolutionRevision,
+  MeetingFilePolicy,
   postApiv1meetingsMeetingIdfiles_Body,
   MeetingFile,
   CorrectResolution,
@@ -2000,6 +2020,24 @@ const endpoints = makeApi([
         type: "Path",
         schema: z.string().uuid(),
       },
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string().max(200).optional(),
+      },
+      {
+        name: "sortBy",
+        type: "Query",
+        schema: z
+          .enum(["projectCode", "projectName", "latestRequestedBudget"])
+          .optional()
+          .default("projectCode"),
+      },
+      {
+        name: "sortOrder",
+        type: "Query",
+        schema: z.enum(["asc", "desc"]).optional().default("asc"),
+      },
     ],
     response: z
       .object({
@@ -2565,6 +2603,67 @@ const endpoints = makeApi([
   },
   {
     method: "post",
+    path: "/api/v1/meetings/:meetingId/agendas/bulk",
+    alias: "postApiv1meetingsMeetingIdagendasbulk",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: BulkCreateAgendas,
+      },
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: z.array(Agenda) }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "post",
     path: "/api/v1/meetings/:meetingId/agendas/reorder",
     alias: "postApiv1meetingsMeetingIdagendasreorder",
     requestFormat: "json",
@@ -2820,6 +2919,62 @@ const endpoints = makeApi([
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 401,
+        description: `Unauthenticated`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 403,
+        description: `Forbidden`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Workflow conflict`,
+        schema: z
+          .object({
+            message: z.string(),
+            dependencies: z.array(z.string()).optional(),
+          })
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/v1/meetings/:meetingId/files/policy",
+    alias: "getApiv1meetingsMeetingIdfilespolicy",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "meetingId",
+        type: "Path",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ data: MeetingFilePolicy }).passthrough(),
     errors: [
       {
         status: 401,
