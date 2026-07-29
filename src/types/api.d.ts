@@ -2338,7 +2338,15 @@ export interface paths {
         /** รายการการประชุมที่มีสิทธิ์เข้าถึง */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    search?: string;
+                    status?: "DRAFT" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+                    meetingTypeId?: number;
+                    page?: number;
+                    limit?: number;
+                    sortBy?: "meetingDate" | "meetingNo" | "status";
+                    sortOrder?: "asc" | "desc";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -2353,6 +2361,12 @@ export interface paths {
                     content: {
                         "application/json": {
                             data: components["schemas"]["Meeting"][];
+                            pagination: {
+                                page: number;
+                                limit: number;
+                                total: number;
+                                totalPages: number;
+                            };
                         };
                     };
                 };
@@ -2864,7 +2878,7 @@ export interface paths {
                                 id: string;
                                 projectCode: string | null;
                                 projectName: string | null;
-                                latestApprovedBudget: string | null;
+                                latestRequestedBudget: string | null;
                                 projectStatusId: number;
                             }[];
                         };
@@ -4668,7 +4682,22 @@ export interface components {
             /** @example 5000000.00 */
             initialRequestedBudget: string | null;
             /** @example 4500000.00 */
-            latestApprovedBudget: string | null;
+            latestRequestedBudget: string | null;
+            /** @example null */
+            finalApprovedBudget: string | null;
+            /** @example 4200000.00 */
+            initialEstimatedCost: string | null;
+            /** @example 4300000.00 */
+            latestEstimatedCost: string | null;
+            /** @example null */
+            finalEstimatedCost: string | null;
+            /** @example 4500000.00 */
+            latestSubmittedRequestedBudget: string | null;
+            /**
+             * @deprecated
+             * @description Deprecated read-only alias of latestRequestedBudget
+             */
+            latestApprovedBudget?: string | null;
             /**
              * Format: uuid
              * @example null
@@ -4768,7 +4797,9 @@ export interface components {
             permissions?: {
                 canDelete: boolean;
                 canManageAttachments: boolean;
-                canUpdateProject: boolean;
+                canEditProject: boolean;
+                /** @deprecated */
+                canUpdateProject?: boolean;
                 canEditProposal: boolean;
                 canSubmitProposal: boolean;
                 canCancelSubmit: boolean;
@@ -4995,236 +5026,8 @@ export interface components {
                 name: string;
             } | null;
         };
-        /** @description Partial update for a submitted proposal by an authorized Secretary */
-        SubmittedProposalPatchRequest: {
-            projectName?: string;
-            agencyName?: string;
-            headOfAgency?: string;
-            dcioName?: string;
-            projectManager?: string;
-            totalBudget?: number;
-            /** @default [] */
-            budgetsByYear: {
-                /** Format: uuid */
-                id?: string;
-                year: number;
-                amount: number;
-                budgetType: string;
-            }[];
-            background?: string;
-            objective?: string;
-            target?: string;
-            scope?: string;
-            /** @enum {string} */
-            projectType?: "NEW" | "REPLACEMENT" | "CONTINUOUS";
-            currentSystemStatus?: string;
-            currentProblems?: string;
-            /** @default [] */
-            relatedProjects: {
-                /** Format: uuid */
-                id?: string;
-                projectName: string;
-                agency: string;
-                fiscalYear: string;
-                relationType: string;
-                remark?: string;
-            }[];
-            /** @default [] */
-            manpower: {
-                /** Format: uuid */
-                id?: string;
-                agencyPart: string;
-                positionLimit: number | null;
-                occupied: number | null;
-                vacant: number | null;
-            }[];
-            /** @default [] */
-            existingEquipment: {
-                /** Format: uuid */
-                id?: string;
-                itemName: string;
-                ageYears: number | null;
-                quantity: number | null;
-                user: string;
-                location: string;
-                remark?: string;
-            }[];
-            /** @default false */
-            isBmaPlan: boolean;
-            /** @default false */
-            isAgencyPlan: boolean;
-            agencyStrategy?: string;
-            agencyIssue?: string;
-            agencyKpi?: string;
-            /** @default false */
-            isGovernorPolicy: boolean;
-            governorPolicyCode?: string;
-            governorPolicyName?: string;
-            obstacleLaws?: string;
-            appArchitecture?: string;
-            dataOwner?: string;
-            dataExchangePlan?: string;
-            /** @default [] */
-            hardwareCosts: {
-                /** Format: uuid */
-                id?: string;
-                itemName: string;
-                quantity: number;
-                unitPrice: number | null;
-                /** @enum {string} */
-                referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
-                mdesMonth?: string;
-                mdesYear?: string;
-                mdesItemNo?: string;
-                marketCount?: number | null;
-                marketCompany?: string;
-                prevProject?: string;
-                prevYear?: string;
-                otherDetail?: string;
-            }[];
-            /** @default [] */
-            softwareCosts: {
-                /** Format: uuid */
-                id?: string;
-                itemName: string;
-                quantity: number;
-                unitPrice: number | null;
-                /** @enum {string} */
-                referenceType: "MDES" | "MARKET" | "PREVIOUS" | "OTHER";
-                mdesMonth?: string;
-                mdesYear?: string;
-                mdesItemNo?: string;
-                marketCount?: number | null;
-                marketCompany?: string;
-                prevProject?: string;
-                prevYear?: string;
-                otherDetail?: string;
-            }[];
-            /** @default [] */
-            personnelCoreCosts: {
-                /** Format: uuid */
-                id?: string;
-                position: string;
-                degree: string;
-                fieldOfStudy?: string;
-                experienceYears: number | null;
-                baseSalary: number;
-                multiplier?: number | null;
-                personCount: number;
-                durationMonths: number;
-            }[];
-            /** @default [] */
-            personnelAsstCosts: {
-                /** Format: uuid */
-                id?: string;
-                position: string;
-                degree: string;
-                fieldOfStudy?: string;
-                experienceYears: number | null;
-                baseSalary: number;
-                multiplier?: number | null;
-                personCount: number;
-                durationMonths: number;
-            }[];
-            /** @default [] */
-            personnelSuppCosts: {
-                /** Format: uuid */
-                id?: string;
-                position: string;
-                degree: string;
-                fieldOfStudy?: string;
-                experienceYears: number | null;
-                baseSalary: number;
-                multiplier?: number | null;
-                personCount: number;
-                durationMonths: number;
-            }[];
-            /** @default [] */
-            personnelResponsibilities: {
-                /** Format: uuid */
-                id?: string;
-                position: string;
-                responsibility: string;
-            }[];
-            /** @default [] */
-            trainingCourses: {
-                /** Format: uuid */
-                id?: string;
-                courseName: string;
-                trainingMethod: string;
-                /** @enum {string} */
-                locationType: "GOVERNMENT" | "PRIVATE";
-                /** @default false */
-                hasSpeakerCost: boolean;
-                speakerReason?: string;
-                /** @default [] */
-                speakerCosts: {
-                    /** Format: uuid */
-                    id?: string;
-                    itemName: string;
-                    hours: number;
-                    ratePerHour: number | null;
-                    days: number;
-                }[];
-                /** @default [] */
-                foodCosts: {
-                    /** Format: uuid */
-                    id?: string;
-                    /** @enum {string} */
-                    itemName: "PARTIAL_MEAL" | "FULL_MEAL" | "SNACK" | "OTHER";
-                    mealsCount: number | null;
-                    ratePerMeal: number | null;
-                    traineesCount: number | null;
-                    days: number | null;
-                }[];
-            }[];
-            /** @default [] */
-            otherCosts: {
-                /** Format: uuid */
-                id?: string;
-                itemName: string;
-                quantity: number;
-                unitPrice: number | null;
-                remark?: string;
-                /** @enum {string} */
-                costType: "IT" | "NON_IT";
-            }[];
-            durationDays?: number;
-            /** @default [] */
-            ictPersonnel: {
-                /** Format: uuid */
-                id?: string;
-                position: string;
-                level: string;
-                count: number;
-            }[];
-            /** @default [] */
-            cloudRequests: {
-                /** Format: uuid */
-                id?: string;
-                systemName: string;
-                requestedServiceDate: string;
-                recordedRequestDate: string;
-                /** @default [] */
-                vms: {
-                    /** Format: uuid */
-                    id?: string;
-                    vmDescription: string;
-                    osDatabase: string;
-                    vcpu: number | null;
-                    ramGb: number | null;
-                    gpuGb: number | null;
-                    storageGb: number | null;
-                    price: number | null;
-                }[];
-            }[];
-            /** @default false */
-            isReady: boolean;
-            readinessDetails?: string;
-            otherReadiness?: string;
-            expectedBenefits?: string;
-            isInRoadmap?: boolean;
-        };
+        /** @description Submitted proposal versions are immutable; this request is retained only for compatibility and rejects all fields */
+        SubmittedProposalPatchRequest: Record<string, never>;
         /** @description Schema สำหรับข้อมูลแบบร่างโครงการ (Auto-Save) */
         DraftProposalRequest: {
             /** Format: uuid */
@@ -5234,7 +5037,8 @@ export interface components {
             draftPayload?: Record<string, never>;
             projectName?: string;
             objective?: string;
-            totalBudget?: number | null;
+            requestedBudgetTotal?: number | null;
+            estimatedCostTotal?: number | null;
         };
         ProposalDataResponse: {
             data: components["schemas"]["ProposalResponse"];
@@ -5257,7 +5061,15 @@ export interface components {
             headOfAgency: string | null;
             dcioName: string | null;
             projectManager: string | null;
-            totalBudget: number | string | unknown;
+            requestedBudgetTotal: number | string | unknown;
+            estimatedCostTotal: number | string | unknown;
+            /** Format: date-time */
+            submittedAt: string | null;
+            /**
+             * @deprecated
+             * @description Deprecated read-only alias of requestedBudgetTotal
+             */
+            totalBudget?: number | string | unknown;
             background: string | null;
             objective: string | null;
             target: string | null;
@@ -5501,7 +5313,6 @@ export interface components {
             headOfAgency: string;
             dcioName: string;
             projectManager: string;
-            totalBudget: number;
             /** @default [] */
             budgetsByYear: {
                 /** Format: uuid */
@@ -5795,7 +5606,7 @@ export interface components {
                 id: string;
                 projectCode: string | null;
                 projectName: string | null;
-                latestApprovedBudget: string | null;
+                latestRequestedBudget: string | null;
                 projectStatusId: number;
             } | null;
             resolution: {

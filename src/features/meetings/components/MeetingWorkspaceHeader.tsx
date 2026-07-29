@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useHasRole } from "@/features/auth/RoleContext";
 import { useCancelMeeting, useTransitionMeeting } from "../hooks/useMeetings";
 import { Meeting, MeetingStatus, MEETING_STATUS_COLORS, MEETING_STATUS_LABELS } from "../types";
+import { getBoardLabel } from "@/features/workflow/board-labels";
 
 const nextTransition: Partial<Record<MeetingStatus, {
   status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED";
@@ -77,7 +78,7 @@ export function MeetingWorkspaceHeader({ meeting, activeTab }: {
               <div className="flex flex-wrap gap-x-5 gap-y-2 pl-11 text-xs text-muted-foreground">
                 <span className="inline-flex items-center gap-1"><CalendarDays className="size-3.5" />{dateLabel}</span>
                 <span className="inline-flex min-w-0 items-center gap-1"><MapPin className="size-3.5 shrink-0" /><span className="break-all">{meeting.location}</span></span>
-                <span>{meeting.meeting_type === "BIG_BOARD" ? "คณะกรรมการชุดใหญ่" : "คณะกรรมการชุดเล็ก"}</span>
+                <span>{getBoardLabel(meeting.meeting_type)}</span>
                 {!!meeting.unresolved_resolution_count && (
                   <span className="font-medium text-amber-700">ยังไม่มีมติ {meeting.unresolved_resolution_count} วาระ</span>
                 )}

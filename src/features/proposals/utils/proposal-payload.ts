@@ -180,7 +180,10 @@ export function normalizeProposalForForm(source: unknown): JsonRecord {
     headOfAgency: stringValue(value.headOfAgency),
     dcioName: stringValue(value.dcioName),
     projectManager: stringValue(value.projectManager),
-    totalBudget: numberValue(value.totalBudget),
+    // totalBudget remains a UI-only derived field. The API source is the
+    // canonical requestedBudgetTotal snapshot (or the legacy response alias
+    // during the compatibility window).
+    totalBudget: numberValue(value.requestedBudgetTotal ?? value.totalBudget),
     budgetsByYear: rows(value.budgetsByYear ?? value.budgets).map(mapBudget),
 
     background: stringValue(value.background),
@@ -291,6 +294,7 @@ function stripMetadata(value: unknown): unknown {
 }
 
 export const proposalSubmitPayloadSchema = proposalFormSchema.omit({
+  totalBudget: true,
   systemDiagramFile: true,
   networkDiagramFile: true,
   useCaseDiagramFile: true,
@@ -303,6 +307,7 @@ export const proposalSubmitPayloadSchema = proposalFormSchema.omit({
 
 export function toProposalSubmitPayload(source: Record<string, unknown>) {
   const normalized = normalizeProposalForForm(source);
+  delete normalized.totalBudget;
   for (const field of UI_ONLY_FIELDS) delete normalized[field];
   return stripMetadata(normalized) as Record<string, unknown>;
 }
@@ -319,6 +324,7 @@ export function normalizeProposalPatchPayload(source: Record<string, unknown>) {
 
   for (const key of Object.keys(input)) {
     if (UI_ONLY_FIELDS.includes(key as typeof UI_ONLY_FIELDS[number])) continue;
+    if (key === "totalBudget" || key === "latestApprovedBudget") continue;
     const canonicalKey = aliases[key] ?? key;
     result[canonicalKey] = canonicalKey in normalized
       ? normalized[canonicalKey]

@@ -185,7 +185,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
                   {reopenMutation.isPending ? "กำลังดำเนินการ..." : "เปิดโครงการกลับมาแก้ไข"}
                 </Button>
               )}
-              {project.permissions?.canUpdateProject && (
+              {project.permissions?.canEditProject && (
                 <Button
                   variant="outline"
                   onClick={() => setEditDetailsOpen(true)}
@@ -246,7 +246,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
 
       <ReturnedFeedbackBanner project={project} />
 
-      {project.permissions?.canUpdateProject && (
+      {project.permissions?.canEditProject && (
         <ProjectDetailsEditDialog project={project} open={editDetailsOpen} onOpenChange={setEditDetailsOpen} />
       )}
 

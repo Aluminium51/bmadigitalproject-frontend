@@ -39,6 +39,12 @@ export type CreateMeetingPayload = {
 
 export type UpdateMeetingPayload = Partial<CreateMeetingPayload>;
 export type MeetingFilterStatus = MeetingStatus | "ALL";
+export type MeetingListPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -94,9 +100,21 @@ export function normalizeMeeting(meeting: ApiMeeting): Meeting {
   };
 }
 
-async function fetchMeetings() {
-  const response = await request<{ data: ApiMeeting[] }>("/meetings");
-  return response.data.map(normalizeMeeting);
+async function fetchMeetings(searchQuery: string, filterStatus: MeetingFilterStatus, page: number, limit: number) {
+  const params = new URLSearchParams();
+  const search = searchQuery.trim();
+  if (search) params.set("search", search);
+  if (filterStatus !== "ALL") params.set("status", filterStatus);
+  params.set("page", String(page));
+  params.set("limit", String(limit));
+  const query = params.toString();
+  const response = await request<{ data: ApiMeeting[]; pagination?: { page: number; limit: number; total: number; totalPages: number } }>(
+    `/meetings?${query}`,
+  );
+  return {
+    meetings: response.data.map(normalizeMeeting),
+    pagination: response.pagination ?? { page, limit, total: response.data.length, totalPages: 1 },
+  };
 }
 
 async function fetchMeeting(id: string) {
@@ -107,35 +125,41 @@ async function fetchMeeting(id: string) {
 export function useMeetings() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<MeetingFilterStatus>("ALL");
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const updateSearchQuery = useCallback((value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  }, []);
+  const updateFilterStatus = useCallback((value: MeetingFilterStatus) => {
+    setFilterStatus(value);
+    setPage(1);
+  }, []);
   const query = useQuery({
-    queryKey: ["meetings"],
-    queryFn: fetchMeetings,
+    queryKey: ["meetings", { search: searchQuery.trim(), status: filterStatus, page, limit: pageSize }],
+    queryFn: () => fetchMeetings(searchQuery, filterStatus, page, pageSize),
     staleTime: 30_000,
     refetchOnMount: "always",
   });
 
-  const filteredMeetings = useMemo(() => {
-    const search = searchQuery.trim().toLowerCase();
-    return (query.data ?? []).filter((meeting) => {
-      const matchesStatus = filterStatus === "ALL" || meeting.meeting_status === filterStatus;
-      const matchesSearch = !search || [meeting.title, meeting.meeting_no, meeting.chairman]
-        .some((value) => value.toLowerCase().includes(search));
-      return matchesStatus && matchesSearch;
-    });
-  }, [filterStatus, query.data, searchQuery]);
+  const meetings = useMemo(() => query.data?.meetings ?? [], [query.data?.meetings]);
+  const filteredMeetings = useMemo(() => meetings, [meetings]);
 
   const getMeetingById = useCallback(
-    (id: string) => (query.data ?? []).find((meeting) => meeting.meeting_id === id),
-    [query.data],
+    (id: string) => meetings.find((meeting) => meeting.meeting_id === id),
+    [meetings],
   );
 
   return {
-    meetings: query.data ?? [],
+    meetings,
     filteredMeetings,
     searchQuery,
     filterStatus,
-    setSearchQuery,
-    setFilterStatus,
+    setSearchQuery: updateSearchQuery,
+    setFilterStatus: updateFilterStatus,
+    page,
+    setPage,
+    pagination: query.data?.pagination ?? { page, limit: pageSize, total: 0, totalPages: 0 },
     getMeetingById,
     ...query,
   };

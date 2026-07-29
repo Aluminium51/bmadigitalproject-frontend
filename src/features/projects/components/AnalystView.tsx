@@ -15,11 +15,13 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ProjectPagination } from "./ProjectPagination";
 import { useAnalystAssignedProjects, useAnalystDecision, useRequestAnalystReassignment } from "../hooks/useAnalystTasks";
 
 type AnalystProject = z.infer<typeof schemas.AnalystAssignedProject>;
-type DialogMode = "reassign" | "approve" | "return" | "reject" | null;
+type Decision = "approve" | "return" | "reject";
+type DialogMode = "reassign" | "decision" | "approve" | "return" | "reject" | null;
 
 const statusLabels: Record<number, string> = {
   6: "อยู่ระหว่างการวิเคราะห์",
@@ -53,6 +55,7 @@ export function AnalystView() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedProject, setSelectedProject] = useState<AnalystProject | null>(null);
   const [mode, setMode] = useState<DialogMode>(null);
+  const [decision, setDecision] = useState<Decision | null>(null);
   const [remark, setRemark] = useState("");
   const [validationError, setValidationError] = useState("");
 
@@ -72,9 +75,10 @@ export function AnalystView() {
   const analysisCount = useMemo(() => projects.filter((project) => project.projectStatusId === 6).length, [projects]);
   const waitingCount = projects.filter((project) => [7, 10, 13].includes(project.projectStatusId)).length;
 
-  const openDialog = (project: AnalystProject, nextMode: Exclude<DialogMode, null>) => {
+  const openDialog = (project: AnalystProject, nextMode: "reassign" | "decision" | "approve") => {
     setSelectedProject(project);
-    setMode(nextMode);
+    setMode(nextMode === "reassign" ? "reassign" : "decision");
+    setDecision(null);
     setRemark("");
     setValidationError("");
   };
@@ -83,12 +87,18 @@ export function AnalystView() {
     if (reassignmentMutation.isPending || decisionMutation.isPending) return;
     setSelectedProject(null);
     setMode(null);
+    setDecision(null);
     setRemark("");
     setValidationError("");
   };
 
   const submitAction = async () => {
     if (!selectedProject || !mode) return;
+    const selectedDecision = decision ?? (mode === "approve" || mode === "return" || mode === "reject" ? mode : null);
+    if (mode !== "reassign" && !selectedDecision) {
+      setValidationError("กรุณาเลือกผลการวิเคราะห์");
+      return;
+    }
     const normalizedRemark = remark.trim();
     if (!normalizedRemark) {
       setValidationError("กรุณาระบุเหตุผลก่อนดำเนินการ");
@@ -102,7 +112,7 @@ export function AnalystView() {
       } else {
         await decisionMutation.mutateAsync({
           projectId: selectedProject.id,
-          payload: { decision: mode, remark: normalizedRemark },
+          payload: { decision: selectedDecision!, remark: normalizedRemark },
         });
         toast.success("บันทึกผลการวิเคราะห์แล้ว");
       }
@@ -179,6 +189,18 @@ export function AnalystView() {
         <DialogContent className="w-[calc(100%-1rem)] max-w-lg">
           <DialogHeader><DialogTitle>{dialogTitle}</DialogTitle><DialogDescription>{selectedProject?.projectName ?? "โครงการ"}</DialogDescription></DialogHeader>
           <div className="space-y-4">
+            {mode !== "reassign" && (
+              <div className="space-y-2">
+                <Label>ผลการวิเคราะห์ *</Label>
+                <RadioGroup value={decision ?? ""} onValueChange={(value) => setDecision(value as Decision)} aria-label="ผลการวิเคราะห์">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <label className="flex items-center gap-2 rounded-lg border p-3"><RadioGroupItem value="approve" />อนุมัติ</label>
+                    <label className="flex items-center gap-2 rounded-lg border p-3"><RadioGroupItem value="return" />ส่งกลับแก้ไข</label>
+                    <label className="flex items-center gap-2 rounded-lg border p-3"><RadioGroupItem value="reject" />ปฏิเสธ</label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
             <div className="rounded-xl border bg-muted/30 p-4 text-sm"><p className="font-mono text-xs text-muted-foreground">{selectedProject?.projectCode ?? "-"}</p><p className="mt-2 font-semibold">{selectedProject?.projectName ?? "-"}</p></div>
             <div className="space-y-2"><Label htmlFor="analyst-action-remark">เหตุผล/ความคิดเห็น *</Label><Textarea id="analyst-action-remark" value={remark} onChange={(event) => setRemark(event.target.value)} rows={5} placeholder="กรุณาระบุเหตุผลหรือความคิดเห็น" /></div>
             {validationError && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{validationError}</p>}

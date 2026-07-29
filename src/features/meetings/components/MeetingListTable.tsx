@@ -14,6 +14,8 @@ import {
   ListChecks,
   FileSignature,
   Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,22 +38,26 @@ import {
   MEETING_STATUS_LABELS,
   MEETING_STATUS_COLORS,
 } from "../types";
-import type { MeetingFilterStatus } from "../hooks/useMeetings";
+import type { MeetingFilterStatus, MeetingListPagination } from "../hooks/useMeetings";
 
 interface MeetingListTableProps {
   meetings: Meeting[];
   searchQuery: string;
   filterStatus: MeetingFilterStatus;
+  pagination: MeetingListPagination;
   onSearchChange: (query: string) => void;
   onFilterChange: (status: MeetingFilterStatus) => void;
+  onPageChange: (page: number) => void;
 }
 
 export function MeetingListTable({
   meetings,
   searchQuery,
   filterStatus,
+  pagination,
   onSearchChange,
   onFilterChange,
+  onPageChange,
 }: MeetingListTableProps) {
   const router = useRouter();
 
@@ -248,8 +254,29 @@ export function MeetingListTable({
       </div>
 
       {/* ── Footer ── */}
-      <div className="px-6 sm:px-10 py-3 border-t border-[#ededf4] text-xs text-muted-foreground text-right shrink-0">
-        แสดง {meetings.length} รายการ
+      <div className="flex items-center justify-between gap-3 px-6 sm:px-10 py-3 border-t border-[#ededf4] text-xs text-muted-foreground shrink-0">
+        <span>แสดง {meetings.length} จาก {pagination.total} รายการ</span>
+        <div className="flex items-center gap-2">
+          <span>หน้า {pagination.page} / {Math.max(pagination.totalPages, 1)}</span>
+          <button
+            type="button"
+            aria-label="หน้าก่อนหน้า"
+            className="rounded-md border border-[#D1CDC7] p-1.5 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={pagination.page <= 1}
+            onClick={() => onPageChange(pagination.page - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="หน้าถัดไป"
+            className="rounded-md border border-[#D1CDC7] p-1.5 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={pagination.page >= pagination.totalPages || pagination.totalPages === 0}
+            onClick={() => onPageChange(pagination.page + 1)}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

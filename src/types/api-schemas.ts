@@ -147,7 +147,13 @@ const Project = z
     projectName: z.string().nullable(),
     projectNameOriginal: z.string().nullable(),
     initialRequestedBudget: z.string().nullable(),
-    latestApprovedBudget: z.string().nullable(),
+    latestRequestedBudget: z.string().nullable(),
+    finalApprovedBudget: z.string().nullable(),
+    initialEstimatedCost: z.string().nullable(),
+    latestEstimatedCost: z.string().nullable(),
+    finalEstimatedCost: z.string().nullable(),
+    latestSubmittedRequestedBudget: z.string().nullable(),
+    latestApprovedBudget: z.string().nullish(),
     analystId: z.string().uuid().nullable(),
     assignedAnalystId: z.string().uuid().nullish(),
     assignedBy: z.string().uuid().nullable(),
@@ -226,7 +232,8 @@ const Project = z
       .object({
         canDelete: z.boolean(),
         canManageAttachments: z.boolean(),
-        canUpdateProject: z.boolean(),
+        canEditProject: z.boolean(),
+        canUpdateProject: z.boolean().optional(),
         canEditProposal: z.boolean(),
         canSubmitProposal: z.boolean(),
         canCancelSubmit: z.boolean(),
@@ -500,307 +507,11 @@ const DraftProposalRequest = z
     draftPayload: z.object({}).partial().passthrough(),
     projectName: z.string(),
     objective: z.string(),
-    totalBudget: z.number().nullable(),
+    requestedBudgetTotal: z.number().nullable(),
+    estimatedCostTotal: z.number().nullable(),
   })
-  .partial()
-  .passthrough();
-const SubmittedProposalPatchRequest = z
-  .object({
-    projectName: z.string().min(5),
-    agencyName: z.string().min(2),
-    headOfAgency: z.string().min(2),
-    dcioName: z.string().min(2),
-    projectManager: z.string().min(2),
-    totalBudget: z.number().gte(1),
-    budgetsByYear: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            year: z.number().int().gte(2500).lte(2600),
-            amount: z.number().gte(1),
-            budgetType: z.string().min(1),
-          })
-          .passthrough()
-      )
-      .default([]),
-    background: z.string().min(10),
-    objective: z.string().min(10),
-    target: z.string().min(10),
-    scope: z.string().min(10),
-    projectType: z.enum(["NEW", "REPLACEMENT", "CONTINUOUS"]),
-    currentSystemStatus: z.string().min(5),
-    currentProblems: z.string().min(5),
-    relatedProjects: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            projectName: z.string().min(1),
-            agency: z.string().min(1),
-            fiscalYear: z.string().min(4),
-            relationType: z.string().min(1),
-            remark: z.string().optional(),
-          })
-          .passthrough()
-      )
-      .default([]),
-    manpower: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            agencyPart: z.string().min(1),
-            positionLimit: z.number().nullable(),
-            occupied: z.number().nullable(),
-            vacant: z.number().nullable(),
-          })
-          .passthrough()
-      )
-      .default([]),
-    existingEquipment: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            itemName: z.string().min(1),
-            ageYears: z.number().nullable(),
-            quantity: z.number().nullable(),
-            user: z.string().min(1),
-            location: z.string().min(1),
-            remark: z.string().optional(),
-          })
-          .passthrough()
-      )
-      .default([]),
-    isBmaPlan: z.boolean().default(false),
-    isAgencyPlan: z.boolean().default(false),
-    agencyStrategy: z.string(),
-    agencyIssue: z.string(),
-    agencyKpi: z.string(),
-    isGovernorPolicy: z.boolean().default(false),
-    governorPolicyCode: z.string(),
-    governorPolicyName: z.string(),
-    obstacleLaws: z.string(),
-    appArchitecture: z.string().min(5),
-    dataOwner: z.string().min(2),
-    dataExchangePlan: z.string().min(5),
-    hardwareCosts: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            itemName: z.string().min(1),
-            quantity: z.number().gte(1),
-            unitPrice: z.number().gte(0).nullable(),
-            referenceType: z.enum(["MDES", "MARKET", "PREVIOUS", "OTHER"]),
-            mdesMonth: z.string().optional(),
-            mdesYear: z.string().optional(),
-            mdesItemNo: z.string().optional(),
-            marketCount: z.number().nullish(),
-            marketCompany: z.string().optional(),
-            prevProject: z.string().optional(),
-            prevYear: z.string().optional(),
-            otherDetail: z.string().optional(),
-          })
-          .passthrough()
-      )
-      .default([]),
-    softwareCosts: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            itemName: z.string().min(1),
-            quantity: z.number().gte(1),
-            unitPrice: z.number().gte(0).nullable(),
-            referenceType: z.enum(["MDES", "MARKET", "PREVIOUS", "OTHER"]),
-            mdesMonth: z.string().optional(),
-            mdesYear: z.string().optional(),
-            mdesItemNo: z.string().optional(),
-            marketCount: z.number().nullish(),
-            marketCompany: z.string().optional(),
-            prevProject: z.string().optional(),
-            prevYear: z.string().optional(),
-            otherDetail: z.string().optional(),
-          })
-          .passthrough()
-      )
-      .default([]),
-    personnelCoreCosts: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            position: z.string().min(1),
-            degree: z.string().min(1),
-            fieldOfStudy: z.string().optional(),
-            experienceYears: z.number().gte(0).nullable(),
-            baseSalary: z.number().gte(1),
-            multiplier: z.number().nullish(),
-            personCount: z.number().gte(1),
-            durationMonths: z.number().gte(1),
-          })
-          .passthrough()
-      )
-      .default([]),
-    personnelAsstCosts: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            position: z.string().min(1),
-            degree: z.string().min(1),
-            fieldOfStudy: z.string().optional(),
-            experienceYears: z.number().gte(0).nullable(),
-            baseSalary: z.number().gte(1),
-            multiplier: z.number().nullish(),
-            personCount: z.number().gte(1),
-            durationMonths: z.number().gte(1),
-          })
-          .passthrough()
-      )
-      .default([]),
-    personnelSuppCosts: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            position: z.string().min(1),
-            degree: z.string().min(1),
-            fieldOfStudy: z.string().optional(),
-            experienceYears: z.number().gte(0).nullable(),
-            baseSalary: z.number().gte(1),
-            multiplier: z.number().nullish(),
-            personCount: z.number().gte(1),
-            durationMonths: z.number().gte(1),
-          })
-          .passthrough()
-      )
-      .default([]),
-    personnelResponsibilities: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            position: z.string(),
-            responsibility: z.string().min(1),
-          })
-          .passthrough()
-      )
-      .default([]),
-    trainingCourses: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            courseName: z.string().min(1),
-            trainingMethod: z.string().min(1),
-            locationType: z.enum(["GOVERNMENT", "PRIVATE"]),
-            hasSpeakerCost: z.boolean().optional().default(false),
-            speakerReason: z.string().optional(),
-            speakerCosts: z
-              .array(
-                z
-                  .object({
-                    id: z.string().uuid().optional(),
-                    itemName: z.string().min(1),
-                    hours: z.number().gte(1),
-                    ratePerHour: z.number().gte(0).nullable(),
-                    days: z.number().gte(1),
-                  })
-                  .passthrough()
-              )
-              .optional()
-              .default([]),
-            foodCosts: z
-              .array(
-                z
-                  .object({
-                    id: z.string().uuid().optional(),
-                    itemName: z.enum([
-                      "PARTIAL_MEAL",
-                      "FULL_MEAL",
-                      "SNACK",
-                      "OTHER",
-                    ]),
-                    mealsCount: z.number().gte(0).nullable(),
-                    ratePerMeal: z.number().gte(0).nullable(),
-                    traineesCount: z.number().gte(0).nullable(),
-                    days: z.number().gte(0).nullable(),
-                  })
-                  .passthrough()
-              )
-              .optional()
-              .default([]),
-          })
-          .passthrough()
-      )
-      .default([]),
-    otherCosts: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            itemName: z.string().min(1),
-            quantity: z.number().gte(1),
-            unitPrice: z.number().gte(0).nullable(),
-            remark: z.string().optional(),
-            costType: z.enum(["IT", "NON_IT"]),
-          })
-          .passthrough()
-      )
-      .default([]),
-    durationDays: z.number().gte(1),
-    ictPersonnel: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            position: z.string().min(1),
-            level: z.string().min(1),
-            count: z.number().gte(1),
-          })
-          .passthrough()
-      )
-      .default([]),
-    cloudRequests: z
-      .array(
-        z
-          .object({
-            id: z.string().uuid().optional(),
-            systemName: z.string().min(1),
-            requestedServiceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-            recordedRequestDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-            vms: z
-              .array(
-                z
-                  .object({
-                    id: z.string().uuid().optional(),
-                    vmDescription: z.string().min(1),
-                    osDatabase: z.string().min(1),
-                    vcpu: z.number().gte(0).nullable(),
-                    ramGb: z.number().gte(0).nullable(),
-                    gpuGb: z.number().gte(0).nullable(),
-                    storageGb: z.number().gte(0).nullable(),
-                    price: z.number().gte(0).nullable(),
-                  })
-                  .passthrough()
-              )
-              .optional()
-              .default([]),
-          })
-          .passthrough()
-      )
-      .default([]),
-    isReady: z.boolean().default(false),
-    readinessDetails: z.string(),
-    otherReadiness: z.string(),
-    expectedBenefits: z.string().min(1),
-    isInRoadmap: z.boolean(),
-  })
-  .partial()
-  .passthrough();
+  .partial();
+const SubmittedProposalPatchRequest = z.object({}).partial();
 const ProposalResponse = z.object({
   id: z.string().uuid(),
   status: z.string(),
@@ -813,7 +524,10 @@ const ProposalResponse = z.object({
   headOfAgency: z.string().nullable(),
   dcioName: z.string().nullable(),
   projectManager: z.string().nullable(),
-  totalBudget: z.union([z.number(), z.string(), z.unknown()]),
+  requestedBudgetTotal: z.union([z.number(), z.string(), z.unknown()]),
+  estimatedCostTotal: z.union([z.number(), z.string(), z.unknown()]),
+  submittedAt: z.string().datetime({ offset: true }).nullable(),
+  totalBudget: z.union([z.number(), z.string(), z.unknown()]).optional(),
   background: z.string().nullable(),
   objective: z.string().nullable(),
   target: z.string().nullable(),
@@ -868,7 +582,6 @@ const SubmitProposalRequest = z
     headOfAgency: z.string().min(2),
     dcioName: z.string().min(2),
     projectManager: z.string().min(2),
-    totalBudget: z.number().gte(1),
     budgetsByYear: z
       .array(
         z
@@ -1243,7 +956,7 @@ const Agenda = z
         id: z.string().uuid(),
         projectCode: z.string().nullable(),
         projectName: z.string().nullable(),
-        latestApprovedBudget: z.string().nullable(),
+        latestRequestedBudget: z.string().nullable(),
         projectStatusId: z.number().int(),
       })
       .passthrough()
@@ -1988,7 +1701,61 @@ const endpoints = makeApi([
     path: "/api/v1/meetings",
     alias: "getApiv1meetings",
     requestFormat: "json",
-    response: z.object({ data: z.array(Meeting) }).passthrough(),
+    parameters: [
+      {
+        name: "search",
+        type: "Query",
+        schema: z.string().max(200).optional(),
+      },
+      {
+        name: "status",
+        type: "Query",
+        schema: z
+          .enum(["DRAFT", "SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"])
+          .optional(),
+      },
+      {
+        name: "meetingTypeId",
+        type: "Query",
+        schema: z.number().int().gte(1).lte(2).optional(),
+      },
+      {
+        name: "page",
+        type: "Query",
+        schema: z.number().int().gte(1).optional().default(1),
+      },
+      {
+        name: "limit",
+        type: "Query",
+        schema: z.number().int().gte(1).lte(100).optional().default(20),
+      },
+      {
+        name: "sortBy",
+        type: "Query",
+        schema: z
+          .enum(["meetingDate", "meetingNo", "status"])
+          .optional()
+          .default("meetingDate"),
+      },
+      {
+        name: "sortOrder",
+        type: "Query",
+        schema: z.enum(["asc", "desc"]).optional().default("desc"),
+      },
+    ],
+    response: z
+      .object({
+        data: z.array(Meeting),
+        pagination: z
+          .object({
+            page: z.number(),
+            limit: z.number(),
+            total: z.number(),
+            totalPages: z.number(),
+          })
+          .passthrough(),
+      })
+      .passthrough(),
     errors: [
       {
         status: 401,
@@ -2242,7 +2009,7 @@ const endpoints = makeApi([
               id: z.string().uuid(),
               projectCode: z.string().nullable(),
               projectName: z.string().nullable(),
-              latestApprovedBudget: z.string().nullable(),
+              latestRequestedBudget: z.string().nullable(),
               projectStatusId: z.number().int(),
             })
             .passthrough()
@@ -3616,7 +3383,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: SubmittedProposalPatchRequest,
+        schema: z.object({}).partial(),
       },
       {
         name: "projectId",

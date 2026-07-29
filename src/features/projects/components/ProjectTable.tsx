@@ -165,7 +165,7 @@ export function ProjectTable({
                 <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.division?.name || "-"}</TableCell>
                 <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.division?.departmentName || "-"}</TableCell>
                 <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{getProjectTypeLabel(project.projectType?.name, statusLanguage)}</TableCell>
-                <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.initialRequestedBudget ? Number(project.initialRequestedBudget).toLocaleString("th-TH") : "-"}</TableCell>
+                <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">{project.latestSubmittedRequestedBudget ? Number(project.latestSubmittedRequestedBudget).toLocaleString("th-TH") : "-"}</TableCell>
                 {!hideAnalystColumn && (
                   <TableCell className="px-6 py-5 text-[#3f4942] sm:px-10">
                     {project.analyst ? `${project.analyst.firstName} ${project.analyst.lastName}` : "-"}

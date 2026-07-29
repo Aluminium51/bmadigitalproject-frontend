@@ -14,6 +14,8 @@ export default function MeetingsPage() {
     filterStatus,
     setSearchQuery,
     setFilterStatus,
+    pagination,
+    setPage,
     isLoading,
     isError,
     error,
@@ -54,8 +56,10 @@ export default function MeetingsPage() {
             meetings={filteredMeetings}
             searchQuery={searchQuery}
             filterStatus={filterStatus}
+            pagination={pagination}
             onSearchChange={setSearchQuery}
             onFilterChange={setFilterStatus}
+            onPageChange={setPage}
           />
         )}
       </div>

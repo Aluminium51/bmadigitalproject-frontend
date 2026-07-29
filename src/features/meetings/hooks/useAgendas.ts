@@ -27,7 +27,7 @@ type ApiAgenda = {
     id: string;
     projectCode: string | null;
     projectName: string | null;
-    latestApprovedBudget: string | null;
+    latestRequestedBudget: string | null;
     projectStatusId: number;
   } | null;
   resolution?: {
@@ -73,7 +73,7 @@ function normalizeProject(project: ApiAgenda["project"]): Project | null {
     project_code: project.projectCode ?? "-",
     name: project.projectName ?? "Untitled project",
     agency: "-",
-    budget: Number(project.latestApprovedBudget ?? 0),
+    budget: Number(project.latestRequestedBudget ?? 0),
     description: "",
     objective: "",
     start_date: "",
@@ -113,7 +113,7 @@ async function fetchProjects(meetingId: string) {
     id: string;
     projectCode?: string | null;
     projectName?: string | null;
-    latestApprovedBudget?: string | null;
+    latestRequestedBudget?: string | null;
     projectStatusId: number;
   }> }>(`/meetings/${meetingId}/eligible-projects`);
 
@@ -122,7 +122,7 @@ async function fetchProjects(meetingId: string) {
     project_code: project.projectCode ?? "-",
     name: project.projectName ?? "Untitled project",
     agency: "-",
-    budget: Number(project.latestApprovedBudget ?? 0),
+    budget: Number(project.latestRequestedBudget ?? 0),
     description: "",
     objective: "",
     start_date: "",

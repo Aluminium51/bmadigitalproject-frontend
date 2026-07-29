@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateMeeting } from "../hooks/useMeetings";
+import { BOARD_LABELS } from "@/features/workflow/board-labels";
 
 const schema = z.object({
   meetingNo: z.string().trim().min(1, "กรุณาระบุครั้งที่ประชุม").max(100),
@@ -77,8 +78,8 @@ export function CreateMeetingForm() {
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger><SelectValue placeholder="เลือกประเภทคณะกรรมการ" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">คณะกรรมการชุดเล็ก</SelectItem>
-                    <SelectItem value="2">คณะกรรมการชุดใหญ่</SelectItem>
+                  <SelectItem value="1">{BOARD_LABELS.SMALL_BOARD}</SelectItem>
+                  <SelectItem value="2">{BOARD_LABELS.BIG_BOARD}</SelectItem>
                   </SelectContent>
                 </Select>
               )} />

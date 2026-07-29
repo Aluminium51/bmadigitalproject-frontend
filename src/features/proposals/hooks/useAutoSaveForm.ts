@@ -23,9 +23,12 @@ function serializeFormValue(value: unknown): unknown {
 }
 
 function toDraftRequest(formPayload: Record<string, unknown>) {
-  const request: Record<string, unknown> = { draftPayload: formPayload };
-  for (const key of ["projectName", "objective", "totalBudget"]) {
-    if (formPayload[key] !== undefined) request[key] = formPayload[key];
+  const sanitizedPayload = { ...formPayload };
+  delete sanitizedPayload.totalBudget;
+  delete sanitizedPayload.latestApprovedBudget;
+  const request: Record<string, unknown> = { draftPayload: sanitizedPayload };
+  for (const key of ["projectName", "objective"]) {
+    if (sanitizedPayload[key] !== undefined) request[key] = sanitizedPayload[key];
   }
   return request;
 }

@@ -1,3 +1,5 @@
+import { BOARD_LABELS } from "@/features/workflow/board-labels";
+
 export const PROJECT_STATUS = {
   DRAFT: 1,
   PENDING_SECRETARY: 2,
@@ -36,6 +38,13 @@ const STATUS_META: Record<number, { label: string; className: string }> = {
   14: { label: "ไม่อนุมัติโดยคณะกรรมการนโยบาย", className: "bg-red-50 text-red-700 border-red-200" },
   15: { label: "อนุมัติแล้ว", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
 };
+
+STATUS_META[9].label = `รอพิจารณาโดย${BOARD_LABELS.SMALL_BOARD}`;
+STATUS_META[10].label = `ส่งกลับเพื่อแก้ไขโดย${BOARD_LABELS.SMALL_BOARD}`;
+STATUS_META[11].label = `ไม่อนุมัติโดย${BOARD_LABELS.SMALL_BOARD}`;
+STATUS_META[12].label = `รอพิจารณาโดย${BOARD_LABELS.BIG_BOARD}`;
+STATUS_META[13].label = `ส่งกลับเพื่อแก้ไขโดย${BOARD_LABELS.BIG_BOARD}`;
+STATUS_META[14].label = `ไม่อนุมัติโดย${BOARD_LABELS.BIG_BOARD}`;
 
 const THAI_STATUS_LABELS: Record<number, string> = Object.fromEntries(
   Object.entries(STATUS_META).map(([id, meta]) => [Number(id), meta.label]),

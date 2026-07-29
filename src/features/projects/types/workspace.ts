@@ -11,7 +11,8 @@ export interface ProjectDetail extends ProjectResponse {
   permissions?: {
     canDelete: boolean;
     canManageAttachments: boolean;
-    canUpdateProject: boolean;
+    canEditProject: boolean;
+    canUpdateProject?: boolean;
     canEditProposal: boolean;
     canSubmitProposal: boolean;
     canCancelSubmit: boolean;
