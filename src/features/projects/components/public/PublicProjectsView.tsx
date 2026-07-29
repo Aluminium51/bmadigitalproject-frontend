@@ -11,13 +11,6 @@ import { ProjectPagination } from "../ProjectPagination";
 import { usePublicProjects } from "../../hooks/usePublicProjects";
 import { getProjectStatusMeta, getThaiProjectStatus } from "../../utils/projectStatus";
 
-function formatDate(value: string | Date) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "-"
-    : new Intl.DateTimeFormat("th-TH", { dateStyle: "medium" }).format(date);
-}
-
 export function PublicProjectsView() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -89,7 +82,6 @@ export function PublicProjectsView() {
                         <p className="break-words text-xs text-muted-foreground">ชื่อเริ่มต้น: {project.projectNameOriginal}</p>
                       )}
                       <div className="mt-auto flex items-end justify-between gap-3 border-t pt-4 text-xs text-muted-foreground">
-                        <span>ปรับปรุงล่าสุด {formatDate(project.updatedAt)}</span>
                         <Button asChild size="sm" className="shrink-0 gap-1 text-white [&_svg]:text-white">
                           <Link href={`/projects/public/${project.id}`} className="text-white hover:text-white">
                             <span className="text-white">ดูรายละเอียด</span>

@@ -475,8 +475,6 @@ const PublicProject = z
       .object({ id: z.number(), name: z.string() })
       .passthrough()
       .nullable(),
-    createdAt: z.union([z.string(), z.string()]),
-    updatedAt: z.union([z.string(), z.string()]),
   })
   .passthrough();
 const PaginatedPublicProjectResponse = z
@@ -2873,7 +2871,7 @@ const endpoints = makeApi([
   {
     method: "patch",
     path: "/api/v1/users/:userId/roles",
-    alias: "patchApiv1users_userIdroles",
+    alias: "patchApiv1usersUserIdroles",
     requestFormat: "json",
     parameters: [
       {
@@ -2909,7 +2907,7 @@ const endpoints = makeApi([
   {
     method: "patch",
     path: "/api/v1/users/:userId/status",
-    alias: "patchApiv1users_userIdstatus",
+    alias: "patchApiv1usersUserIdstatus",
     requestFormat: "json",
     parameters: [
       {
@@ -2980,7 +2978,7 @@ const endpoints = makeApi([
   {
     method: "get",
     path: "/api/v1/users/profile/:userId",
-    alias: "getApiv1usersprofile_userId",
+    alias: "getApiv1usersprofileUserId",
     requestFormat: "json",
     parameters: [
       {

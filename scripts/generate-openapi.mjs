@@ -17,6 +17,9 @@ const output = mode === "types" ? "src/types/api.d.ts" : "src/types/api-schemas.
 
 execFileSync(pnpm, ["exec", generator, openapiUrl, "-o", output], {
   stdio: "inherit",
+  // Windows exposes pnpm as a .cmd shim, which Node cannot execute directly
+  // without shell resolution. Unix keeps the direct executable behavior.
+  shell: process.platform === "win32",
 });
 
 if (mode === "schemas") {

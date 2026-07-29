@@ -1,19 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, ArrowLeft, CalendarDays, Loader2, Tag } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePublicProject } from "../../hooks/usePublicProjects";
 import { getProjectStatusMeta, getThaiProjectStatus } from "../../utils/projectStatus";
-
-function formatDate(value: string | Date) {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "-"
-    : new Intl.DateTimeFormat("th-TH", { dateStyle: "long" }).format(date);
-}
 
 export function PublicProjectDetailView({ projectId }: { projectId: string }) {
   const query = usePublicProject(projectId);
@@ -62,21 +55,11 @@ export function PublicProjectDetailView({ projectId }: { projectId: string }) {
                 <p className="mt-1 break-words text-sm">{project.projectNameOriginal}</p>
               </div>
             )}
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-xl border p-4">
                 <Tag className="size-5 text-primary" />
                 <p className="mt-3 text-xs text-muted-foreground">ประเภทโครงการ</p>
                 <p className="mt-1 break-words font-semibold">{project.projectType?.name ?? "ไม่ระบุ"}</p>
-              </div>
-              <div className="rounded-xl border p-4">
-                <CalendarDays className="size-5 text-primary" />
-                <p className="mt-3 text-xs text-muted-foreground">วันที่สร้าง</p>
-                <p className="mt-1 break-words font-semibold">{formatDate(project.createdAt)}</p>
-              </div>
-              <div className="rounded-xl border p-4">
-                <CalendarDays className="size-5 text-primary" />
-                <p className="mt-3 text-xs text-muted-foreground">ปรับปรุงล่าสุด</p>
-                <p className="mt-1 break-words font-semibold">{formatDate(project.updatedAt)}</p>
               </div>
             </div>
             <p className="border-t pt-5 text-xs leading-6 text-muted-foreground">ข้อมูลหน้านี้เป็นข้อมูลสรุปที่เปิดเผยต่อสาธารณะเท่านั้น และไม่รวมข้อมูลส่วนบุคคล เอกสารแนบ หรือรายละเอียดข้อเสนอฉบับเต็ม</p>

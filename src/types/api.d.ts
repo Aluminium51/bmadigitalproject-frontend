@@ -160,7 +160,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/users/profile/:userId": {
+    "/api/v1/users/profile/{userId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -226,7 +226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/users/:userId/roles": {
+    "/api/v1/users/{userId}/roles": {
         parameters: {
             query?: never;
             header?: never;
@@ -294,7 +294,7 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/v1/users/:userId/status": {
+    "/api/v1/users/{userId}/status": {
         parameters: {
             query?: never;
             header?: never;
@@ -3664,8 +3664,6 @@ export interface components {
                 id: number;
                 name: string;
             } | null;
-            createdAt: string;
-            updatedAt: string;
         };
         /** @description Partial update for a submitted proposal by an authorized Secretary */
         SubmittedProposalPatchRequest: {
