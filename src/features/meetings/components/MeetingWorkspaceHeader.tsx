@@ -113,7 +113,7 @@ export function MeetingWorkspaceHeader({ meeting, activeTab }: {
 function Tab({ href, active, icon, label }: { href: string; active: boolean; icon: React.ReactNode; label: string }) {
   return (
     <Link href={href} className={`inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${active ? "bg-primary text-white" : "text-muted-foreground hover:text-primary"}`}>
-      {icon}<span>{label}</span>
+      <span className={`${active ? "text-white" : "text-black"}`}>{icon}</span><span className={`${active ? "text-white" : "text-black"}`}>{label}</span>
     </Link>
   );
 }

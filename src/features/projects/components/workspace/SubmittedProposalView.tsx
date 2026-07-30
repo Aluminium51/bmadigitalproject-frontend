@@ -113,7 +113,10 @@ export function SubmittedProposalView({
                   >
                     {step.number}
                   </span>
-                  <span className="whitespace-nowrap lg:whitespace-normal">{step.title}</span>
+                  <span className={`whitespace-nowrap lg:whitespace-normal ${
+                    activeStep === step.number 
+                      ? "text-white" 
+                      : "text-black"}`}>{step.title}</span>
                 </a>
               ))}
             </CardContent>
