@@ -1,27 +1,21 @@
-# DEPRECATED: temporary rollback/transition path only.
-# Use ../infrastructure/compose.*.yml for the canonical separated deployment.
+# DEPRECATED: temporary source-build rollback path only.
+# Use ../infrastructure/compose.*.yml for the canonical deployment.
+# This file is excluded from CI and must not be used for staging or production.
 services:
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        # Browser requests must use the backend host URL; /api/v1 is not proxied by Next.js.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://172.27.15.59:8081/api/v1}
-        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://172.27.15.59:8081}
-        NEXT_PUBLIC_FILE_PREVIEW_URL: ${NEXT_PUBLIC_FILE_PREVIEW_URL:-http://localhost:8081/api/v1}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api/v1}
     container_name: bma_frontend
     restart: always
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://172.27.15.59:8081/api/v1}
-      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://172.27.15.59:8081}
-      - NEXT_PUBLIC_FILE_PREVIEW_URL=${NEXT_PUBLIC_FILE_PREVIEW_URL:-http://localhost:8081/api/v1}
-      # These Compose files use separate networks by default. Override this
-      # with http://backend:8081 only when both services share a Docker network.
-      - BACKEND_URL=${BACKEND_URL:-http://172.27.15.59:8081}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-/api/v1}
+      - BACKEND_URL=${BACKEND_URL:?BACKEND_URL is required}
     # จำกัดทรัพยากร (Optional: ป้องกันไม่ให้ Next.js กินแรมเซิร์ฟเวอร์จนหมด)
     deploy:
       resources:

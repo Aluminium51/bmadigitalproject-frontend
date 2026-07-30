@@ -59,11 +59,21 @@ Ensure you have the following installed on your local machine:
     ```
 
 2.  **Environment Variables:**
-    Create a `.env.local` file in the root directory and configure the necessary environment variables (e.g., API endpoints, authentication secrets).
+    For the canonical Docker workflow, use the Compose files in `../infrastructure`.
+    If running the Next.js development server directly, create a `.env.local`
+    with browser-safe and server-only values:
     ```bash
+    NEXT_PUBLIC_API_URL=/api/v1
     BACKEND_URL=http://localhost:8081
-    # Add any other required environment variables here
     ```
+
+    `BACKEND_URL` is server-only. Do not create `NEXT_PUBLIC_BACKEND_URL` or
+    `NEXT_PUBLIC_FILE_PREVIEW_URL`, and do not place private infrastructure
+    addresses in browser-exposed variables.
+
+    The deprecated `docker-compose.yml` is retained only as a temporary
+    source-build rollback path. It is excluded from CI; use
+    `../infrastructure/compose.app.dev.yml` or the staging Compose files.
 
 3.  **Generate API Schemas (Types):**
     Important: Ensure the Backend server is currently running. Then, pull the latest OpenAPI schema to generate TypeScript types:
