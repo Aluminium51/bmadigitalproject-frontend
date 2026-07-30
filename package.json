@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "bun test",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "scan:browser-bundle": "node scripts/scan-browser-bundle.mjs .next/static",
     "clean": "rimraf .next && next dev",
     "generate:types": "node scripts/generate-openapi.mjs types",
     "generate:schemas": "node scripts/generate-openapi.mjs schemas"

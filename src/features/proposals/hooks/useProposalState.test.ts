@@ -8,7 +8,8 @@ test("editable draft wins over submitted history when the Backend permits editin
     preferEditableDraft: true,
   });
   expect(state.status).toBe("draft");
-  expect(state.data?.projectName).toBe("ฉบับร่าง");
+  if (state.status !== "draft") throw new Error("Expected an editable draft state");
+  expect(state.data.projectName).toBe("ฉบับร่าง");
 });
 
 test("submitted history remains the workspace when editing is not permitted", () => {
@@ -18,5 +19,6 @@ test("submitted history remains the workspace when editing is not permitted", ()
     preferEditableDraft: false,
   });
   expect(state.status).toBe("submitted");
-  expect(state.data?.projectName).toBe("ฉบับที่ส่งแล้ว");
+  if (state.status !== "submitted") throw new Error("Expected a submitted proposal state");
+  expect(state.data.projectName).toBe("ฉบับที่ส่งแล้ว");
 });
