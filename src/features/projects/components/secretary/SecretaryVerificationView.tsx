@@ -94,6 +94,7 @@ export function SecretaryVerificationView() {
             <ProjectTable
               data={projects}
               activeTab="all"
+              showActions
               actionsFirst
               stickyActions
               actionsHeader="จัดการ"

@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/table";
 import { TabType } from "../hooks/useProjects";
 import { getProjectStatusMeta, getThaiProjectStatus } from "../utils/projectStatus";
+import { getProjectTableColumnCount } from "./project-table-columns";
+
+export { getProjectTableColumnCount } from "./project-table-columns";
 
 type Project = z.infer<typeof schemas.Project>;
 type ProjectRow = Project & {
@@ -30,10 +33,38 @@ interface ProjectTableProps {
   onRowClick?: (project: ProjectRow) => void;
   renderActions?: (project: ProjectRow) => ReactNode;
   actionsFirst?: boolean;
+  showActions?: boolean;
   stickyActions?: boolean;
   actionsHeader?: string;
   hideAnalystColumn?: boolean;
+  showDraftProgress?: boolean;
   statusLanguage?: "th" | "en";
+}
+
+export function ProjectTableSkeleton({
+  activeTab,
+  hideAnalystColumn = false,
+  showActions = false,
+  showDraftProgress = true,
+}: Pick<ProjectTableProps, "activeTab" | "hideAnalystColumn" | "showActions" | "showDraftProgress">) {
+  const columnCount = getProjectTableColumnCount({ activeTab, hideAnalystColumn, showActions, showDraftProgress });
+  return (
+    <div className="flex-1 overflow-auto" data-column-count={columnCount}>
+      <Table>
+        <TableBody>
+          {Array.from({ length: 6 }, (_, rowIndex) => (
+            <TableRow key={rowIndex}>
+              {Array.from({ length: columnCount }, (_, columnIndex) => (
+                <TableCell key={columnIndex} className="px-6 py-5 sm:px-10">
+                  <div className="h-5 animate-pulse rounded bg-muted" />
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
 }
 
 function StatusBadge({
@@ -74,9 +105,11 @@ export function ProjectTable({
   onRowClick,
   renderActions,
   actionsFirst = false,
+  showActions = false,
   stickyActions = false,
   actionsHeader = "จัดการ",
   hideAnalystColumn = false,
+  showDraftProgress = true,
   statusLanguage = "en",
 }: ProjectTableProps) {
   const router = useRouter();
@@ -88,6 +121,8 @@ export function ProjectTable({
   const actionsClassName = stickyActions
     ? "sticky left-0 z-20 px-3 py-4 text-center shadow-[2px_0_4px_-3px_rgba(0,0,0,0.25)] sm:px-6"
     : "px-6 py-4 text-center sm:px-10";
+  const hasStatusColumn = activeTab !== "drafts" || showDraftProgress;
+  const columnCount = getProjectTableColumnCount({ activeTab, hideAnalystColumn, showActions, showDraftProgress });
 
   const renderActionsHeader = () => (
     <TableHead className={actionsClassName}>{actionsHeader}</TableHead>
@@ -114,18 +149,26 @@ export function ProjectTable({
 
   if (data.length === 0) {
     return (
-      <div className="p-16 text-center font-medium text-muted-foreground">
-        {emptyMessage ?? (activeTab === "drafts" ? "ไม่มีโครงการแบบร่าง" : "ไม่พบโครงการ")}
+      <div className="flex-1 overflow-auto">
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell colSpan={columnCount} className="p-16 text-center font-medium text-muted-foreground">
+                {emptyMessage ?? (activeTab === "drafts" ? "ไม่มีโครงการแบบร่าง" : "ไม่พบโครงการ")}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 overflow-auto" data-column-count={columnCount}>
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-white">
           <TableRow>
-            {actionsFirst && renderActionsHeader()}
+            {showActions && actionsFirst && renderActionsHeader()}
             <TableHead className="px-6 py-4 sm:px-10">วันที่นำเข้า</TableHead>
             <TableHead className="w-full px-6 py-4 sm:px-10">ชื่อโครงการ</TableHead>
             <TableHead className="px-6 py-4 sm:px-10">หน่วยงาน</TableHead>
@@ -133,10 +176,10 @@ export function ProjectTable({
             <TableHead className="px-6 py-4 sm:px-10">ประเภทโครงการ</TableHead>
             <TableHead className="px-6 py-4 sm:px-10">งบประมาณ</TableHead>
             {!hideAnalystColumn && <TableHead className="px-6 py-4 sm:px-10">ผู้วิเคราะห์</TableHead>}
-            <TableHead className="min-w-50 px-6 py-4 sm:px-10">
+            {hasStatusColumn && <TableHead className="min-w-50 px-6 py-4 sm:px-10">
               {activeTab === "drafts" ? "ความคืบหน้า" : "สถานะโครงการ"}
-            </TableHead>
-            {!actionsFirst && renderActionsHeader()}
+            </TableHead>}
+            {showActions && !actionsFirst && renderActionsHeader()}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -154,7 +197,7 @@ export function ProjectTable({
                   : "cursor-pointer hover:bg-surface-variant/40"}
                 onClick={() => navigate(project)}
               >
-                {actionsFirst && renderActionsCell(project)}
+                {showActions && actionsFirst && renderActionsCell(project)}
                 <TableCell className="px-6 py-5 text-xs text-muted-foreground sm:px-10">{date}</TableCell>
                 <TableCell className="px-6 py-5 sm:px-10">
                   <div className={`flex flex-col font-bold ${isReturned && activeTab !== "drafts" ? "text-red-700" : "text-[#191c20]"}`}>
@@ -171,7 +214,7 @@ export function ProjectTable({
                     {project.analyst ? `${project.analyst.firstName} ${project.analyst.lastName}` : "-"}
                   </TableCell>
                 )}
-                <TableCell className="px-6 py-5 sm:px-10">
+                {hasStatusColumn && <TableCell className="px-6 py-5 sm:px-10">
                   {activeTab === "drafts" ? (
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-[#00734b]/20 bg-[#00734b]/10 px-2.5 py-1 text-[11px] font-bold text-[#00734b]"><FileSpreadsheet className="h-3 w-3" /> แบบฟอร์ม {project.formProgress || "-"}</span>
@@ -180,8 +223,8 @@ export function ProjectTable({
                   ) : (
                     <StatusBadge statusId={project.status?.id} statusName={project.status?.name} language={statusLanguage} />
                   )}
-                </TableCell>
-                {!actionsFirst && renderActionsCell(project)}
+                </TableCell>}
+                {showActions && !actionsFirst && renderActionsCell(project)}
               </TableRow>
             );
           })}

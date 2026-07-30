@@ -16,8 +16,8 @@ export default async function CreateProposalPage({
   const mode = query?.mode === "review" ? "submitted" : "draft";
 
   return (
-    <div className="min-h-screen bg-[#f9f9ff] py-8">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="min-h-full bg-[#f9f9ff] py-4 md:py-6">
+      <div className="mx-auto w-full max-w-7xl px-4">
         
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-extrabold text-[#191c20] tracking-tight">

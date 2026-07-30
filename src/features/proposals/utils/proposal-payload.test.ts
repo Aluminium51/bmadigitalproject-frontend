@@ -78,3 +78,32 @@ test("creates a backend-compatible payload without stale relational IDs", () => 
   expect(payload.cloudRequests[0]).not.toHaveProperty("id");
   expect(payload.cloudRequests[0].requestedServiceDate).toBe("2027-01-02");
 });
+
+test("does not leak submitted-proposal response metadata into form or submit payload", () => {
+  const response = {
+    ...completeResponse,
+    id: "018f3a3b-1b2c-7d3e-8f4b-5c6d7e8f9a0b",
+    status: "submitted",
+    projectId: "018f3a3b-1b2c-7d3e-8f4b-5c6d7e8f9a0c",
+    userId: "018f3a3b-1b2c-7d3e-8f4b-5c6d7e8f9a0d",
+    updatedBy: "018f3a3b-1b2c-7d3e-8f4b-5c6d7e8f9a0e",
+    version: 1,
+    requestedBudgetTotal: "100000",
+    estimatedCostTotal: "25000",
+    submittedAt: "2027-01-03T00:00:00.000Z",
+    createdAt: "2027-01-03T00:00:00.000Z",
+    updatedAt: "2027-01-03T00:00:00.000Z",
+  };
+
+  const form = normalizeProposalForForm(response);
+  const payload = toProposalSubmitPayload(form);
+
+  expect(form).not.toHaveProperty("status");
+  expect(form).not.toHaveProperty("projectId");
+  expect(form).not.toHaveProperty("submittedAt");
+  expect(form).not.toHaveProperty("createdAt");
+  expect(payload).not.toHaveProperty("requestedBudgetTotal");
+  expect(payload).not.toHaveProperty("estimatedCostTotal");
+  expect(payload).not.toHaveProperty("status");
+  expect(proposalSubmitPayloadSchema.safeParse(payload).success).toBe(true);
+});

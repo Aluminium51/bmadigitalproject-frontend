@@ -22,6 +22,8 @@ import { useFourQuadrants, useDeputyGovernors } from "@/features/lookups/hooks/u
 import { useProposalState } from "@/features/proposals/hooks/useProposalState";
 import { useGetDraft } from "@/features/proposals/hooks/useProposalDraftQuery";
 import { useSubmitProposal } from "@/features/proposals/hooks/useProposalMutations";
+import type { ProposalDraftValues } from "@/features/proposals/types";
+import { ProposalExportButton } from "@/features/proposals/components/ProposalExportButton";
 import {
   useCancelSubmitProject,
   useDeleteProject,
@@ -65,6 +67,9 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
   const canSubmitProposal = project.permissions?.canSubmitProposal === true;
   const isSubmitDisabled = isDraftLoading || isSubmitting || !currentDraft || !canSubmitProposal;
   const statusMeta = getProjectStatusMeta(project.projectStatusId, project.status?.name);
+  const exportableProposal = proposalState.status === "draft" || proposalState.status === "submitted"
+    ? proposalState.data
+    : null;
 
   const { data: quadrantsRes } = useFourQuadrants();
   const { data: governorsRes } = useDeputyGovernors();
@@ -165,6 +170,12 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
             </div>
 
             <div className="flex w-full shrink-0 flex-col items-stretch gap-2 xl:w-auto xl:self-start">
+              {exportableProposal && (
+                <ProposalExportButton
+                  proposal={exportableProposal as ProposalDraftValues}
+                  className="gap-2 rounded-xl border-primary/30 text-primary hover:bg-primary/5"
+                />
+              )}
               {isSuperAdmin && [11, 14].includes(project.projectStatusId ?? -1) && (
                 <Button
                   variant="outline"
@@ -194,7 +205,7 @@ export function ProjectHeader({ project, proposal }: ProjectHeaderProps) {
                   className="gap-2 rounded-xl border-primary/30 text-primary hover:bg-primary/5"
                 >
                   <Pencil className="h-4 w-4" />
-                  แก้ไขรายละเอียด
+                  เปลี่ยนชื่อโครงการ
                 </Button>
               )}
               {project.permissions?.canChangeVisibility && (

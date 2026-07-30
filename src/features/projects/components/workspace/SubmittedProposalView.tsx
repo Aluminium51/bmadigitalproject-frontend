@@ -52,7 +52,7 @@ export function SubmittedProposalView({
   }, []);
 
   const attachments = project.attachments ?? [];
-  const editAllowed = project.permissions?.canEditProposal && !project.permissions?.canSubmitProposal;
+  const editAllowed = project.permissions?.canEditProposal === true;
 
   return (
     <div className="min-w-0 space-y-5">

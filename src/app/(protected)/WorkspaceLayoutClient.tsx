@@ -51,7 +51,7 @@ export default function WorkspaceLayoutClient({
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar roles={roles} />
-        <main className="flex h-screen min-h-0 min-w-0 flex-1 flex-col bg-surface-container-low">
+        <main className="flex min-h-svh min-w-0 flex-1 flex-col bg-surface-container-low">
           <nav className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-[#ededf4] bg-white p-4 shadow-sm">
             <section className="flex w-full min-w-0 items-center overflow-hidden pr-4">
               <CustomSidebarTrigger />
@@ -61,7 +61,7 @@ export default function WorkspaceLayoutClient({
               <UserMenu />
             </div>
           </nav>
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2 md:p-4">
+          <div data-testid="workspace-content-scroll" className="p-2 md:p-4">
             {children}
           </div>
         </main>

@@ -1,7 +1,6 @@
 // src/features/projects/components/ProjectStep5.tsx
 "use client";
 
-import { useState } from "react";
 import {
   useFormContext,
   useFieldArray,
@@ -16,8 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Trash2, Plus, AlertCircle, FileDown, Loader2, Calculator } from "lucide-react";
-import { generateProposalDocx } from "@/features/proposals/utils/documentGenerator";
+import { Trash2, Plus, AlertCircle, Calculator } from "lucide-react";
+import { ProposalExportButton } from "./ProposalExportButton";
 
 // ---------------------------------------------------------------------------
 // Sub-Component: สำหรับจัดการตาราง VM ภายในแต่ละระบบงาน
@@ -212,24 +211,6 @@ export const ProposalStep5 = () => {
     });
     return acc;
   }, { vcpu: 0, ramGb: 0, gpuGb: 0, storageGb: 0, price: 0 });
-
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleGenerateDocument = async () => {
-    setIsGenerating(true);
-    try {
-      const allFormData = getValues();
-      const result = await generateProposalDocx(allFormData);
-      if (!result.success) {
-        alert("เกิดข้อผิดพลาดในการสร้างเอกสาร: " + result.error);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("เกิดข้อผิดพลาดที่ไม่คาดคิด");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500 w-full min-w-0 pb-10">
@@ -427,20 +408,11 @@ export const ProposalStep5 = () => {
 
       {/* --- ส่วนปุ่ม Generate Document --- */}
       <div className="flex justify-end mt-4 pt-6 border-t border-border">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={handleGenerateDocument}
-          disabled={isGenerating}
-          className="gap-2 bg-primary-container/20 hover:bg-primary-container/40 text-primary-dark border-primary/30"
-        >
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <FileDown className="w-4 h-4" />
-          )}
-          {isGenerating ? "กำลังสร้างเอกสาร..." : "สร้างแบบเสนอโครงการ (Word)"}
-        </Button>
+        <ProposalExportButton
+          proposal={getValues()}
+          label="สร้างแบบเสนอโครงการ (Word)"
+          className="gap-2 border-primary/30 bg-primary-container/20 text-primary-dark hover:bg-primary-container/40"
+        />
       </div>
 
     </div>

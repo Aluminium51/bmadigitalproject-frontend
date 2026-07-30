@@ -51,10 +51,14 @@ export function useReviewSecretaryProject() {
       payload: SecretaryReviewPayload;
     }) => reviewSecretaryProjectAction(projectId, payload),
     onSuccess: async (response) => {
+      queryClient.setQueryData(["project", response.project.id], response.project);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["projects", "secretary-pending"] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
         queryClient.invalidateQueries({ queryKey: ["project", response.project.id] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals", "draft", response.project.id] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals", "submitted", response.project.id] }),
+        queryClient.invalidateQueries({ queryKey: ["timeline", response.project.id] }),
       ]);
       toast.success("บันทึกผลการตรวจสอบโครงการเรียบร้อยแล้ว");
     },

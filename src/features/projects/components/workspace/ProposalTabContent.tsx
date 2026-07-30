@@ -53,7 +53,7 @@ export function ProposalTabContent({ project }: ProposalTabContentProps) {
             onClick={() => router.push(`/projects/${projectId}/proposal/create`)}
             className="h-11 w-full gap-2 font-bold md:w-auto"
           >
-            ดำเนินการต่อ
+            แก้ไขข้อเสนอ
             <ArrowRight className="h-4 w-4" />
           </Button>
         </CardContent>

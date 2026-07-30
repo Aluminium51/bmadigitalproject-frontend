@@ -36,6 +36,66 @@ const UI_ONLY_FIELDS = [
   "securityDiagramUrl",
 ] as const;
 
+// The submitted-proposal API response contains persistence metadata and
+// response-shaped collection names in addition to the editable form values.
+// Keep one explicit allow-list so those fields can never leak into React Hook
+// Form state, draft autosaves, or the strict submit payload.
+const FORM_FIELD_KEYS = [
+  "projectName",
+  "agencyName",
+  "headOfAgency",
+  "dcioName",
+  "projectManager",
+  "totalBudget",
+  "budgetsByYear",
+  "background",
+  "objective",
+  "target",
+  "scope",
+  "projectType",
+  "currentSystemStatus",
+  "currentProblems",
+  "relatedProjects",
+  "manpower",
+  "existingEquipment",
+  "isBmaPlan",
+  "isAgencyPlan",
+  "agencyStrategy",
+  "agencyIssue",
+  "agencyKpi",
+  "isGovernorPolicy",
+  "governorPolicyCode",
+  "governorPolicyName",
+  "obstacleLaws",
+  "appArchitecture",
+  "dataOwner",
+  "dataExchangePlan",
+  "systemDiagramFile",
+  "networkDiagramFile",
+  "useCaseDiagramFile",
+  "securityDiagramFile",
+  "systemDiagramUrl",
+  "networkDiagramUrl",
+  "useCaseDiagramUrl",
+  "securityDiagramUrl",
+  "hardwareCosts",
+  "softwareCosts",
+  "personnelCoreCosts",
+  "personnelAsstCosts",
+  "personnelSuppCosts",
+  "personnelResponsibilities",
+  "trainingCourses",
+  "otherCosts",
+  "durationDays",
+  "ictPersonnel",
+  "cloudRequests",
+  "isReady",
+  "readinessDetails",
+  "otherReadiness",
+  "expectedBenefits",
+  "isInRoadmap",
+] as const;
+
 function record(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as JsonRecord
@@ -174,7 +234,6 @@ export function normalizeProposalForForm(source: unknown): JsonRecord {
   const existingEquipments = value.existingEquipment ?? value.existingEquipments;
 
   const normalized: JsonRecord = {
-    ...value,
     projectName: stringValue(value.projectName),
     agencyName: stringValue(value.agencyName),
     headOfAgency: stringValue(value.headOfAgency),
@@ -278,7 +337,9 @@ export function normalizeProposalForForm(source: unknown): JsonRecord {
     if (field in value) normalized[field] = value[field];
   }
 
-  return normalized;
+  return Object.fromEntries(
+    FORM_FIELD_KEYS.flatMap((key) => key in normalized ? [[key, normalized[key]]] : []),
+  );
 }
 
 function stripMetadata(value: unknown): unknown {
@@ -326,6 +387,7 @@ export function normalizeProposalPatchPayload(source: Record<string, unknown>) {
     if (UI_ONLY_FIELDS.includes(key as typeof UI_ONLY_FIELDS[number])) continue;
     if (key === "totalBudget" || key === "latestApprovedBudget") continue;
     const canonicalKey = aliases[key] ?? key;
+    if (!(FORM_FIELD_KEYS as readonly string[]).includes(canonicalKey)) continue;
     result[canonicalKey] = canonicalKey in normalized
       ? normalized[canonicalKey]
       : input[key];

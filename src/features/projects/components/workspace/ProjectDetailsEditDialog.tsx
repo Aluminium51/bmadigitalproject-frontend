@@ -42,7 +42,7 @@ export function ProjectDetailsEditDialog({
     <Dialog open={open} onOpenChange={(nextOpen) => !mutation.isPending && onOpenChange(nextOpen)}>
       <DialogContent className="w-[calc(100%-1rem)] max-w-lg">
         <DialogHeader>
-          <DialogTitle>แก้ไขรายละเอียดโครงการ</DialogTitle>
+          <DialogTitle>แก้ไขชื่อโครงการ</DialogTitle>
           <DialogDescription>แก้ไขได้ตามสิทธิ์ของผู้ใช้งานและสถานะปัจจุบันของโครงการ</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

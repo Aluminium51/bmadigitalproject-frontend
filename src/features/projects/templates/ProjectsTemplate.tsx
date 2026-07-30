@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProjects } from "@/features/projects/hooks/useProjects";
 import { ProjectTabs } from "@/features/projects/components/ProjectTabs";
-import { ProjectTable } from "@/features/projects/components/ProjectTable";
+import { ProjectTable, ProjectTableSkeleton } from "@/features/projects/components/ProjectTable";
 import { ProjectPagination } from "@/features/projects/components/ProjectPagination";
 import {
   getProjectStatusMeta,
@@ -157,15 +157,19 @@ export function ProjectsTemplate({
         </div>
 
         {isLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-16 text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin mb-4 text-[#00734b]" />
-            <p>กำลังโหลดข้อมูลโครงการ...</p>
-          </div>
+          <ProjectTableSkeleton
+            activeTab={activeTab}
+            hideAnalystColumn={activeTab === "drafts"}
+            showActions={false}
+            showDraftProgress={false}
+          />
         ) : (
           <ProjectTable
             data={projectsData}
             activeTab={activeTab}
             hideAnalystColumn={activeTab === "drafts"}
+            showActions={false}
+            showDraftProgress={false}
             statusLanguage="th"
           />
         )}

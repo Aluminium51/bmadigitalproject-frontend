@@ -231,14 +231,20 @@ const WizardForm = ({
     const isValid = await validateCurrentStep();
     if (!isValid) return;
     nextStep();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const handlePrev = async () => {
     const isValid = await validateCurrentStep();
     if (!isValid) return;
     prevStep();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   // Completing the wizard only leaves the draft intact. The project workspace
@@ -285,7 +291,7 @@ const WizardForm = ({
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="mx-auto w-full rounded-container border border-[#D1CDC7] bg-white p-6 sm:p-10 shadow-sm overflow-hidden">
+    <div className="mx-auto w-full rounded-container border border-[#D1CDC7] bg-white p-6 shadow-sm sm:p-10">
 
       <div className="mb-5 flex items-center justify-between gap-3">
         <Button type="button" variant="ghost" onClick={requestExit} className="-ml-2 text-slate-600">
@@ -305,14 +311,14 @@ const WizardForm = ({
         />
 
         {isReadOnly && (
-          <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
-            This proposal is read-only while the project is being reviewed.
-          </div>
-        )}
+            <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+              This proposal is read-only while the project is being reviewed.
+            </div>
+          )}
 
         <form onSubmit={(event) => event.preventDefault()} className="mt-8">
 
-          <fieldset disabled={isReadOnly} className="min-h-100">
+          <fieldset disabled={isReadOnly}>
             {currentStep === 1 && <ProposalStep1 project={projectDetail} />}
             {currentStep === 2 && <ProposalStep2 />}
             {currentStep === 3 && <ProposalStep3 projectId={projectId} />}
