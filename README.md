@@ -1,167 +1,179 @@
-# BMA Digital Project - Frontend
+# BMA Digital Project Frontend
 
-An enterprise-level digital project management and approval system designed for robust performance, scalability, and maintainability. This repository houses the frontend application built with a modern React ecosystem and a Feature-Driven Architecture.
+The Frontend is the browser and server-rendered user interface for BMA Digital
+Project workflows. It uses the Backend's versioned API and OpenAPI document;
+PostgreSQL and business authorization remain Backend responsibilities.
 
-## Project Background
+## Background and purpose
 
-Historically, government IT project proposals and budget approvals involved excessive paperwork, manual tracking, and complex hierarchical reviews. The **BMA Digital Project** was initiated to digitize and centralize this entire pipeline for the Bangkok Metropolitan Administration (BMA). 
+BMA Digital Project is intended to give BMA staff a single interface for
+preparing and following digital-project proposals. It brings project
+information, budgets, supporting documents, review feedback, meetings, and
+board decisions into one workflow so users can see the current state and the
+actions they are permitted to take.
 
-The system ensures that all proposed IT projects align with the organization's Enterprise Architecture (EA) and strategic policies. It streamlines the lifecycle from the initial drafting of a proposal to the final executive board approval, providing transparency, reducing redundancy, and enabling efficient budget allocation.
+The Frontend turns the Backend workflow into role-aware screens for project
+owners and collaborators, secretaries, analysts, administrators, and board
+reviewers. It focuses on clear proposal editing, status tracking, validation,
+and responsive access to the authoritative data served by the Backend.
 
-## ✨ Core Features
+## Technology stack
 
-*   📝 **Multi-Step Proposal Wizard:** A comprehensive, interactive form handling general information, strategic alignment (Enterprise Architecture), and detailed budget breakdowns (Hardware, Software, Personnel, and Training).
-*   🔄 **Multi-Tier Approval Workflow:** A strict, state-driven routing system that moves projects through various screening phases (Secretary ➡️ Analyst ➡️ Screening Committee ➡️ Policy Board) with built-in revision loops (Revise/Fix).
-*   🔐 **Role-Based Access Control (RBAC):** Secure, domain-specific access ensuring users only see and interact with data relevant to their specific role and department.
-*   📊 **Real-Time Status Tracking:** Intuitive dashboards for users to monitor their project's status (Draft, Submitted, Passed, Need Revision, Rejected) at a glance.
-*   📄 **Document Management:** Integrated file handling with automated PDF compression for supporting project documents and architectural diagrams.
-*   ⚡ **Hybrid Data Fetching (Server Actions + React Query):** Strategically separates secure, server-side data mutations (Next.js Server Actions) from highly interactive, cached client-side UI states (React Query) for optimal performance.
+- Next.js 16 App Router, React 19, and TypeScript
+- Tailwind CSS, Base UI, and project UI components
+- TanStack Query for server-state caching and mutations
+- React Hook Form and Zod validation
+- Zodios/OpenAPI-generated types and schemas
+- Bun test runner, ESLint, pnpm, and Docker
 
-## Target Audience (User Roles)
+## Prerequisites
 
-The system is designed to serve multiple stakeholders across the organization:
+- Node.js 24 (the Docker image uses 24.6.0)
+- pnpm 11.13.0, managed through Corepack when needed
+- A running Backend for authenticated flows, API generation, and end-to-end
+  browser verification
 
-1.  **Project Creators (Agency Staff):** Personnel from various departments (เขต/สำนัก) who initiate, draft, and submit IT project proposals.
-2.  **Secretaries (Initial Screeners):** Coordinators who perform the first round of checks for document completeness and compliance.
-3.  **IT Analysts:** Technical experts who evaluate the project's technical feasibility, architecture alignment, and budget correctness.
-4.  **Committee & Board Members (Executives):** Decision-makers in both the Screening Committee (Small Board) and Policy Board (Big Board) who grant final approvals.
-5.  **System Administrators:** Super users responsible for managing master data, organizational lookups, and user permissions.
+## Quick start
 
-## Tech Stack
+Install dependencies:
 
-This project utilizes a modern and type-safe tech stack:
+```bash
+pnpm install --frozen-lockfile
+```
 
-*   **Core:** Next.js (App Router), TypeScript, pnpm
-*   **Language:** TypeScript
-*   **Styling:** Tailwind CSS + PostCSS
-*   **UI Library:** Custom components & Shadcn UI (located in `src/components/ui`)
-*   **Package Manager:** pnpm (Workspace enabled)
-*   **Validation:** Zod
-*   **RBAC & Authorization:** NextAuth.js + CASL
-*   **Context:** React Context + Zustand
-*   **Forms:** React Hook Form
-*   **Data Fetching:** React Query + Next.js Server Actions
----
+Create an untracked `.env.local` from [`.env.example`](.env.example). For a
+same-origin proxy, keep the browser API path relative and provide a server-only
+Backend URL:
 
-## Getting Started
+```dotenv
+NEXT_PUBLIC_API_URL=/api/v1
+BACKEND_URL=http://localhost:8081
+```
 
-### Prerequisites
-Ensure you have the following installed on your local machine:
-*   Node.js (v18.x or later recommended)
-*   pnpm (v8.x or later)
+Start the development server:
 
-### Installation & Setup
+```bash
+pnpm dev
+```
 
-1.  **Install dependencies:**
-    Navigate to the frontend directory and install packages using pnpm:
-    ```bash
-    pnpm install
-    ```
+Open `http://localhost:3000`. A direct development setup without a same-origin
+proxy may set `NEXT_PUBLIC_API_URL=http://localhost:8081/api/v1`; do not use
+private infrastructure addresses in browser-exposed production variables.
 
-2.  **Environment Variables:**
-    For the canonical Docker workflow, use the Compose files in `../infrastructure`.
-    If running the Next.js development server directly, create a `.env.local`
-    with browser-safe and server-only values:
-    ```bash
-    NEXT_PUBLIC_API_URL=/api/v1
-    BACKEND_URL=http://localhost:8081
-    ```
+## Environment variables
 
-    `BACKEND_URL` is server-only. Do not create `NEXT_PUBLIC_BACKEND_URL` or
-    `NEXT_PUBLIC_FILE_PREVIEW_URL`, and do not place private infrastructure
-    addresses in browser-exposed variables.
+| Variable | Scope | Purpose | Safe example |
+| --- | --- | --- | --- |
+| `NEXT_PUBLIC_API_URL` | Browser-exposed | API base path used by client requests | `/api/v1` |
+| `BACKEND_URL` | Server-only | Backend base URL used by server actions/fetches | `http://localhost:8081` |
+| `COOKIE_SECURE` | Server-only | Secure cookie behavior | `false` locally |
+| `COOKIE_SAME_SITE` | Server-only | Cookie same-site policy | `lax` |
+| `COOKIE_DOMAIN` | Server-only | Optional cookie domain | empty |
+| `OPENAPI_URL` | Generation only | OpenAPI document source | `http://localhost:8081/openapi-v1.json` |
 
-    The deprecated `docker-compose.yml` is retained only as a temporary
-    source-build rollback path. It is excluded from CI; use
-    `../infrastructure/compose.app.dev.yml` or the staging Compose files.
+Only values prefixed with `NEXT_PUBLIC_` are bundled into browser code. Never
+put database URLs, JWT secrets, filesystem paths, or private network addresses
+in browser-exposed variables.
 
-3.  **Generate API Schemas (Types):**
-    Important: Ensure the Backend server is currently running. Then, pull the latest OpenAPI schema to generate TypeScript types:
-    ```bash
-    pnpm generate:schemas
-    ```
+## Available scripts
 
-4.  **Run the development server:**
-    ```bash
-    pnpm dev
-    ```
-    The frontend application will be available at `http://localhost:3000`.
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Start the Next.js development server. |
+| `pnpm build` | Create a production build. |
+| `pnpm start` | Start a completed production build. |
+| `pnpm lint` | Run ESLint. |
+| `pnpm typecheck` | Run TypeScript validation. |
+| `pnpm test` | Run Bun tests. |
+| `pnpm scan:browser-bundle` | Scan built browser assets for private infrastructure values. Run after `pnpm build`. |
+| `pnpm generate:types` | Generate `src/types/api.d.ts` from OpenAPI. |
+| `pnpm generate:schemas` | Generate and normalize `src/types/api-schemas.ts` from OpenAPI. |
+| `pnpm clean` | Remove `.next` and start development mode. |
 
----
-
-## Project Architecture & Structure
-
-This project strictly follows a **Feature-Driven Architecture (FDA)**. This means code is organized by business domains (features) rather than technical roles (components, hooks, etc.). 
-
-### High-Level Directory Tree
+## Architecture
 
 ```text
 src/
-├── app/              # Next.js App Router (Routing & Pages only)
-│   ├── (protected)/  # Authenticated routes (dashboard, projects, meetings, etc.)
-│   ├── login/        # Public authentication routes
-│   └── register/     # Public authentication routes
-├── components/       # Global/Shared UI components
-│   ├── custom/       # Domain-agnostic complex components (e.g., app-sidebar)
-│   └── ui/           # Base UI elements (buttons, inputs, dialogs)
-├── features/         # 🌟 Core Business Logic (Domain-driven modules)
-│   ├── auth/         # Authentication logic and forms
-│   ├── meetings/     # Board meeting and resolution management
-│   ├── projects/     # Project workspace and tracking
-│   ├── proposals/    # Multi-step proposal wizard and document generation
-│   └── users/        # User management and RBAC
-├── hooks/            # Global custom React hooks (e.g., use-mobile.ts)
-├── lib/              # Global utilities and configurations (e.g., utils.ts)
-├── types/            # Global TypeScript models (e.g., models.ts)
-└── data/             # Global static data or lookup tables (e.g., lookup.ts)
+  app/                   App Router pages, layouts, and route composition
+  features/              domain UI, hooks, actions, forms, and mutations
+  components/            shared application and UI components
+  hooks/                 cross-feature React hooks
+  lib/                   API clients, server fetches, and utilities
+  types/                 generated API contracts and local type declarations
+  data/ utils/           shared data and utility helpers
+scripts/
+  generate-openapi.mjs   contract generation entry point
+  scan-browser-bundle.mjs browser bundle safety check
 ```
 
-### Feature Module Pattern
-Every directory under src/features/ represents a self-contained business domain. A typical feature module looks like this:  
+Keep feature-specific behavior within `src/features`. App Router files should
+compose pages and layouts rather than duplicate domain logic. Generated files in
+`src/types` are outputs, not hand-maintained source.
 
-```text
-src/features/[feature-name]/
-├── components/       # UI components specific to this feature
-├── hooks/            # Custom hooks for local state and data fetching
-├── actions/          # Server actions or API call functions
-├── schemas/          # Zod validation schemas
-├── stores/           # Local state management (Zustand/Context)
-├── utils/            # Helper functions specific to this feature
-├── data/             # Feature-specific mock data or constants
-└── types.ts          # TypeScript interfaces/types specific to this feature
+## Frontend data flow
+
+The Backend OpenAPI document is the contract source. Query hooks own stable
+query keys, mutations invalidate/refetch affected project, proposal, meeting,
+and lookup data, and forms submit validated API payloads.
+
+The Backend resolves workflow capabilities such as project/proposal edit and
+submit permissions. Use those returned capabilities to render controls. Client
+visibility checks improve UX only; they are never an authorization boundary.
+
+## Forms and workflow UI
+
+The proposal workspace includes a five-step form with draft hydration,
+field-level validation, and separate editable-draft and submitted-history views.
+Project status and Backend capabilities control editable actions and submission
+controls. Preserve unsaved form data where practical, and refresh relevant query
+state after successful workflow mutations or `409 Conflict` responses.
+
+## API contract generation
+
+Start the Backend or make its OpenAPI document reachable, then generate both
+outputs from the same source:
+
+```bash
+OPENAPI_URL=http://localhost:8081/openapi-v1.json pnpm generate:types
+OPENAPI_URL=http://localhost:8081/openapi-v1.json pnpm generate:schemas
 ```
 
-## Architecture & Design Patterns
+In PowerShell, set `$env:OPENAPI_URL` before the command. Do not manually edit
+[`src/types/api.d.ts`](src/types/api.d.ts) or
+[`src/types/api-schemas.ts`](src/types/api-schemas.ts); regenerate them instead.
 
-This project follows modern React and Next.js (App Router) best practices to ensure maintainability, scalability, and clean code.
-*   **Feature-Sliced Design (FSD):** Code is organized by feature domains (e.g., `src/features/projects`) rather than file types, making it easier to scale and locate related logic.
-*   **Container / Presentational Pattern:** We strictly separate Server-side logic and Routing from Client-side UI.
-    *   **`page.tsx` (Container / Server Component):** Responsible for routing, handling URL params, SEO metadata, and initial server-side data fetching.
-    *   **`Template.tsx` (Presentational / Client Component):** Acts as the main UI layout for a specific page, handling client-side interactivity (`"use client"`), hooks, and layout structuring.
-*   **Separation of Concerns (SoC):** By isolating the UI templates from the Next.js router, components become highly reusable and easier to test in isolation (e.g., via Storybook or Jest).
+## Testing and verification
 
-## 🎨 UI & Styling Guidelines
-- Tailwind CSS: Use Tailwind for all styling[cite: 1]. Avoid writing custom CSS unless absolutely necessary (add to src/app/globals.css)[cite: 1].
-- Component Composition: Use the cn() utility (located in src/lib/utils.ts) to merge Tailwind classes dynamically[cite: 1].
-- Base Components: Always utilize the foundational components from src/components/ui/ (e.g., ```<Button>, <Input>, <Table>```) before building custom ones[cite: 1].
+Run the normal local checks:
 
-## 🤖 AI Developer Notes (System Prompt Instructions)
-If you are an AI Assistant, Copilot, or Cursor agent working on this repository, you MUST adhere to the following rules:
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm scan:browser-bundle
+```
 
-Architecture Compliance: Strictly follow the Feature-Driven Architecture[cite: 1]. Do not clutter src/app with business logic[cite: 1]. Pages in src/app should merely act as orchestrators.
+Use browser verification for role-based workflows, stale query behavior,
+responsive layouts, and authenticated API actions. Confirm the active Backend
+and same-origin proxy configuration before interpreting client API failures.
 
-Type Safety: Use TypeScript strictly. Avoid any. Rely on Zod schemas (in src/features/[feature]/schemas/) to infer types for forms and API payloads whenever possible[cite: 1].
+## Docker and deployment
 
-Imports: Prefer absolute imports ```(@/...)``` over relative paths ```(../../...)```.
+The [`Dockerfile`](Dockerfile) builds a standalone Next.js image that runs as
+the non-root `nextjs` user on port 3000. In deployed environments, Nginx routes
+browser `/api/v1` requests to the Backend while `BACKEND_URL` remains server-only.
+See the sibling [Infrastructure runbook](../infrastructure/docs/staging-runbook.md)
+for Compose, immutable image references, Nginx, staging, and production steps.
 
-Global vs. Local: Do not import feature-specific files into global components. Dependencies should point inward (App -> Features -> Global Components).
+## Troubleshooting
 
-State Management: When dealing with complex forms (e.g., the proposal wizard), utilize the designated store inside src/features/[feature]/stores/ (e.g., useProposalFormStore.ts) to prevent excessive prop drilling[cite: 1].
-
-Data Fetching: This project implements a Hybrid Data Fetching architecture, leveraging the strengths of both Next.js server-side capabilities and client-side libraries to ensure security, performance, and a seamless UX. 
-- Server Actions & Native fetch: Handles core data fetching and sensitive business logic strictly on the server. 
-    - Best for: Initial page loads (Server Components) and secure mutations (e.g., submitting forms, updating project statuses).
-    - Benefits: Highly secure (hides API keys/tokens), leverages revalidatePath for instant UI updates, and minimizes client-side JavaScript overhead.
-- React Query: Manages client-side state, caching, and background data synchronization. 
-    - Best for: Non-sensitive data fetching, real-time updates, and optimistic UI patterns.
-    - Benefits: Reduces server load, improves perceived performance, and provides a robust caching mechanism.
+| Symptom | Check |
+| --- | --- |
+| API requests fail in the browser | Confirm `NEXT_PUBLIC_API_URL`, the same-origin proxy, CORS, and the Backend health endpoints. |
+| Server action cannot reach the API | Set `BACKEND_URL`; it must be reachable from the Next.js server/container. |
+| Data looks stale after a mutation | Inspect the feature's query invalidation/refetch behavior and refresh on `409 Conflict`. |
+| Generated types do not match the API | Regenerate both outputs from the intended `OPENAPI_URL`; do not edit generated files. |
+| Hydration or client-boundary error | Check Server/Client Component boundaries and browser-only access in `use client` code. |
+| Production build fails | Run `pnpm typecheck`, inspect `.env.local`, and remove stale `.next` output with `pnpm clean`. |
+| Nested scrolling or overflow | Check the route layout's height and `min-h-0`/overflow ownership; keep one intentional scroll region. |
